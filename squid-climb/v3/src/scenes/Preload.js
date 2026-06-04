@@ -23,7 +23,7 @@
   // How long to wait for the loader before booting the menu anyway. Any assets
   // that haven't arrived gray-box via the runtime fallback (§10.3). The happy
   // path normally fires 'complete' in well under a second.
-  var SAFETY_TIMEOUT_MS = 8000;
+  var SAFETY_TIMEOUT_MS = 3000;
 
   function Preload() { Phaser.Scene.call(this, { key: "Preload" }); }
   Preload.prototype = Object.create(Phaser.Scene.prototype);
