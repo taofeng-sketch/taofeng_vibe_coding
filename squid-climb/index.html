@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Default entry: jump straight to the v3 Phaser game (works under file://). -->
+  <meta http-equiv="refresh" content="0; url=v3/index.html" />
+  <title>Squid Technologies: Performance Review Climb</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #05080c; color: #e6f1ff; font-family: monospace; }
+    .wrap { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 24px; box-sizing: border-box; text-align: center; }
+    h1 { color: #4fd1c5; font-size: 20px; margin: 0; font-weight: normal; }
+    a.play { font-size: 22px; color: #05080c; background: #4fd1c5; text-decoration: none; padding: 12px 26px; border-radius: 8px; font-weight: bold; }
+    a.play:hover { background: #6ee7da; }
+    a.old { color: #9fb3c8; font-size: 13px; }
+    p { color: #9fb3c8; font-size: 13px; margin: 0; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Squid Technologies — Performance Review Climb</h1>
+    <p>Launching the v3 game&hellip;</p>
+    <a class="play" href="v3/index.html">&#9654; Play</a>
+    <a class="old" href="index_v2.html">(old v2 prototype: index_v2.html)</a>
+  </div>
+  <!-- JS redirect as well, so it works even if meta-refresh is ignored. -->
+  <script>
+    try { window.location.replace("v3/index.html"); }
+    catch (e) { window.location.href = "v3/index.html"; }
+  </script>
+</body>
+</html>

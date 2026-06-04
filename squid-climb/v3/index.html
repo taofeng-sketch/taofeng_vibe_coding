@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Squid Technologies — Performance Review Climb (v3)</title>
+  <style>
+    html, body { margin: 0; padding: 0; height: 100%; background: #05080c; overflow: hidden; }
+    body { font-family: monospace; color: #e6f1ff; }
+    #game { width: 100vw; height: 100vh; }
+    #game canvas { display: block; margin: 0 auto; }
+    /* Phaser-missing friendly overlay (shown only if the vendored blob is absent) */
+    #missing {
+      position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
+      background: #05080c; padding: 24px; box-sizing: border-box; z-index: 9999;
+    }
+    #missing .box {
+      max-width: 680px; border: 2px solid #4fd1c5; background: #121b24; border-radius: 10px;
+      padding: 28px 32px; line-height: 1.6;
+    }
+    #missing h1 { color: #4fd1c5; font-size: 22px; margin: 0 0 12px; }
+    #missing code { background: #0e151d; padding: 2px 6px; border-radius: 4px; color: #ffd479; }
+    #missing p { color: #9fb3c8; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <!-- Error surfacing attached FIRST so it catches load+boot errors (headless verify) -->
+  <script>
+    window.__squidErrors = [];
+    window.addEventListener("error", function (e) {
+      window.__squidErrors.push(String(e.message || e.error || e));
+      try { document.title = "ERR: " + (e.message || "js error"); } catch (x) {}
+    });
+  </script>
+
+  <div id="game"></div>
+
+  <div id="missing">
+    <div class="box">
+      <h1>⚠ Phaser engine is missing</h1>
+      <p>This zero-build game needs the vendored Phaser library, which isn't bundled in the repo.</p>
+      <p>To fix (one-time, needs internet once):</p>
+      <p>1. Download <code>phaser.min.js</code> (Phaser 3 latest stable, ~1.2&nbsp;MB) from
+         <code>https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.min.js</code></p>
+      <p>2. Drop it at <code>v3/assets/vendor/phaser.min.js</code></p>
+      <p>3. Reopen this <code>index.html</code>. Nothing else needs the network, ever.</p>
+    </div>
+  </div>
+
+  <!-- 1) Vendored engine (single ~1.2MB blob, loaded via <script>, offline) -->
+  <script src="assets/vendor/phaser.min.js" onerror="window.__phaserLoadFailed=true"></script>
+
+  <!-- 2) Audio engine (synthesized Web Audio, zero files) -->
+  <script src="src/audio/sound.js"></script>
+
+  <!-- 3) Plain JS DATA modules (ported from v2) -->
+  <!-- Asset manifest as a GLOBAL (window.SQUID_MANIFEST) — file:// safe, no XHR (§10.1) -->
+  <script src="data/manifest.js"></script>
+  <script src="data/cards.js"></script>
+  <script src="data/enemies.js"></script>
+  <script src="data/encounters.js"></script>
+  <script src="data/stages.js"></script>
+  <script src="data/events.js"></script>
+  <script src="data/intros.js"></script>
+  <script src="data/lore.js"></script>
+
+  <!-- 4) Engine (framework-agnostic, headless-testable) -->
+  <script src="src/engine/save.js"></script>
+  <script src="src/engine/combat.js"></script>
+
+  <!-- 5) UI helpers + LAYOUT indirection (§11.7) -->
+  <script src="src/ui/layout.js"></script>
+  <script src="src/ui/widgets.js"></script>
+  <script src="src/ui/fx.js"></script>
+  <script src="src/ui/card.js"></script>
+
+  <!-- 6) Scenes (one file each, dependency order) -->
+  <script src="src/scenes/Boot.js"></script>
+  <script src="src/scenes/Preload.js"></script>
+  <script src="src/scenes/MainMenu.js"></script>
+  <script src="src/scenes/Intro.js"></script>
+  <script src="src/scenes/Map.js"></script>
+  <script src="src/scenes/Combat.js"></script>
+  <script src="src/scenes/Reward.js"></script>
+  <script src="src/scenes/Rest.js"></script>
+  <script src="src/scenes/Event.js"></script>
+  <script src="src/scenes/Compendium.js"></script>
+  <script src="src/scenes/GameOver.js"></script>
+  <script src="src/scenes/Win.js"></script>
+
+  <!-- 7) Bootstrap the Phaser game (must be last) -->
+  <script>
+    (function () {
+      // Friendly "Phaser missing" path: blob failed to load OR symbol absent.
+      if (window.__phaserLoadFailed || typeof Phaser === "undefined") {
+        var m = document.getElementById("missing");
+        if (m) m.style.display = "flex";
+        document.title = "Phaser missing — Squid v3";
+        window.__squidPhaserMissing = true;
+        return;
+      }
+    })();
+  </script>
+  <script src="src/main.js"></script>
+</body>
+</html>

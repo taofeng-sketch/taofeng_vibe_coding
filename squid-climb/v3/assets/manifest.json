@@ -1,0 +1,26 @@
+{
+  "_comment": "V3 asset manifest (plan §10.1). Single source of truth for Preload. Paths are relative to v3/index.html. V2 PNGs are reused from ../assets. Sprite-sheets/atlases/VFX are NOT authored yet (gray-box via runtime fallback, §10.3).",
+  "version": 1,
+  "images": [
+    { "key": "scene_hq", "path": "../assets/scene_hq.png" },
+    { "key": "scene_climb", "path": "../assets/scene_climb.png" },
+    { "key": "player", "path": "../assets/player.png" },
+    { "key": "intro_graduation", "path": "../assets/intro_graduation.png" },
+    { "key": "intro_ladder_tower", "path": "../assets/intro_ladder_tower.png" },
+    { "key": "enemy_bug", "path": "../assets/enemy_bug.png" },
+    { "key": "enemy_legacy", "path": "../assets/enemy_legacy.png" },
+    { "key": "enemy_pm", "path": "../assets/enemy_pm.png" },
+    { "key": "enemy_ds", "path": "../assets/enemy_ds.png" },
+    { "key": "enemy_manager", "path": "../assets/enemy_manager.png" },
+    { "key": "boss_halfyear", "path": "../assets/boss_halfyear.png" },
+    { "key": "boss_calibration", "path": "../assets/boss_calibration.png" }
+  ],
+  "spritesheets": [],
+  "atlases": [],
+  "audio": [],
+  "_todo_future_milestones": {
+    "spritesheets": "per-enemy idle/attack/hurt frames (M2/M5, gray-boxed until then)",
+    "atlases": "card atlas + UI atlas + VFX (M2/M6)",
+    "audio": "none — synthesized Web Audio (src/audio/sound.js), zero files"
+  }
+}
