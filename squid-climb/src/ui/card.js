@@ -44,12 +44,24 @@
     var frame = scene.add.rectangle(0, 0, W, H, 0x121b24).setStrokeStyle(3, accent);
     var inner = scene.add.rectangle(0, 0, W - 8, H - 8, 0x0e151d, 0).setStrokeStyle(1, 0x2a3744);
 
-    // art window (gray-box: glyph centered)
+    // art window — real per-card art if its texture loaded (M6), else the glyph
+    // gray-box fallback (§10.3). Art is contain-fit so the whole icon shows inside
+    // the frame and never overflows it.
     var artY = -H / 2 + 70;
-    var artBox = scene.add.rectangle(0, artY, W - 24, 80, 0x05080c).setStrokeStyle(1, accent, 0.5);
-    var glyph = scene.add.text(0, artY, c.glyph || "?", {
-      fontFamily: "monospace", fontSize: "32px", color: hex(accent), fontStyle: "bold",
-    }).setOrigin(0.5);
+    var artBoxW = W - 24, artBoxH = 80;
+    var artBox = scene.add.rectangle(0, artY, artBoxW, artBoxH, 0x05080c).setStrokeStyle(1, accent, 0.5);
+
+    var artImg = null, glyph = null;
+    if (c.art && scene.textures.exists(c.art)) {
+      artImg = scene.add.image(0, artY, c.art);
+      var asc = Math.min(artBoxW / artImg.width, artBoxH / artImg.height);
+      artImg.setScale(asc);
+    } else {
+      glyph = scene.add.text(0, artY, c.glyph || "?", {
+        fontFamily: "monospace", fontSize: "32px", color: hex(accent), fontStyle: "bold",
+      }).setOrigin(0.5);
+    }
+    var artLayer = artImg || glyph;
 
     // cost orb (top-left)
     var orb = scene.add.circle(-W / 2 + 18, -H / 2 + 18, 15, 0x05080c).setStrokeStyle(2, accent);
@@ -80,7 +92,7 @@
     var gemColor = RARITY_GEM[c.rarity] || 0x4a5a6b;
     var gem = scene.add.rectangle(0, H / 2 - 12, 10, 10, gemColor).setAngle(45);
 
-    con.add([frame, inner, artBox, glyph, nameBg, name, rules, orb, costT, sigil, gem]);
+    con.add([frame, inner, artBox, artLayer, nameBg, name, rules, orb, costT, sigil, gem]);
     con.setSize(W, H);
 
     // metadata + helpers

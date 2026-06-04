@@ -27,8 +27,12 @@
 
   Reward.prototype.create = function () {
     var self = this, W = this.scale.width, H = this.scale.height;
+    // Phaser reuses scene instances; reset the one-shot "taken" guard each entry, else
+    // the SECOND reward (after the 2nd combat win) can never be taken/skipped and the
+    // run is hard soft-locked on the reward screen (§ scene-reuse guard).
+    this._taken = false;
     var save = Squid.activeSave;
-    var Sound = Squid.Sound; Sound.init(); Sound.resume(); Sound.playMusic("map");
+    var Sound = Squid.Sound; Sound.init(); Sound.resume(); Sound.playMusic("reward");
 
     // background
     if (this.textures.exists("scene_hq")) {

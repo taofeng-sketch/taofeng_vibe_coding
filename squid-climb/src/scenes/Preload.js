@@ -84,6 +84,20 @@
     if (this._failed && this._failed.length) {
       console.warn("[Squid] Missing assets (gray-box fallback will apply):", this._failed);
     }
+
+    // SMOOTH downscaling: every loaded image is large illustrated/photographic art
+    // shown small (portraits) or as a background. Pin LINEAR filtering so the GPU
+    // downscale is clean, not crunchy. (Belt-and-suspenders alongside the global
+    // pixelArt:false in main.js — keeps art crisp even if the global flag changes.)
+    try {
+      var L = (Phaser.Textures && Phaser.Textures.FilterMode && Phaser.Textures.FilterMode.LINEAR);
+      var manifest = Squid.manifest || { images: [] };
+      var self = this;
+      (manifest.images || []).forEach(function (img) {
+        if (L != null && self.textures.exists(img.key)) self.textures.get(img.key).setFilter(L);
+      });
+    } catch (e) { console.warn("[Squid] could not set LINEAR filter:", e && e.message); }
+
     console.log("[Squid] Preload -> MainMenu via:", reason);
 
     // ---- data sanity log (user-requested) ----

@@ -8,20 +8,19 @@ Fully offline. No build step, no dependencies, no server — just open it in a b
 
 ## Play
 
-Open **`index.html`** in a modern browser (Chrome recommended) and click **New Game**.
+Just open **`index.html`** in a modern browser (double-click works — no server needed) and click **New Game**.
 
 - **Pulse Score** = your health / will to stay. Hits zero → you quit, burn out, or get managed out.
 - **Working Hours** = energy you spend each turn to play cards.
 - **Focus** = a combo resource for payoff cards.
 - Pick your path up the climb map, fight through combats and bosses, draft cards, and get promoted.
 
-The old single-file prototype is preserved at **`index_v2.html`**.
-
 ## Tech
 
-- **Phaser 3** (vendored locally — no build step) + vanilla JavaScript.
-- Pixel art generated with AI; chiptune music + sound effects are **synthesized at runtime** via the Web Audio API (zero audio files).
-- Single self-contained folder; runs straight from `file://`.
+- **Phaser 3** (vendored locally — no build step) + vanilla JavaScript, single flat folder.
+- **Canvas2D renderer** (not WebGL) so the AI-generated pixel art loads correctly straight from `file://` (under `file://` every file is its own origin, and WebGL refuses cross-origin textures).
+- Chiptune music + SFX are **synthesized at runtime** via the Web Audio API (zero audio files); every scene — intro, map, combat, boss, rest, event, reward, win — has its own track.
+- Card hand shows a live hover-recognition ring so you can see exactly which card is under the cursor.
 
 ## Disclaimer
 

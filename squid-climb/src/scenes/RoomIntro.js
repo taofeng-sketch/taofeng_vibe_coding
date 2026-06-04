@@ -73,6 +73,10 @@
 
   RoomIntro.prototype.create = function () {
     var self = this;
+    // Phaser reuses scene instances; reset the one-shot "go" guard each entry, else
+    // after the first room the Begin/Skip buttons no-op and the player is soft-locked
+    // on the intro card (§ scene-reuse guard).
+    this._going = false;
     var W = this.scale.width, H = this.scale.height;
     var L = Squid.LAYOUT.get();
     var settings = (Squid.Save && Squid.Save.getSettings()) || {};

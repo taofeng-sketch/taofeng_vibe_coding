@@ -16,9 +16,12 @@
 
   Rest.prototype.create = function () {
     var self = this, W = this.scale.width, H = this.scale.height;
+    // Phaser reuses scene instances; reset the one-shot "done" guard each entry, else
+    // a second Rest stop can never be resolved (soft-lock) (§ scene-reuse guard).
+    this._done = false;
     var save = Squid.activeSave;
     var run = save ? save.run : { pulse: 80, maxPulse: 80, deck: [] };
-    var Sound = Squid.Sound; Sound.init(); Sound.resume(); Sound.playMusic("map");
+    var Sound = Squid.Sound; Sound.init(); Sound.resume(); Sound.playMusic("rest");
 
     if (this.textures.exists("scene_climb")) {
       var bg = this.add.image(W / 2, H / 2, "scene_climb"); bg.setScale(Math.max(W / bg.width, H / bg.height));

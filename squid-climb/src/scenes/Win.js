@@ -12,7 +12,7 @@
   Win.prototype.create = function () {
     var copy = Squid.WIN_COPY || { stamp: "PROMOTED", title: "You made VP.", body: "" };
     var Sound = Squid.Sound;
-    Sound.init(); Sound.resume(); Sound.stopMusic(); Sound.sfx("win");
+    Sound.init(); Sound.resume(); Sound.sfx("win"); Sound.playMusic("win");
 
     // Advance the IC ladder onto the boss node so the run genuinely tops out at VP
     // (the boss node is never cleared by Reward, which only handles non-boss wins).

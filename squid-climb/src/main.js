@@ -1,7 +1,8 @@
 /* =============================================================================
  * V3 MAIN — Phaser.Game bootstrap  (plan §11.1 / §0)
  * Desktop LANDSCAPE first: 1280x720 design canvas, Scale.FIT + CENTER_BOTH,
- * pixelArt:true. All scenes registered in order; Boot runs first.
+ * SMOOTH (LINEAR) texture filtering for clean downscaling of the illustrated art.
+ * All scenes registered in order; Boot runs first.
  * Loaded LAST (after phaser.min.js + all data/engine/ui/scenes scripts).
  * ============================================================================= */
 (function () {
@@ -17,10 +18,25 @@
 
   var S = Squid.scenes;
   var config = {
-    type: Phaser.AUTO,
+    // CANVAS (not AUTO/WebGL) is REQUIRED for double-click (file://) play.
+    // Under file:// every file is its own opaque origin, so the art PNGs are
+    // cross-origin. WebGL refuses to upload cross-origin ("tainted") images as
+    // textures (SecurityError) -> every texture fails -> the whole game falls back
+    // to glyph/emoji placeholders with a black background. The Canvas2D renderer
+    // CAN draw cross-origin images (only pixel READBACK is blocked, which we never
+    // do), so all art renders correctly offline. Measured 60fps on the canvas path.
+    type: Phaser.CANVAS,
     parent: "game",
     backgroundColor: "#05080c",
-    pixelArt: true,
+    // Art here is large AI-illustrated/photographic PNGs shown SMALL (portraits)
+    // or as backgrounds — NEAREST (pixelArt:true) made downscaled non-pixel-grid
+    // art look crunchy/soft. Use SMOOTH (LINEAR) filtering + antialiasing so the
+    // downscale is clean. (Preload also pins LINEAR per-texture defensively.)
+    // The "UI" (buttons/bars/text) is vector + monospace text, not textures, so it
+    // stays crisp regardless. (§ blur fix)
+    pixelArt: false,
+    antialias: true,
+    roundPixels: true,
     // CRITICAL for file:// (double-click) play: load images via <img> (HTMLImageElement)
     // instead of Phaser's default XHR/blob fetch, which Chrome BLOCKS under file://
     // (CORS, origin "null"). Without this every PNG fails to load and the whole game
@@ -32,7 +48,7 @@
       width: L.width,
       height: L.height,
     },
-    scene: [S.Boot, S.Preload, S.MainMenu, S.Intro, S.Map, S.Combat, S.Reward, S.Rest, S.Event, S.Compendium, S.GameOver, S.Win],
+    scene: [S.Boot, S.Preload, S.MainMenu, S.Intro, S.Map, S.RoomIntro, S.Combat, S.Reward, S.Rest, S.Event, S.Compendium, S.GameOver, S.Win],
   };
 
   Squid.game = new Phaser.Game(config);

@@ -27,11 +27,14 @@
 
   Event.prototype.create = function () {
     var self = this, W = this.scale.width, H = this.scale.height;
+    // Phaser reuses scene instances; reset the one-shot "chosen" guard each entry, else
+    // a second Event can never be resolved (soft-lock) (§ scene-reuse guard).
+    this._chosen = false;
     var save = Squid.activeSave;
     var node = Squid.currentNode || {};
     var ev = (Squid.EVENTS && (node.event || node.id)) ? Squid.EVENTS[node.event || node.id] : null;
     this.ev = ev;
-    var Sound = Squid.Sound; Sound.init(); Sound.resume(); Sound.playMusic("map");
+    var Sound = Squid.Sound; Sound.init(); Sound.resume(); Sound.playMusic("event");
 
     if (this.textures.exists("scene_climb")) {
       var bg = this.add.image(W / 2, H / 2, "scene_climb"); bg.setScale(Math.max(W / bg.width, H / bg.height));

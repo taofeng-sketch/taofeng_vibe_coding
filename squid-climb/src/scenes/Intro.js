@@ -53,6 +53,13 @@
       cn: "VP \u5C31\u5728\u2026\u2026\u4E0A\u9762\u3002\u80FD\u6709\u591A\u96BE\u5462\uFF1F",
       dur: 7200,
     },
+    {
+      // how-it-works beat (rules), bridges the cutscene into the deckbuilder loop
+      art: "scene_hq", kind: "still", fit: "cover", ken: true,
+      cap: "How it works: spend Working Hours to play cards \u2014 deal damage, gain Block. Keep your Pulse above zero, or you're managed out. Climb IC3 \u2192 VP.",
+      cn: "\u73A9\u6CD5\uFF1A\u7528\u300C\u5DE5\u65F6\u300D\u6253\u51FA\u5361\u724C\u2014\u2014\u9020\u4F24\u5BB3\u3001\u62FF\u683C\u6321\u3002\u522B\u8BA9\u300CPulse\u300D\u5F52\u96F6\uFF0C\u5426\u5219\u88AB managed out\u3002\u4ECE IC3 \u4E00\u8DEF\u722C\u5230 VP\u3002",
+      dur: 6400,
+    },
   ];
 
   function Intro() { Phaser.Scene.call(this, { key: "Intro" }); }
@@ -76,8 +83,8 @@
     // solid base so fades read as black, never the canvas clear color
     this.cameras.main.setBackgroundColor("#05080c");
 
-    // hopeful synth theme; swaps to the heavier "map" theme on the pull-back
-    try { if (Sound) { Sound.init(); Sound.resume(); Sound.playMusic("menu"); } } catch (e) {}
+    // dedicated hopeful "intro" theme; swaps to the wandering "map" theme on the pull-back
+    try { if (Sound) { Sound.init(); Sound.resume(); Sound.playMusic("intro"); } } catch (e) {}
 
     // ---- persistent caption band (rebuilt text per beat) ----
     this.capScrim = this.add.rectangle(W / 2, H - 86, W, 132, 0x05080c, 0.62).setDepth(40);

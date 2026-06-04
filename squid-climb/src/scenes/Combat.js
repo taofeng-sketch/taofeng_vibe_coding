@@ -23,6 +23,14 @@
   "use strict";
   var Squid = (window.Squid = window.Squid || {});
 
+  // Global pacing multiplier for the FX queue. The combat choreography was
+  // hard-locking player input for ~0.5s per card and ~2.1s per enemy turn (input
+  // is gated by `this.locked` for the WHOLE animation queue), which read as
+  // "laggy / unresponsive / cards won't click". Scaling every inter-event delay
+  // (and the gating tween durations below) makes the game feel snappy while
+  // keeping the exact same sequencing. Lower = faster.
+  var FX_SPEED = 0.45;
+
   function Combat() { Phaser.Scene.call(this, { key: "Combat" }); }
   Combat.prototype = Object.create(Phaser.Scene.prototype);
   Combat.prototype.constructor = Combat;
@@ -95,11 +103,13 @@
     }
 
     // ---- top bar ----
+    // Prefer the current map node's act band; fall back to the legacy STAGES entry.
     var stage = (Squid.STAGES || [])[run.stageIndex] || { act: "\u2014" };
+    var actLabel = (node && node.act) || stage.act || "\u2014";
     var level = Squid.levelName ? Squid.levelName(run.floor) : "IC3";
     var tierStr = this.engine.enemies.length > 1 ? "  \u2022  GROUP \u00D7" + this.engine.enemies.length
       : (this.engine.enemies[0].tier !== "normal" ? "  \u2022  " + String(this.engine.enemies[0].tier).toUpperCase() : "");
-    this.add.text(L.actLabel.x, L.actLabel.y, stage.act + "  \u2022  " + level + tierStr, { fontFamily: "monospace", fontSize: "15px", color: "#9fb3c8" }).setOrigin(0, 0.5);
+    this.add.text(L.actLabel.x, L.actLabel.y, actLabel + "  \u2022  " + level + tierStr, { fontFamily: "monospace", fontSize: "15px", color: "#9fb3c8" }).setOrigin(0, 0.5);
     this.turnText = this.add.text(L.turnLabel.x, L.turnLabel.y, "Turn 1", { fontFamily: "monospace", fontSize: "15px", color: "#9fb3c8" }).setOrigin(L.turnLabel.origin.x, L.turnLabel.origin.y);
 
     // audio toggle
@@ -119,6 +129,12 @@
     this.reticle = this.add.graphics().setDepth(28);
     // hover ring (transient preview)
     this.hoverRing = this.add.graphics().setDepth(27);
+    // CARD HOVER-RECOGNITION indicator (§ "can I see which card the mouse is on?"):
+    // a live pulsing ring framing whichever hand card is currently detected under
+    // the pointer. Redrawn every frame in update() so it tracks the card as it lifts
+    // and jumps card-to-card as you move across the hand — visual proof of the hit.
+    this.hoverGfx = this.add.graphics().setDepth(410);
+    this.hoveredCard = null;
 
     // ===== player =====
     this.playerSprite = this.makeSprite("player", "\uD83E\uDDD1\u200D\uD83D\uDCBB", 160);
@@ -370,6 +386,7 @@
     view.setInteractive(new Phaser.Geom.Rectangle(-cs.w / 2, -cs.h / 2, cs.w, cs.h), Phaser.Geom.Rectangle.Contains);
 
     view.on("pointerover", function () {
+      self.hoveredCard = view; // recognition indicator tracks this card (see update())
       if (self.locked || view._raised) return;
       view._raised = true;
       view.setDepth(400);
@@ -377,6 +394,7 @@
       self.tweens.add({ targets: view, y: view._baseY - 26, scaleX: 1.1, scaleY: 1.1, duration: 110, ease: "Back.out" });
     });
     view.on("pointerout", function () {
+      if (self.hoveredCard === view) self.hoveredCard = null;
       if (!view._raised) return;
       view._raised = false;
       var idx = self.handViews.indexOf(view);
@@ -394,10 +412,28 @@
     return view;
   };
 
+  // Per-frame: draw the hover-recognition ring around the detected card so the
+  // player can SEE which card the mouse is actually on (and confirm accuracy).
+  Combat.prototype.update = function (time) {
+    var g = this.hoverGfx;
+    if (!g) return;
+    g.clear();
+    var v = this.hoveredCard;
+    if (!v || !v.active || this.locked) return;
+    var cs = this.L.cardSize;
+    var w = (cs.w + 18) * v.scaleX, h = (cs.h + 18) * v.scaleY;
+    var pulse = 0.6 + 0.25 * Math.sin((time || 0) / 130);
+    g.lineStyle(3, 0xffd479, pulse);
+    g.strokeEllipse(v.x, v.y, w * 1.16, h * 1.04);
+    g.lineStyle(1.5, 0xffffff, pulse * 0.6);
+    g.strokeEllipse(v.x, v.y, w * 1.02, h * 0.94);
+  };
+
   Combat.prototype.relayout = function (animate) {
     var n = this.handViews.length;
     if (!n) return;
     var L = this.L;
+    var cw = L.cardSize.w, ch = L.cardSize.h;
     var spread = Math.min(L.handSpread, 920 / n);
     var total = (n - 1) * spread;
     var startX = L.handCenter.x - total / 2;
@@ -409,8 +445,22 @@
       v.handIndex = i;
       v.setBaseY(ty);
       if (!v._raised) v.setDepth(100 + i);
+      // ---- TILE THE HIT ZONE (fix: leftmost/overlapped card wouldn't acquire hover)
+      // Fanned cards overlap (~spacing < card width), and since each later card has a
+      // higher depth, the OVERLAP region was always grabbed by the right-hand neighbor,
+      // so hovering a card's covered half popped the wrong card (or nothing on the edge).
+      // Give every card an exclusive, non-overlapping local hit rectangle that tiles the
+      // hand: middle cards span [-spread/2, +spread/2]; the two end cards extend out to
+      // the full card edge so the whole visible hand is reliably hoverable/clickable.
+      if (v.input && v.input.hitArea) {
+        var leftLocal = (i === 0) ? -cw / 2 : -spread / 2;
+        var rightLocal = (i === n - 1) ? cw / 2 : spread / 2;
+        var ha = v.input.hitArea;
+        ha.x = leftLocal; ha.width = rightLocal - leftLocal;
+        ha.y = -ch / 2; ha.height = ch;
+      }
       if (animate && !this.reduce) {
-        this.tweens.add({ targets: v, x: tx, y: v._raised ? ty - 26 : ty, scaleX: 1, scaleY: 1, duration: 220, ease: "Back.out" });
+        this.tweens.add({ targets: v, x: tx, y: v._raised ? ty - 26 : ty, scaleX: 1, scaleY: 1, duration: 180, ease: "Back.out" });
       } else {
         v.x = tx; v.y = ty; v.setScale(1);
       }
@@ -427,7 +477,7 @@
       if (i >= list.length) { self.refreshStatic(true); if (onComplete) onComplete(); return; }
       var ev = list[i++];
       var delay = self.applyFxEvent(ev);
-      if (self.reduce) delay = 0;
+      delay = self.reduce ? 0 : Math.round(delay * FX_SPEED);
       self.time.delayedCall(delay, step);
     }
     step();
@@ -509,7 +559,7 @@
           if (ev.taken > 0) {
             Sound.sfx("hurt");
             FX.hitFlash(self, self.playerSprite);
-            self.recoil(self.playerSprite, pxc, -16);
+            self.playerHurtAnim();
             FX.burst(self, pxc, pyc, 0xff6b5e, 12, 46);
             FX.floatNumber(self, pxc, pyc - 30, "-" + ev.taken, "#ff6b5e", 32);
             FX.shake(self, ev.taken);
@@ -609,6 +659,33 @@
     this.tweens.add({ targets: view, x: bx + 7, duration: 50, yoyo: true, repeat: 2, onComplete: function () { view.x = bx; } });
   };
 
+  // Player ATTACK animation: lunge toward the target, tilt forward, brief scale-up.
+  // Tweens x/angle/scale only (the idle bob owns y) so they never fight. (§ player juice)
+  Combat.prototype.playerAttackAnim = function (tx) {
+    var sp = this.playerSprite;
+    if (this.reduce || !sp) return;
+    var bx = sp.x, sx0 = sp.scaleX, sy0 = sp.scaleY;
+    var dx = Math.max(40, Math.min(120, ((tx == null ? bx + 200 : tx) - bx) * 0.22));
+    this.tweens.add({
+      targets: sp, x: bx + dx, angle: 7, scaleX: sx0 * 1.08, scaleY: sy0 * 1.08,
+      duration: 120, yoyo: true, ease: "Back.out",
+      onComplete: function () { sp.x = bx; sp.angle = 0; sp.setScale(sx0, sy0); },
+    });
+  };
+
+  // Player HURT animation: stagger BACK, tilt the other way, vertical squash — reads
+  // clearly different from the forward attack lunge. Replaces the plain x-recoil.
+  Combat.prototype.playerHurtAnim = function () {
+    var sp = this.playerSprite;
+    if (this.reduce || !sp) return;
+    var bx = sp.x, sx0 = sp.scaleX, sy0 = sp.scaleY;
+    this.tweens.add({
+      targets: sp, x: bx - 20, angle: -9, scaleX: sx0 * 0.9, scaleY: sy0 * 1.08,
+      duration: 95, yoyo: true, ease: "Quad.out",
+      onComplete: function () { sp.x = bx; sp.angle = 0; sp.setScale(sx0, sy0); },
+    });
+  };
+
   // ===========================================================================
   // player actions
   // ===========================================================================
@@ -626,6 +703,7 @@
     }
 
     this.locked = true;
+    if (this.hoveredCard === view) this.hoveredCard = null;
     Squid.Sound.sfx("play");
     this.handViews.splice(i, 1);
     var fxList = this.engine.drainFx();
@@ -638,7 +716,7 @@
 
     if (view && !this.reduce) {
       view.setDepth(800);
-      this.tweens.add({ targets: view, x: cx, y: cy, scaleX: 1.15, scaleY: 1.15, duration: 150, ease: "Back.out", onComplete: resolve });
+      this.tweens.add({ targets: view, x: cx, y: cy, scaleX: 1.15, scaleY: 1.15, duration: 90, ease: "Back.out", onComplete: resolve });
     } else {
       resolve();
     }
@@ -654,7 +732,7 @@
       self.locked = false;
     };
     if (view && !this.reduce) {
-      this.tweens.add({ targets: view, x: this.discardPos.x, y: this.discardPos.y, scaleX: 0.4, scaleY: 0.4, alpha: 0, angle: 18, duration: 170, ease: "Cubic.in", onComplete: done });
+      this.tweens.add({ targets: view, x: this.discardPos.x, y: this.discardPos.y, scaleX: 0.4, scaleY: 0.4, alpha: 0, angle: 18, duration: 100, ease: "Cubic.in", onComplete: done });
     } else {
       done();
     }
@@ -669,6 +747,7 @@
     switch (res.fx) {
       case "slash": {
         if (this.reduce) return;
+        this.playerAttackAnim(ex); // player lunges at the target as the strike lands
         var line = this.add.rectangle(ex, ey, 120, 5, 0xffffff).setAngle(-35).setDepth(940).setAlpha(0.95);
         this.tweens.add({ targets: line, alpha: 0, scaleX: 1.4, duration: 220, ease: "Cubic.out", onComplete: function () { line.destroy(); } });
         break;
@@ -706,7 +785,7 @@
     var done = 0;
     live.forEach(function (v) {
       self.tweens.add({
-        targets: v.intentBadge, scaleX: 1.16, scaleY: 1.16, duration: 200, yoyo: true, repeat: 1, ease: "Sine.inOut",
+        targets: v.intentBadge, scaleX: 1.16, scaleY: 1.16, duration: 150, yoyo: true, repeat: 0, ease: "Sine.inOut",
         onComplete: function () { v.intentBadge.setScale(1); done++; if (done === 1) cb(); },
       });
     });

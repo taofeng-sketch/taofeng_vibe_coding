@@ -9,11 +9,56 @@
 
   var midi = function (n) { return 440 * Math.pow(2, (n - 69) / 12); };
 
+  // Each track has its OWN key, tempo, timbre, optional arpeggio (3rd voice) and
+  // drum pattern so every scene sounds distinct (intro/menu/map/combat/boss/rest/
+  // event/reward/win). `arp` plays an octave up as a plucky counter-melody; `drum`
+  // ("drive" = busy hats+kick, "soft" = sparse) adds groove. 0 = rest.
   var SONGS = {
-    menu: { bpm: 84, step: 0.22, lead: [69, 0, 72, 0, 76, 0, 72, 0, 67, 0, 69, 0, 72, 0, 0, 0], bass: [45, 0, 0, 0, 40, 0, 0, 0, 43, 0, 0, 0, 40, 0, 0, 0], lt: "triangle", bt: "sine" },
-    combat: { bpm: 122, step: 0.13, lead: [69, 71, 72, 76, 72, 71, 69, 67, 69, 72, 76, 79, 76, 72, 71, 69], bass: [45, 45, 52, 52, 43, 43, 50, 50, 41, 41, 48, 48, 40, 40, 47, 47], lt: "square", bt: "triangle" },
-    boss: { bpm: 100, step: 0.15, lead: [64, 0, 63, 0, 64, 67, 63, 0, 60, 0, 63, 0, 59, 0, 58, 0], bass: [40, 40, 39, 39, 38, 38, 40, 40, 36, 36, 38, 38, 35, 35, 34, 34], lt: "sawtooth", bt: "triangle" },
-    map: { bpm: 76, step: 0.26, lead: [72, 0, 74, 0, 76, 0, 79, 0, 76, 0, 74, 0, 72, 0, 71, 0], bass: [48, 0, 0, 0, 43, 0, 0, 0, 45, 0, 0, 0, 47, 0, 0, 0], lt: "triangle", bt: "sine" },
+    // hopeful, bright, rising — the "new grad optimism" theme
+    intro: { step: 0.17, lt: "triangle", bt: "sine", at: "square", drum: "soft",
+      lead: [72, 0, 76, 0, 79, 0, 84, 0, 83, 0, 79, 0, 81, 0, 76, 0],
+      bass: [48, 0, 0, 0, 53, 0, 0, 0, 55, 0, 0, 0, 52, 0, 0, 0],
+      arp: [72, 76, 79, 84, 76, 79, 84, 88, 74, 77, 81, 84, 76, 79, 83, 86] },
+    // calm, sparse, contemplative — front-of-house menu
+    menu: { step: 0.22, lt: "triangle", bt: "sine",
+      lead: [69, 0, 72, 0, 76, 0, 72, 0, 67, 0, 69, 0, 72, 0, 0, 0],
+      bass: [45, 0, 0, 0, 40, 0, 0, 0, 43, 0, 0, 0, 40, 0, 0, 0] },
+    // airy, wandering — "pick your next room"
+    map: { step: 0.26, lt: "triangle", bt: "sine", at: "triangle",
+      lead: [72, 0, 74, 0, 76, 0, 79, 0, 76, 0, 74, 0, 72, 0, 71, 0],
+      bass: [48, 0, 0, 0, 43, 0, 0, 0, 45, 0, 0, 0, 47, 0, 0, 0],
+      arp: [0, 0, 79, 0, 0, 0, 83, 0, 0, 0, 81, 0, 0, 0, 78, 0] },
+    // standard fight — REWORKED: lower register + syncopated funk "groove" (a
+    // walking bass with off-beat stabs) so it no longer feels like the same busy
+    // high chiptune as the other tracks. Warm triangle lead, gritty sawtooth bass.
+    combat: { step: 0.14, lt: "triangle", bt: "sawtooth", at: "triangle", drum: "groove",
+      lead: [57, 0, 0, 60, 0, 55, 0, 57, 0, 0, 60, 0, 62, 0, 60, 0],
+      bass: [33, 0, 40, 0, 33, 0, 38, 40, 31, 0, 38, 0, 36, 0, 43, 0],
+      arp: [0, 0, 69, 0, 0, 0, 67, 0, 0, 0, 72, 0, 0, 0, 67, 0] },
+    // menacing, low, ominous — boss (calibration council)
+    boss: { step: 0.15, lt: "sawtooth", bt: "triangle", at: "square", drum: "drive",
+      lead: [64, 0, 63, 0, 64, 67, 63, 0, 60, 0, 63, 0, 59, 0, 58, 0],
+      bass: [40, 40, 39, 39, 38, 38, 40, 40, 36, 36, 38, 38, 35, 35, 34, 34],
+      arp: [0, 0, 0, 0, 76, 0, 0, 0, 0, 0, 0, 0, 71, 0, 70, 0] },
+    // warm, slow, restorative — rest node
+    rest: { step: 0.34, lt: "sine", bt: "sine",
+      lead: [69, 0, 0, 0, 72, 0, 0, 0, 71, 0, 0, 0, 67, 0, 64, 0],
+      bass: [45, 0, 0, 0, 0, 0, 0, 0, 43, 0, 0, 0, 0, 0, 0, 0] },
+    // mysterious, chromatic, tense — random event dilemma
+    event: { step: 0.20, lt: "triangle", bt: "sawtooth", at: "triangle",
+      lead: [70, 0, 71, 0, 70, 0, 66, 0, 68, 0, 69, 0, 68, 0, 64, 0],
+      bass: [42, 0, 0, 0, 42, 0, 0, 0, 41, 0, 0, 0, 40, 0, 0, 0],
+      arp: [0, 0, 82, 0, 0, 0, 0, 0, 0, 0, 80, 0, 0, 0, 0, 0] },
+    // upbeat, plucky — post-fight reward
+    reward: { step: 0.15, lt: "square", bt: "triangle", at: "triangle", drum: "soft",
+      lead: [76, 79, 83, 84, 83, 79, 76, 72, 74, 77, 81, 84, 81, 77, 74, 72],
+      bass: [52, 52, 48, 48, 53, 53, 55, 55, 50, 50, 45, 45, 47, 47, 55, 55],
+      arp: [88, 0, 84, 0, 91, 0, 84, 0, 89, 0, 86, 0, 84, 0, 88, 0] },
+    // triumphant fanfare — made VP
+    win: { step: 0.18, lt: "square", bt: "triangle", at: "square", drum: "drive",
+      lead: [72, 76, 79, 84, 0, 84, 0, 84, 83, 79, 76, 72, 74, 79, 83, 0],
+      bass: [48, 48, 55, 55, 53, 53, 55, 55, 50, 50, 52, 52, 55, 55, 55, 55],
+      arp: [84, 88, 91, 96, 0, 0, 0, 0, 83, 86, 91, 95, 0, 0, 0, 0] },
   };
 
   var Sound = {
@@ -50,7 +95,7 @@
       o.connect(g); g.connect(dest || this.sfxGain);
       o.start(); o.stop(this.ctx.currentTime + dur + 0.02);
     },
-    noise: function (dur, gain) {
+    noise: function (dur, gain, dest) {
       if (!this.ctx) return;
       var n = Math.floor(this.ctx.sampleRate * dur);
       var buf = this.ctx.createBuffer(1, n, this.ctx.sampleRate);
@@ -58,7 +103,7 @@
       for (var i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
       var src = this.ctx.createBufferSource(); src.buffer = buf;
       var g = this.ctx.createGain(); g.gain.value = gain == null ? 0.25 : gain;
-      src.connect(g); g.connect(this.sfxGain); src.start();
+      src.connect(g); g.connect(dest || this.sfxGain); src.start();
     },
     sfx: function (name) {
       if (!this.ctx) return;
@@ -89,10 +134,31 @@
       if (!this.ctx || !this.song) return;
       var s = this.song;
       while (this.nextT < this.ctx.currentTime + 0.12) {
-        var li = s.lead[this.step % s.lead.length];
-        var bi = s.bass[this.step % s.bass.length];
+        var i = this.step;
+        var li = s.lead[i % s.lead.length];
+        var bi = s.bass[i % s.bass.length];
         if (li) this.tone(midi(li), s.step * 0.95, s.lt, 0.5, this.musicGain);
         if (bi) this.tone(midi(bi), s.step * 1.1, s.bt, 0.7, this.musicGain);
+        // arpeggio counter-melody (plucky, quieter, octave-ish up)
+        if (s.arp && s.arp.length) {
+          var ai = s.arp[i % s.arp.length];
+          if (ai) this.tone(midi(ai), s.step * 0.6, s.at || "square", 0.16, this.musicGain); // softer (less piercing)
+        }
+        // percussion groove
+        if (s.drum) {
+          var beat = i % 4;
+          if (beat === 0) this.tone(64, 0.11, "sine", 0.55, this.musicGain, 32); // kick (pitch drop)
+          if (s.drum === "drive") {
+            if (beat === 2) this.noise(0.05, 0.10, this.musicGain);               // snare-ish
+            if (i % 2 === 1) this.noise(0.025, 0.05, this.musicGain);             // hat (offbeats)
+          } else if (s.drum === "groove") {
+            if (i % 8 === 3) this.tone(58, 0.10, "sine", 0.5, this.musicGain, 30); // syncopated "&" kick
+            if (beat === 2) this.noise(0.06, 0.11, this.musicGain);               // backbeat snare
+            if (i % 4 === 1) this.noise(0.02, 0.04, this.musicGain);              // light hat
+          } else if (beat === 2) {
+            this.noise(0.03, 0.06, this.musicGain);                              // soft backbeat
+          }
+        }
         this.nextT += s.step;
         this.step++;
       }

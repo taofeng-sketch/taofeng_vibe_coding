@@ -31,6 +31,10 @@
 
   Map.prototype.create = function () {
     var self = this;
+    // Phaser REUSES scene instances across scene.start(), so one-shot guards set on
+    // `this` persist. Reset the node-pick guard every entry or, after the first room,
+    // pickNode() early-returns and clicking any node silently does nothing (soft-lock).
+    this._picking = false;
     var Save = Squid.Save, Sound = Squid.Sound, MM = Squid.MapModel;
     var W = this.scale.width, H = this.scale.height;
     this.L = Squid.LAYOUT.get().map;
