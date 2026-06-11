@@ -39,6 +39,21 @@ src/
 
 Scripts carry a `?v=N` cache-busting token — bump it in `index.html` after edits so a plain double-click never serves a stale cached copy.
 
+## Auto-publish to GitHub
+
+Public mirror: `taofeng-sketch/taofeng_vibe_coding` → `squid-climb/` ([play online](https://taofeng-sketch.github.io/taofeng_vibe_coding/squid-climb/)).
+
+```bash
+# one-shot publish (runs tests first)
+bash scripts/publish_to_github.sh
+
+# install background sync: every 30 min + on login when files change
+bash scripts/setup_auto_publish.sh install
+bash scripts/setup_auto_publish.sh status   # check launchd + recent log
+bash scripts/setup_auto_publish.sh run-now  # force sync now
+bash scripts/setup_auto_publish.sh uninstall
+```
+
 ## Disclaimer
 
 This is a work of **satire**. "Squid Technologies" and all characters, bosses, and events are fictional. Any resemblance to a specific company, product, or your last performance cycle is coincidental — and affectionate.
