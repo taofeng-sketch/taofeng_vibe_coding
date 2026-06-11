@@ -105,6 +105,28 @@
     e_half_year: { id: "e_half_year", slots: ["half_year"], planGroup: independentPlan, intro: "intro_half_year" },
     e_calibration: { id: "e_calibration", slots: ["calibration_council"], planGroup: independentPlan, intro: "intro_calibration" },
 
+    // ---- multi-enemy variety (earlier than the flagship PRM) ----
+    // Two bugs: teaches targeting without the full PM/DS/Manager puzzle.
+    duo_bug_swarm: {
+      id: "duo_bug_swarm", slots: ["bug_swarm", "bug_swarm"], hpScale: 0.72,
+      planGroup: independentPlan, intro: "intro_bug_swarm", tag: "DUO",
+    },
+    // PM + DS arguing with each other AND you — pick who to silence first.
+    xfn_spat: {
+      id: "xfn_spat", slots: ["pm_align", "ds_skeptic"], hpScale: 0.82,
+      planGroup: independentPlan, intro: "intro_pm", tag: "DUO",
+    },
+    // Standup gone wrong: bugs in prod while the PM "just has a quick sync."
+    standup_chaos: {
+      id: "standup_chaos", slots: ["bug_swarm", "pm_align"], hpScale: 0.78,
+      planGroup: independentPlan, intro: "intro_bug_swarm", tag: "DUO",
+    },
+    // Legacy monolith sprouted a second head (tanky + chip damage).
+    legacy_infestation: {
+      id: "legacy_infestation", slots: ["legacy_service", "bug_swarm"], hpScale: 0.85,
+      planGroup: independentPlan, intro: "intro_legacy", tag: "DUO",
+    },
+
     // ---- flagship 3-enemy coordinated fight (plan §3.4) ----
     // Slot 0 PM (controller) marks/Weak -> slot 1 DS (denier) halves your damage
     // -> slot 2 Manager (bruiser) hits the Marked/Weak target for +50%.

@@ -49,6 +49,7 @@
      */
     placeholder: function (scene, opts) {
       var W = scene.scale.width, H = scene.scale.height;
+      if (Squid.FX) Squid.FX.fadeIn(scene);
       if (opts.bgImage && scene.textures.exists(opts.bgImage)) {
         var bg = scene.add.image(W / 2, H / 2, opts.bgImage);
         bg.setScale(Math.max(W / bg.width, H / bg.height));
@@ -67,7 +68,7 @@
       nav.forEach(function (n, i) {
         Widgets.button(scene, {
           x: W / 2, y: startY + i * gap, w: 320, h: 50, label: n.label,
-          onClick: function () { if (n.onClick) n.onClick(); else if (n.to) scene.scene.start(n.to); },
+          onClick: function () { if (n.onClick) n.onClick(); else if (n.to) Squid.FX.go(scene, n.to); },
         });
       });
       window.__squidScene = scene.scene.key;

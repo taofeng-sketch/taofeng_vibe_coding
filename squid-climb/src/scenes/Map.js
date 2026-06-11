@@ -41,6 +41,7 @@
     var settings = (Save && Save.getSettings()) || {};
     this.reduce = !!settings.reduceMotion;
     if (Squid.FX) Squid.FX.setReduce(this.reduce);
+    Squid.FX.fadeIn(this);
 
     // ensure an active run (Continue/New always set one; defend anyway)
     if (!Squid.activeSave) Squid.activeSave = (Save && (Save.continueGame() || Save.newGame({ cls: "swe" }))) || null;
@@ -56,8 +57,13 @@
       var bg = this.add.image(W / 2, H / 2, "scene_climb");
       bg.setScale(Math.max(W / bg.width, H / bg.height));
       this.add.rectangle(W / 2, H / 2, W, H, 0x05080c, 0.58);
+      if (!this.reduce) Squid.FX.parallaxBg(this, bg, 12);
     } else {
       this.add.rectangle(W / 2, H / 2, W, H, 0x0b1118);
+    }
+    if (!this.reduce) {
+      Squid.FX.ambientDrift(this, { glyphs: ["↑", "IC", "M", "E", "VP"], color: "#ffd479", count: 10, depth: 1 });
+      Squid.FX.vignette(this, 0.28);
     }
 
     // ---- header ----
@@ -78,6 +84,10 @@
     // ---- draw edges (behind nodes) ----
     this.edgeGfx = this.add.graphics().setDepth(2);
     this.drawEdges(save);
+    if (!this.reduce) {
+      this.edgeGfx.setAlpha(0);
+      this.tweens.add({ targets: this.edgeGfx, alpha: 1, duration: 420, delay: 120, ease: "Quad.out" });
+    }
 
     // ---- draw nodes ----
     this.nodeViews = [];
@@ -96,8 +106,8 @@
     // ---- footer + menu/compendium access ----
     this.add.text(C.hint.x, C.hint.y, "Click a glowing room to continue \u00B7 traversed rooms are dimmed \u00B7 locked branches are greyed",
       { fontFamily: "monospace", fontSize: "11px", color: "#5a6b7b" }).setOrigin(0.5);
-    Squid.Widgets.button(this, { x: 120, y: 700, w: 180, h: 36, label: "Compendium", fontSize: 13, onClick: function () { self.scene.start("Compendium"); } });
-    Squid.Widgets.button(this, { x: 1160, y: 700, w: 180, h: 36, label: "Quit to Menu", fontSize: 13, fill: 0x2a2030, hover: 0x3a2a40, border: 0xb083f0, onClick: function () { self.scene.start("MainMenu"); } });
+    Squid.Widgets.button(this, { x: 120, y: 700, w: 180, h: 36, label: "Compendium", fontSize: 13, onClick: function () { Squid.FX.go(self, "Compendium"); } });
+    Squid.Widgets.button(this, { x: 1160, y: 700, w: 180, h: 36, label: "Quit to Menu", fontSize: 13, fill: 0x2a2030, hover: 0x3a2a40, border: 0xb083f0, onClick: function () { Squid.FX.go(self, "MainMenu"); } });
 
     // audio toggle
     this.audioLabel = this.add.text(W - 30, 700, Sound.isMuted() ? "\uD83D\uDD07" : "\uD83D\uDD0A", { fontSize: "20px" }).setOrigin(0.5).setInteractive({ useHandCursor: true }).setDepth(60);
@@ -171,12 +181,26 @@
     var labelY = p.y + C.nodeR + 13;
     var label = this.add.text(p.x, labelY, n.label, { fontFamily: "monospace", fontSize: "11px", color: labelColor, align: "center", wordWrap: { width: 210 } }).setOrigin(0.5, 0).setDepth(depth + 1);
     // type tag chip above
-    this.add.text(p.x, p.y - C.nodeR - 12, TYPE_TAG[n.type] || "", { fontFamily: "monospace", fontSize: "9px", color: cleared ? "#4a5a6b" : (reachable ? Squid.FX.hex(baseColor) : "#3a4754") }).setOrigin(0.5).setDepth(depth + 1);
+    var tag = this.add.text(p.x, p.y - C.nodeR - 12, TYPE_TAG[n.type] || "", { fontFamily: "monospace", fontSize: "9px", color: cleared ? "#4a5a6b" : (reachable ? Squid.FX.hex(baseColor) : "#3a4754") }).setOrigin(0.5).setDepth(depth + 1);
+
+    // entrance: nodes pop in bottom-to-top so the climb "builds" on entry
+    if (!this.reduce) {
+      var delay = 60 + n.row * 45 + n.col * 18;
+      circle.setScale(0); glyph.setScale(0); label.setAlpha(0); tag.setAlpha(0);
+      this.tweens.add({ targets: [circle, glyph], scale: 1, duration: 240, delay: delay, ease: "Back.out" });
+      this.tweens.add({ targets: [label, tag], alpha: 1, duration: 240, delay: delay + 80, ease: "Quad.out" });
+    }
 
     if (reachable) {
       circle.setInteractive({ useHandCursor: true });
-      circle.on("pointerover", function () { if (!self.reduce) self.tweens.add({ targets: [circle, glyph], scale: 1.12, duration: 110, ease: "Back.out" }); label.setColor("#ffd479"); });
-      circle.on("pointerout", function () { if (!self.reduce) self.tweens.add({ targets: [circle, glyph], scale: 1, duration: 110 }); label.setColor("#e6f1ff"); });
+      circle.on("pointerover", function () {
+        if (!self.reduce) { self.tweens.killTweensOf([circle, glyph]); self.tweens.add({ targets: [circle, glyph], scale: 1.1, duration: 160, ease: "Cubic.out" }); }
+        label.setColor("#ffd479");
+      });
+      circle.on("pointerout", function () {
+        if (!self.reduce) { self.tweens.killTweensOf([circle, glyph]); self.tweens.add({ targets: [circle, glyph], scale: 1, duration: 160, ease: "Cubic.out" }); }
+        label.setColor("#e6f1ff");
+      });
       circle.on("pointerdown", function () { self.pickNode(n); });
     }
 
@@ -189,8 +213,7 @@
     this._picking = true;
     if (Squid.Sound) { Squid.Sound.init(); Squid.Sound.resume(); Squid.Sound.sfx("select"); }
     Squid.currentNode = n;                 // RoomIntro + the target scene read this
-    var self = this;
-    this.time.delayedCall(this.reduce ? 0 : 120, function () { self.scene.start("RoomIntro"); });
+    Squid.FX.go(this, "RoomIntro");
   };
 
   // ---- IC LEVEL-UP banner (§4 ladder progression) ----

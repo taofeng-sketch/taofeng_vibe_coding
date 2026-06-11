@@ -63,6 +63,12 @@
     var settings = (Squid.Save && Squid.Save.getSettings()) || {};
     this.reduce = !!settings.reduceMotion;
     Squid.FX.setReduce(this.reduce);
+    Squid.FX.fadeIn(this);
+    // defensive: a hit-stop interrupted by a scene change must never leak a
+    // frozen clock into the next combat
+    this.tweens.timeScale = 1;
+    this.time.timeScale = 1;
+    this._hitStopActive = false;
 
     // ---- resolve the encounter (group) OR a single enemy from the map node ---
     var node = Squid.currentNode || { enemy: "bug_swarm", label: "Fix the Bug", type: "combat" };
@@ -76,6 +82,14 @@
     this.engine = new Squid.CombatEngine(engineOpts);
     this.isBoss = this.engine.enemies.some(function (e) { return e.tier === "boss"; });
     this.coordinated = !!(node.encounter && Squid.ENCOUNTERS[node.encounter] && Squid.ENCOUNTERS[node.encounter].coordinated);
+    this.isMulti = this.engine.enemies.length > 1;
+
+    // fight flavor — multi-enemy rooms get a punchy opener so they don't feel like solo with extras
+    if (this.isMulti) {
+      var tags = ["Pick your target.", "Kill order matters.", "Someone has to go first."];
+      var tag = tags[Math.floor(Math.random() * tags.length)];
+      this._flavorLine = this.engine.enemies.length + " threats. " + tag;
+    }
 
     // audio
     var Sound = Squid.Sound;
@@ -89,17 +103,24 @@
     }
 
     this.handViews = [];
+    this._hoverIdx = -1; // unified hover index (avoids boundary flicker shake)
     this.locked = true; // gated until the opening deal finishes
     this.drawPos = { x: (L.drawPile && L.drawPile.x) || 60, y: (L.drawPile && L.drawPile.y) || 660 };
     this.discardPos = { x: 1200, y: 660 };
 
-    // ---- background ----
+    // ---- background + atmosphere ----
+    this.bgImage = null;
     if (this.textures.exists("scene_hq")) {
-      var bg = this.add.image(W / 2, H / 2, "scene_hq");
-      bg.setScale(Math.max(W / bg.width, H / bg.height)).setScrollFactor(0);
-      this.add.rectangle(W / 2, H / 2, W, H, 0x05080c, 0.62);
+      this.bgImage = this.add.image(W / 2, H / 2, "scene_hq");
+      this.bgImage.setScale(Math.max(W / this.bgImage.width, H / this.bgImage.height)).setScrollFactor(0).setDepth(0);
+      this.add.rectangle(W / 2, H / 2, W, H, 0x05080c, 0.62).setDepth(1);
+      if (!this.reduce) Squid.FX.parallaxBg(this, this.bgImage, 10);
     } else {
-      this.add.rectangle(W / 2, H / 2, W, H, 0x0e151d);
+      this.add.rectangle(W / 2, H / 2, W, H, 0x0e151d).setDepth(0);
+    }
+    if (!this.reduce) {
+      Squid.FX.ambientDrift(this, { glyphs: ["0", "1", "{", "}", "</>", "PM", "LGTM"], color: "#4fd1c5", count: 12, depth: 2 });
+      Squid.FX.vignette(this, 0.38);
     }
 
     // ---- top bar ----
@@ -135,20 +156,28 @@
     // and jumps card-to-card as you move across the hand — visual proof of the hit.
     this.hoverGfx = this.add.graphics().setDepth(410);
     this.hoveredCard = null;
+    // StS-style TARGETING ARROW: while hovering a single-target attack card, a
+    // bezier chain of chevrons arcs from the card to the selected enemy so you
+    // always see exactly who the card will hit. Redrawn per frame in update().
+    this.aimGfx = this.add.graphics().setDepth(415);
 
     // ===== player =====
+    this.makeShadow(L.player.x - 20, L.player.y + 84, 110);
     this.playerSprite = this.makeSprite("player", "\uD83E\uDDD1\u200D\uD83D\uDCBB", 160);
     this.playerSprite.setPosition(L.player.x - 20, L.player.y).setDepth(10);
     if (!this.reduce) {
+      // entrance: slide in from the left while the opening hand deals
+      this.playerSprite.setAlpha(0).setX(L.player.x - 90);
+      this.tweens.add({ targets: this.playerSprite, x: L.player.x - 20, alpha: 1, duration: 320, ease: "Cubic.out" });
       this.tweens.add({ targets: this.playerSprite, y: L.player.y - 6, duration: 1900, yoyo: true, repeat: -1, ease: "Sine.inOut" });
     }
-    var px = 290;
-    this.add.text(px, 404, "You \u2014 " + level, { fontFamily: "monospace", fontSize: "13px", color: "#cfe0f0" }).setOrigin(0, 0.5);
-    this.pulseBar = this.makeBar(px, 430, 260, 16, 0x4fd1c5, { prefix: "" });
-    this.hoursBar = this.makeBar(px, 458, 260, 14, 0xffd479, { prefix: "" });
-    this.add.text(px - 4, 430, "Pulse", { fontFamily: "monospace", fontSize: "9px", color: "#05080c" }).setOrigin(0, 0.5).setDepth(8);
-    this.miniText = this.add.text(px, 486, "", { fontFamily: "monospace", fontSize: "13px", color: "#9fb3c8" }).setOrigin(0, 0.5);
-    this.playerStatusText = this.add.text(px, 510, "", { fontFamily: "monospace", fontSize: "12px", color: "#c9a227", wordWrap: { width: 320 } }).setOrigin(0, 0.5);
+    var px = L.playerStats.x, py = L.playerStats.y;
+    this.add.text(px, py - 26, "You \u2014 " + level, { fontFamily: "monospace", fontSize: "13px", color: "#cfe0f0" }).setOrigin(0, 0.5);
+    this.pulseBar = this.makeBar(px, py, 260, 16, 0x4fd1c5, { prefix: "" });
+    this.hoursBar = this.makeBar(px, py + 28, 260, 14, 0xffd479, { prefix: "" });
+    this.add.text(px - 4, py, "Pulse", { fontFamily: "monospace", fontSize: "9px", color: "#05080c" }).setOrigin(0, 0.5).setDepth(8);
+    this.miniText = this.add.text(px, py + 56, "", { fontFamily: "monospace", fontSize: "13px", color: "#9fb3c8" }).setOrigin(0, 0.5);
+    this.playerStatusText = this.add.text(px, py + 80, "", { fontFamily: "monospace", fontSize: "12px", color: "#c9a227", wordWrap: { width: 320 } }).setOrigin(0, 0.5);
 
     // ===== controls =====
     this.endTurnBtn = Squid.Widgets.button(this, {
@@ -157,8 +186,15 @@
       onClick: function () { self.onEndTurn(); },
     });
     this.endTurnBtn.setDepth(40);
-    this.deckText = this.add.text(this.drawPos.x, this.drawPos.y - 28, "Draw 0", { fontFamily: "monospace", fontSize: "12px", color: "#9fb3c8" }).setOrigin(0, 0.5);
-    this.discardText = this.add.text(this.discardPos.x, this.discardPos.y - 28, "Discard 0", { fontFamily: "monospace", fontSize: "12px", color: "#9fb3c8" }).setOrigin(1, 0.5);
+    // hand strip — gives cards a stable "dock" so the fan doesn't visually fight the stage
+    if (L.handPanel) {
+      var hp = L.handPanel;
+      this.handPanel = this.add.rectangle(hp.x, hp.y, hp.w, hp.h, 0x05080c, 0.55)
+        .setStrokeStyle(1, 0x2a3744, 0.9).setDepth(85);
+      this.add.rectangle(hp.x, hp.y - hp.h / 2 + 2, hp.w - 40, 2, 0x4fd1c5, 0.25).setDepth(86);
+    }
+    this.deckText = this.add.text(this.drawPos.x, this.drawPos.y - 28, "Draw 0", { fontFamily: "monospace", fontSize: "12px", color: "#9fb3c8" }).setOrigin(0, 0.5).setDepth(90);
+    this.discardText = this.add.text(this.discardPos.x, this.discardPos.y - 28, "Discard 0", { fontFamily: "monospace", fontSize: "12px", color: "#9fb3c8" }).setOrigin(1, 0.5).setDepth(90);
 
     // expose for the headless verify harness / debugging (mirrors v2 window.__squid)
     window.__squidScene = "Combat";
@@ -166,8 +202,12 @@
 
     // ---- kick off: opening deal ----
     this.engine.start();
+    if (this._flavorLine) this.pushLog(this._flavorLine);
     this.setTargetView(this.engine.target, false);
-    this.runFx(this.engine.drainFx(), function () { self.locked = false; });
+    this.runFx(this.engine.drainFx(), function () {
+      self.relayout(true); // smooth fan once opening hand is fully dealt
+      self.locked = false;
+    });
     this.refreshStatic(false);
   };
 
@@ -193,10 +233,14 @@
       var p = pos[i] || { x: 640, y: 250 };
       var v = { idx: e.idx, slot: e.slot, x: p.x, y: p.y, dead: false };
 
+      v.shadow = self.makeShadow(p.x, p.y + spriteH / 2 + 4, spriteH * 0.62);
       v.sprite = self.makeSprite(e.art, e.glyph, spriteH).setPosition(p.x, p.y).setDepth(10);
+      // entrance: drop in from above with a fade, staggered per slot, then the
       // staggered idle bob (so the group feels alive, not in lockstep, §1)
       if (!self.reduce) {
-        self.tweens.add({ targets: v.sprite, y: p.y - 8, duration: 1500 + i * 180, delay: i * 220, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+        v.sprite.setAlpha(0).setY(p.y - 26);
+        self.tweens.add({ targets: v.sprite, y: p.y, alpha: 1, duration: 300, delay: 80 + i * 110, ease: "Back.out" });
+        self.tweens.add({ targets: v.sprite, y: p.y - 8, duration: 1500 + i * 180, delay: 80 + i * 110 + 320, yoyo: true, repeat: -1, ease: "Sine.inOut" });
       }
 
       v.nameText = self.add.text(p.x, p.y + (spriteH / 2) + 6, e.name, { fontFamily: "monospace", fontSize: "13px", color: "#e6f1ff", fontStyle: "bold", align: "center", wordWrap: { width: 200 } }).setOrigin(0.5, 0);
@@ -237,6 +281,7 @@
     this.engine.setTarget(idx);
     this.targetIdx = idx;
     if (sfx && Squid.Sound) Squid.Sound.sfx("select");
+    if (sfx && !this.reduce && Squid.FX) Squid.FX.burst(this, v.x, v.y, 0xffd479, 6, 28);
     this.drawReticle(v);
     this.updatePlayable();
   };
@@ -245,6 +290,9 @@
     var g = this.reticle; g.clear();
     if (!v) return;
     var hw = 78, hh = 92, x = v.x, y = v.y, len = 18;
+    // soft spotlight under the locked target
+    g.fillStyle(0xffd479, 0.07);
+    g.fillCircle(x, y + 8, 82);
     g.lineStyle(3, 0xffd479, 1);
     // four corner brackets
     var corners = [[-hw, -hh, 1, 1], [hw, -hh, -1, 1], [-hw, hh, 1, -1], [hw, hh, -1, -1]];
@@ -263,6 +311,11 @@
   // ===========================================================================
   // sprite + bar factories
   // ===========================================================================
+  // soft grounding shadow under a cutout sprite (the art is transparent now)
+  Combat.prototype.makeShadow = function (x, y, w) {
+    return this.add.ellipse(x, y, w, Math.max(10, w * 0.16), 0x000000, 0.38).setDepth(9);
+  };
+
   Combat.prototype.makeSprite = function (key, glyph, targetH) {
     if (this.textures.exists(key)) {
       var img = this.add.image(0, 0, key);
@@ -385,85 +438,215 @@
     view.setScale(0.4);
     view.setInteractive(new Phaser.Geom.Rectangle(-cs.w / 2, -cs.h / 2, cs.w, cs.h), Phaser.Geom.Rectangle.Contains);
 
-    view.on("pointerover", function () {
-      self.hoveredCard = view; // recognition indicator tracks this card (see update())
-      if (self.locked || view._raised) return;
-      view._raised = true;
-      view.setDepth(400);
-      if (self.reduce) { view.y = view._baseY - 22; view.setScale(1.08); return; }
-      self.tweens.add({ targets: view, y: view._baseY - 26, scaleX: 1.1, scaleY: 1.1, duration: 110, ease: "Back.out" });
-    });
-    view.on("pointerout", function () {
-      if (self.hoveredCard === view) self.hoveredCard = null;
-      if (!view._raised) return;
-      view._raised = false;
-      var idx = self.handViews.indexOf(view);
-      view.setDepth(100 + (idx < 0 ? 0 : idx));
-      if (self.reduce) { view.y = view._baseY; view.setScale(1); return; }
-      self.tweens.add({ targets: view, y: view._baseY, scaleX: 1, scaleY: 1, duration: 130, ease: "Quad.out" });
-    });
+    // hover raise/lower is driven centrally in update() via pickHandIndex() so
+    // tiled hit-zone boundaries don't rapid-fire pointerover/out (the shake bug).
     view.on("pointerdown", function () {
       if (self.locked) return;
       var idx = self.handViews.indexOf(view);
       if (idx >= 0) self.playCardAt(idx);
     });
 
+    var cardMeta = Squid.CARDS[cardId];
+    if (Squid.FX && cardMeta && cardMeta.rarity) Squid.FX.cardShimmer(this, view, cardMeta.rarity);
     this.handViews.push(view);
     return view;
   };
 
-  // Per-frame: draw the hover-recognition ring around the detected card so the
-  // player can SEE which card the mouse is actually on (and confirm accuracy).
+  // Hand hit-test geometry (shared by hover picker + tiled hit zones in relayout).
+  Combat.prototype.handSpreadPx = function () {
+    var HL = Squid.HandLayout;
+    if (HL) return HL.handSpread(this.handViews.length, this.L);
+    var n = this.handViews.length;
+    if (!n) return this.L.handSpread;
+    return Math.min(this.L.handSpread, 920 / n);
+  };
+
+  Combat.prototype.handTileBounds = function (i) {
+    var HL = Squid.HandLayout;
+    if (HL) return HL.tileBounds(i, this.handViews.length, this.L);
+    return null;
+  };
+
+  // Pick which hand card is under the pointer (single source of truth for hover).
+  Combat.prototype.pickHandIndex = function (x, y) {
+    var n = this.handViews.length;
+    if (!n || this.locked) return -1;
+    for (var i = 0; i < n; i++) {
+      var b = this.handTileBounds(i);
+      if (!b) continue;
+      if (x >= b.left && x <= b.right && y >= b.top && y <= b.bottom) return i;
+    }
+    return -1;
+  };
+
+  Combat.prototype.raiseHandCard = function (view, idx) {
+    if (!view || view._raised) return;
+    view._raised = true;
+    view.setDepth(400);
+    this.tweens.killTweensOf(view);
+    if (this.reduce) { view.y = view._baseY - 22; view.setScale(1.08); view.setAngle(0); return; }
+    this.tweens.add({ targets: view, y: view._baseY - 26, angle: 0, scaleX: 1.1, scaleY: 1.1, duration: 160, ease: "Cubic.out" });
+  };
+
+  Combat.prototype.lowerHandCard = function (view, idx) {
+    if (!view || !view._raised) return;
+    view._raised = false;
+    view.setDepth(100 + (idx < 0 ? 0 : idx));
+    this.tweens.killTweensOf(view);
+    if (this.reduce) { view.y = view._baseY; view.setScale(1); view.setAngle(view._baseAngle || 0); return; }
+    this.tweens.add({ targets: view, y: view._baseY, angle: view._baseAngle || 0, scaleX: 1, scaleY: 1, duration: 170, ease: "Cubic.out" });
+  };
+
+  Combat.prototype.setHandHover = function (idx) {
+    if (idx === this._hoverIdx) return;
+    if (this._hoverIdx >= 0 && this.handViews[this._hoverIdx]) {
+      this.lowerHandCard(this.handViews[this._hoverIdx], this._hoverIdx);
+    }
+    this._hoverIdx = idx;
+    if (idx >= 0 && this.handViews[idx]) {
+      this.raiseHandCard(this.handViews[idx], idx);
+      this.hoveredCard = this.handViews[idx];
+    } else {
+      this.hoveredCard = null;
+    }
+  };
+
+  // Per-frame: unified hover pick + draw the hover-recognition ring around the
+  // detected card so the player can SEE which card the mouse is actually on.
   Combat.prototype.update = function (time) {
+    if (!this.locked && this.handViews.length) {
+      var ptr = this.input.activePointer;
+      this.setHandHover(this.pickHandIndex(ptr.x, ptr.y));
+    } else if (this._hoverIdx >= 0) {
+      this.setHandHover(-1);
+    }
+
     var g = this.hoverGfx;
     if (!g) return;
     g.clear();
+    if (this.aimGfx) this.aimGfx.clear();
     var v = this.hoveredCard;
     if (!v || !v.active || this.locked) return;
     var cs = this.L.cardSize;
-    var w = (cs.w + 18) * v.scaleX, h = (cs.h + 18) * v.scaleY;
-    var pulse = 0.6 + 0.25 * Math.sin((time || 0) / 130);
-    g.lineStyle(3, 0xffd479, pulse);
-    g.strokeEllipse(v.x, v.y, w * 1.16, h * 1.04);
-    g.lineStyle(1.5, 0xffffff, pulse * 0.6);
-    g.strokeEllipse(v.x, v.y, w * 1.02, h * 0.94);
+    var w = (cs.w + 10) * v.scaleX, h = (cs.h + 10) * v.scaleY;
+    // gentle breathe on the ring — slower than before so it doesn't read as shake
+    var pulse = 0.65 + 0.2 * Math.sin((time || 0) / 280);
+    g.lineStyle(2, 0xffd479, pulse);
+    g.strokeRoundedRect(v.x - w / 2, v.y - h / 2, w, h, 10);
+    this.drawAimArrow(v, time || 0);
+  };
+
+  // Bezier chevron arrow card -> current target (only for single-target cards
+  // aimed at enemies). Chevrons march along the curve toward the target;
+  // unaffordable cards show it dimmed grey so the aim line never lies.
+  Combat.prototype.drawAimArrow = function (cardView, time) {
+    var g = this.aimGfx;
+    var c = cardView.cardData;
+    if (!c || c.targeting !== "single" || c.unplayable) return;
+    var tv = this.viewFor(this.targetIdx);
+    if (!tv || tv.dead) return;
+
+    var color = cardView.playable === false ? 0x5a6b7b : 0xff6b5e;
+    var alpha = cardView.playable === false ? 0.45 : 0.95;
+
+    // quadratic bezier: card top -> arc above midfield -> just under the enemy
+    var ax = cardView.x, ay = cardView.y - 112 * cardView.scaleY;
+    var bx = tv.x, by = tv.y + 86;
+    var cx = (ax + bx) / 2, cy = Math.min(ay, by) - 150;
+
+    function pt(t) {
+      var u = 1 - t;
+      return {
+        x: u * u * ax + 2 * u * t * cx + t * t * bx,
+        y: u * u * ay + 2 * u * t * cy + t * t * by,
+      };
+    }
+    function tangent(t) {
+      var u = 1 - t;
+      return { x: 2 * u * (cx - ax) + 2 * t * (bx - cx), y: 2 * u * (cy - ay) + 2 * t * (by - cy) };
+    }
+
+    // soft guide line under the chevrons so the path reads at a glance
+    g.lineStyle(3, color, alpha * 0.35);
+    g.beginPath();
+    var p0 = pt(0);
+    g.moveTo(p0.x, p0.y);
+    for (var k = 1; k <= 20; k++) { var pk = pt(k / 20); g.lineTo(pk.x, pk.y); }
+    g.strokePath();
+
+    // marching chevrons (phase loops so the chain flows toward the enemy)
+    var N = 10;
+    var phase = (time % 520) / 520 / N;
+    for (var i = 0; i < N; i++) {
+      var t = i / N + phase;
+      if (t >= 0.96) continue;
+      var p = pt(t), d = tangent(t);
+      var ang = Math.atan2(d.y, d.x);
+      var s = 7 + 6 * t; // chevrons grow toward the target
+      var a = alpha * (0.5 + 0.5 * t);
+      g.fillStyle(color, a);
+      g.fillTriangle(
+        p.x + Math.cos(ang) * s, p.y + Math.sin(ang) * s,
+        p.x + Math.cos(ang + 2.5) * s, p.y + Math.sin(ang + 2.5) * s,
+        p.x + Math.cos(ang - 2.5) * s, p.y + Math.sin(ang - 2.5) * s
+      );
+    }
+
+    // arrowhead locked on the target
+    var hp = pt(1), hd = tangent(1);
+    var hang = Math.atan2(hd.y, hd.x), hs = 15;
+    g.fillStyle(color, alpha);
+    g.fillTriangle(
+      hp.x + Math.cos(hang) * hs, hp.y + Math.sin(hang) * hs,
+      hp.x + Math.cos(hang + 2.4) * hs, hp.y + Math.sin(hang + 2.4) * hs,
+      hp.x + Math.cos(hang - 2.4) * hs, hp.y + Math.sin(hang - 2.4) * hs
+    );
   };
 
   Combat.prototype.relayout = function (animate) {
     var n = this.handViews.length;
     if (!n) return;
     var L = this.L;
-    var cw = L.cardSize.w, ch = L.cardSize.h;
-    var spread = Math.min(L.handSpread, 920 / n);
-    var total = (n - 1) * spread;
-    var startX = L.handCenter.x - total / 2;
+    var HL = Squid.HandLayout;
+    var layout = HL ? HL.compute(n, L) : null;
     for (var i = 0; i < n; i++) {
       var v = this.handViews[i];
-      var tx = startX + i * spread;
-      var arc = Math.abs(i - (n - 1) / 2) * 5;
-      var ty = L.handCenter.y + arc;
+      var pos = layout ? layout.positions[i] : null;
+      var tx = pos ? pos.x : v.x;
+      var ty = pos ? pos.y : v.y;
+      var tang = pos ? pos.angle : 0;
       v.handIndex = i;
       v.setBaseY(ty);
+      v._baseAngle = tang;
       if (!v._raised) v.setDepth(100 + i);
-      // ---- TILE THE HIT ZONE (fix: leftmost/overlapped card wouldn't acquire hover)
-      // Fanned cards overlap (~spacing < card width), and since each later card has a
-      // higher depth, the OVERLAP region was always grabbed by the right-hand neighbor,
-      // so hovering a card's covered half popped the wrong card (or nothing on the edge).
-      // Give every card an exclusive, non-overlapping local hit rectangle that tiles the
-      // hand: middle cards span [-spread/2, +spread/2]; the two end cards extend out to
-      // the full card edge so the whole visible hand is reliably hoverable/clickable.
       if (v.input && v.input.hitArea) {
-        var leftLocal = (i === 0) ? -cw / 2 : -spread / 2;
-        var rightLocal = (i === n - 1) ? cw / 2 : spread / 2;
-        var ha = v.input.hitArea;
-        ha.x = leftLocal; ha.width = rightLocal - leftLocal;
-        ha.y = -ch / 2; ha.height = ch;
+        var b = this.handTileBounds(i);
+        if (b) {
+          var ha = v.input.hitArea;
+          ha.x = b.left - tx; ha.width = b.right - b.left;
+          ha.y = -(L.cardSize.h / 2 + 24); ha.height = L.cardSize.h + 60;
+        }
       }
+      this.tweens.killTweensOf(v);
       if (animate && !this.reduce) {
-        this.tweens.add({ targets: v, x: tx, y: v._raised ? ty - 26 : ty, scaleX: 1, scaleY: 1, duration: 180, ease: "Back.out" });
+        this.tweens.add({
+          targets: v, x: tx, y: v._raised ? ty - 26 : ty, angle: v._raised ? 0 : tang,
+          scaleX: v._raised ? 1.1 : 1, scaleY: v._raised ? 1.1 : 1,
+          duration: 200, ease: "Cubic.out",
+        });
       } else {
-        v.x = tx; v.y = ty; v.setScale(1);
+        v.x = tx;
+        v.y = v._raised ? ty - 26 : ty;
+        v.setScale(v._raised ? 1.1 : 1);
+        v.setAngle(v._raised ? 0 : tang);
       }
+    }
+    // hover index invalid after removal? clamp or clear
+    if (this._hoverIdx >= n) {
+      this._hoverIdx = -1;
+      this.hoveredCard = null;
+    } else if (this._hoverIdx >= 0 && this.handViews[this._hoverIdx]) {
+      this.hoveredCard = this.handViews[this._hoverIdx];
     }
     this.updatePlayable();
   };
@@ -497,8 +680,9 @@
       case "draw": {
         this.makeHandCard(ev.cardId);
         Sound.sfx("draw");
-        this.relayout(true);
-        return this.reduce ? 0 : 70;
+        // opening deal: snap layout instantly so cards don't stagger into a broken fan
+        this.relayout(!this.locked);
+        return this.reduce ? 0 : (this.locked ? 35 : 70);
       }
 
       case "damageEnemy": {
@@ -506,6 +690,7 @@
         var ex = v.x, ey = v.y;
         Sound.sfx("hit");
         FX.hitFlash(this, v.sprite);
+        FX.hitStop(this, ev.amount); // freeze the frame so the hit "lands"
         this.recoil(v.sprite, ex, +14);
         FX.burst(this, ex, ey, 0xff6b5e, 12, 50);
         if (ev.amount > 0) FX.floatNumber(this, ex, ey - 40, "-" + ev.amount, "#ff6b5e", 34);
@@ -559,6 +744,7 @@
           if (ev.taken > 0) {
             Sound.sfx("hurt");
             FX.hitFlash(self, self.playerSprite);
+            FX.hitStop(self, ev.taken); // impact freeze on the player too
             self.playerHurtAnim();
             FX.burst(self, pxc, pyc, 0xff6b5e, 12, 46);
             FX.floatNumber(self, pxc, pyc - 30, "-" + ev.taken, "#ff6b5e", 32);
@@ -630,8 +816,10 @@
       Squid.FX.burst(this, v.x, v.y, 0xffd479, 18, 70);
       if (v.sprite.setTint) v.sprite.setTint(0x445566);
       this.tweens.add({ targets: v.sprite, alpha: 0.18, y: v.y + 18, duration: 480, ease: "Cubic.in" });
+      if (v.shadow) this.tweens.add({ targets: v.shadow, alpha: 0, duration: 480 });
     } else if (v.sprite) {
       v.sprite.setAlpha(0.18);
+      if (v.shadow) v.shadow.setAlpha(0);
     }
     v.nameText.setAlpha(0.4);
     // if the dead enemy was the target, re-home the reticle to a living foe
@@ -703,7 +891,7 @@
     }
 
     this.locked = true;
-    if (this.hoveredCard === view) this.hoveredCard = null;
+    this.setHandHover(-1);
     Squid.Sound.sfx("play");
     this.handViews.splice(i, 1);
     var fxList = this.engine.drainFx();
@@ -716,7 +904,9 @@
 
     if (view && !this.reduce) {
       view.setDepth(800);
-      this.tweens.add({ targets: view, x: cx, y: cy, scaleX: 1.15, scaleY: 1.15, duration: 90, ease: "Back.out", onComplete: resolve });
+      this.tweens.killTweensOf(view);
+      this.tweens.add({ targets: view, x: cx, y: cy, angle: 0, scaleX: 1.12, scaleY: 1.12, duration: 100, ease: "Cubic.out", onComplete: resolve });
+      if (!this.reduce) Squid.FX.burst(this, cx, cy, view.cardData && view.accent || 0xff6b5e, 8, 36);
     } else {
       resolve();
     }
@@ -772,7 +962,10 @@
     var fxList = this.engine.drainFx();
     this.runFx(fxList, function () {
       if (self.engine.over === "lose") { self.onLose(); return; }
-      self.telegraph(function () { self.resolveEnemyTurn(); });
+      // StS-style turn sweep, then the intent pulse, then the group resolves
+      Squid.FX.banner(self, "ENEMY TURN", 0xff6b5e, function () {
+        self.telegraph(function () { self.resolveEnemyTurn(); });
+      });
     });
   };
 
@@ -799,6 +992,8 @@
       if (self.engine.over === "lose") { self.onLose(); return; }
       if (self.engine.over === "win") { self.onWin(); return; }
       self.setTargetView(self.engine.target, false);
+      // non-blocking "YOUR TURN" cue — input unlocks immediately
+      Squid.FX.banner(self, "YOUR TURN", 0x4fd1c5, null);
       self.locked = false;
     });
   };
@@ -830,7 +1025,8 @@
 
     Squid.Sound.sfx("win");
     if (!this.reduce) Squid.FX.flash(this, 220, 30, 50, 36);
-    this.time.delayedCall(this.reduce ? 40 : 720, function () { self.scene.start(boss ? "Win" : "Reward"); });
+    Squid.FX.banner(this, boss ? "PROMOTED" : "VICTORY", 0xffd479, null);
+    this.time.delayedCall(this.reduce ? 40 : 760, function () { Squid.FX.go(self, boss ? "Win" : "Reward"); });
   };
 
   Combat.prototype.onLose = function () {
@@ -841,7 +1037,7 @@
       if (this.playerSprite.setTint) this.playerSprite.setTint(0x445566);
       this.tweens.add({ targets: this.playerSprite, alpha: 0.4, angle: -8, duration: 500, ease: "Cubic.in" });
     }
-    this.time.delayedCall(this.reduce ? 40 : 560, function () { self.scene.start("GameOver"); });
+    this.time.delayedCall(this.reduce ? 40 : 560, function () { Squid.FX.go(self, "GameOver", 420); });
   };
 
   // ---- debug hooks for the headless verify harness (M2 + M3) ----------------
@@ -862,15 +1058,35 @@
     return false;
   };
   Combat.prototype.debugSetTarget = function (idx) { if (!this.locked) this.setTargetView(idx, false); };
+  // validate live hand positions (browser stress harness)
+  Combat.prototype.debugValidateHand = function () {
+    var HL = Squid.HandLayout;
+    if (!HL) return { ok: false, errors: ["HandLayout missing"] };
+    var n = this.handViews.length;
+    var v = HL.validate(n, this.L);
+    var live = [];
+    for (var i = 0; i < n; i++) {
+      var hv = this.handViews[i];
+      live.push({ i: i, x: hv.x, y: hv.y, wantX: v.layout.positions[i] ? v.layout.positions[i].x : null });
+      if (v.layout.positions[i] && Math.abs(hv.x - v.layout.positions[i].x) > 3) {
+        v.ok = false;
+        v.errors.push("card " + i + " drift: x=" + hv.x + " want=" + v.layout.positions[i].x);
+      }
+    }
+    return { ok: v.ok, errors: v.errors, maxGap: v.maxGap, live: live, handSize: n };
+  };
+
   Combat.prototype.debugInfo = function () {
     return {
       scene: "Combat",
       coordinated: this.coordinated,
+      isMulti: this.isMulti,
       locked: this.locked,
       over: this.engine.over,
       turn: this.engine.turn,
       target: this.engine.target,
       pulse: this.engine.player.pulse,
+      hand: this.debugValidateHand(),
       enemies: this.engine.enemies.map(function (e) {
         return { id: e.id, name: e.name, hp: e.hp, maxHp: e.maxHp, block: e.block, slot: e.slot, intent: e.intent ? e.intent.label : null, intentVal: e.intent ? (e.intent.value || 0) : 0 };
       }),

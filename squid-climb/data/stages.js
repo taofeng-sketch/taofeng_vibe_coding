@@ -61,19 +61,19 @@
     { id: "n0", row: 0, col: 1, type: "combat", enemy: "bug_swarm", label: "Fix the Bug", act: "Act I \u2014 Onboarding", intro: "intro_bug_swarm", next: ["n1a", "n1b"] },
 
     // row 1 — The System (branch: tanky enemy vs an on-call event) — §4 Act I mid
-    { id: "n1a", row: 1, col: 0, type: "combat", enemy: "legacy_service", label: "Touch the Legacy Service", act: "Act I \u2014 The System", intro: "intro_legacy", next: ["n2a", "n2b"] },
+    { id: "n1a", row: 1, col: 0, type: "combat", encounter: "legacy_infestation", label: "Legacy + Bugs (DUO)", act: "Act I \u2014 The System", intro: "intro_legacy", next: ["n2a", "n2b"] },
     { id: "n1b", row: 1, col: 2, type: "event", event: "oncall", label: "On-Call Shift", act: "Act I \u2014 The System", intro: "intro_oncall", next: ["n2a", "n2b"] },
 
     // row 2 — branch: breather rest vs a debuffer fight
     { id: "n2a", row: 2, col: 0, type: "rest", label: "Rest Stop", act: "Act I \u2014 Breather", intro: "intro_rest", next: ["n3"] },
-    { id: "n2b", row: 2, col: 2, type: "combat", enemy: "ds_skeptic", label: "Defend Your Metric vs DS", act: "Act I \u2014 The System", intro: "intro_ds", next: ["n3"] },
+    { id: "n2b", row: 2, col: 2, type: "combat", encounter: "xfn_spat", label: "PM vs DS Spat (DUO)", act: "Act I \u2014 The System", intro: "intro_ds", next: ["n3"] },
 
     // row 3 — Act I capstone boss (2-phase teachable) — §4 Act I boss. Convergence.
     { id: "n3", row: 3, col: 1, type: "elite", enemy: "half_year", label: "Half-Year Check-In", act: "Act I \u2014 Boss", intro: "intro_half_year", next: ["n4a", "n4b"] },
 
-    // row 4 — Act II XFN chaos (branch of two single fights)
-    { id: "n4a", row: 4, col: 0, type: "combat", enemy: "pm_align", label: "Argue with a PM", act: "Act II \u2014 XFN Chaos", intro: "intro_pm", next: ["n5a", "n5b"] },
-    { id: "n4b", row: 4, col: 2, type: "combat", enemy: "legacy_service", label: "More Legacy Code", act: "Act II \u2014 XFN Chaos", intro: "intro_legacy", next: ["n5a", "n5b"] },
+    // row 4 — Act II XFN chaos (branch: standup chaos vs legacy duo)
+    { id: "n4a", row: 4, col: 0, type: "combat", encounter: "standup_chaos", label: "Standup Gone Wrong (DUO)", act: "Act II \u2014 XFN Chaos", intro: "intro_pm", next: ["n5a", "n5b"] },
+    { id: "n4b", row: 4, col: 2, type: "combat", encounter: "duo_bug_swarm", label: "Bug Swarm ×2", act: "Act II \u2014 XFN Chaos", intro: "intro_bug_swarm", next: ["n5a", "n5b"] },
 
     // row 5 — Act II politics (branch: reorg event vs a breather)
     { id: "n5a", row: 5, col: 0, type: "event", event: "reorg", label: "Reorg Event", act: "Act II \u2014 Politics", intro: "intro_reorg", next: ["n6"] },

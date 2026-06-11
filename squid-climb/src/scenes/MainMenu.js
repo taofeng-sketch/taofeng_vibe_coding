@@ -16,18 +16,32 @@
     var L = Squid.LAYOUT.get().menu;
     var W = this.scale.width, H = this.scale.height;
     var Save = Squid.Save, Sound = Squid.Sound, Widgets = Squid.Widgets;
+    Squid.FX.fadeIn(this);
+
+    var settings = (Save && Save.getSettings()) || {};
+    this.reduce = !!settings.reduceMotion;
+    if (Squid.FX) Squid.FX.setReduce(this.reduce);
 
     // background (gray-box if scene_hq missing)
+    var bg = null;
     if (this.textures.exists("scene_hq")) {
-      var bg = this.add.image(W / 2, H / 2, "scene_hq");
+      bg = this.add.image(W / 2, H / 2, "scene_hq");
       var sc = Math.max(W / bg.width, H / bg.height); bg.setScale(sc);
+      if (!this.reduce) Squid.FX.parallaxBg(this, bg, 14);
     } else {
       this.add.rectangle(W / 2, H / 2, W, H, 0x0e151d);
     }
     this.add.rectangle(W / 2, H / 2, W, H, 0x05080c, 0.55); // scrim
+    if (!this.reduce) {
+      Squid.FX.ambientDrift(this, { glyphs: ["∞", "PM", "IC", "VP", "LGTM", "ship"], color: "#4fd1c5", count: 16, depth: 4 });
+      Squid.FX.vignette(this, 0.32);
+    }
 
     // logo + tagline
-    this.add.text(L.logo.x, L.logo.y, "\u221E SQUID TECHNOLOGIES", { fontFamily: "monospace", fontSize: "34px", color: "#4fd1c5", fontStyle: "bold" }).setOrigin(0.5);
+    this.logoText = this.add.text(L.logo.x, L.logo.y, "\u221E SQUID TECHNOLOGIES", { fontFamily: "monospace", fontSize: "34px", color: "#4fd1c5", fontStyle: "bold" }).setOrigin(0.5);
+    if (!this.reduce) {
+      this.tweens.add({ targets: this.logoText, alpha: { from: 0.82, to: 1 }, duration: 1400, yoyo: true, repeat: -1, ease: "Sine.inOut" });
+    }
     this.add.text(L.tagline.x, L.tagline.y - 4, "PERFORMANCE REVIEW CLIMB", { fontFamily: "monospace", fontSize: "20px", color: "#e6f1ff" }).setOrigin(0.5);
     this.add.text(L.tagline.x, L.tagline.y + 26, "A satirical big-tech deckbuilder. Move Tentacles Fast\u2122.", { fontFamily: "monospace", fontSize: "13px", color: "#9fb3c8" }).setOrigin(0.5);
 
@@ -38,7 +52,7 @@
       { label: "\u25B6  New Game", onClick: function () { self.newGame(); } },
       { label: hasContinue ? "Continue" : "Continue (no save)", enabled: hasContinue, onClick: function () { self.continueGame(); } },
       { label: "Load Game", onClick: function () { self.openLoad(); } },
-      { label: "Compendium", onClick: function () { self.scene.start("Compendium"); } },
+      { label: "Compendium", onClick: function () { Squid.FX.go(self, "Compendium"); } },
       { label: "Settings", onClick: function () { self.openSettings(); } },
     ];
     items.forEach(function (it, i) {
@@ -73,9 +87,9 @@
     // Play the IC3->VP cutscene ONCE (persisted in settings). Intro -> Map.
     var settings = Squid.Save.getSettings();
     if (settings && settings.introSeen) {
-      this.scene.start("Map");
+      Squid.FX.go(this, "Map");
     } else {
-      this.scene.start("Intro");
+      Squid.FX.go(this, "Intro");
     }
   };
 
@@ -84,7 +98,7 @@
     if (!save) return;
     Squid.activeSave = save;
     var target = { map: "Map", event: "Event", rest: "Rest", reward: "Reward" }[save.screen] || "Map";
-    this.scene.start(target);
+    Squid.FX.go(this, target);
   };
 
   // ---- Load Game slot picker (overlay within this scene) ----
@@ -109,7 +123,7 @@
       layer.add(self.add.text(W / 2 - 320, y + 10, desc, { fontFamily: "monospace", fontSize: "12px", color: "#9fb3c8" }));
       layer.add(Widgets.button(self, {
         x: W / 2 + 230, y: y, w: 150, h: 44, label: s.exists ? "Load" : "\u2014", enabled: s.exists,
-        onClick: function () { var sv = Save.load(s.slot); if (sv) { Squid.activeSave = sv; var t = { map: "Map", event: "Event", rest: "Rest", reward: "Reward" }[sv.screen] || "Map"; self.scene.start(t); } },
+        onClick: function () { var sv = Save.load(s.slot); if (sv) { Squid.activeSave = sv; var t = { map: "Map", event: "Event", rest: "Rest", reward: "Reward" }[sv.screen] || "Map"; Squid.FX.go(self, t); } },
       }));
     });
     layer.add(Widgets.button(self, { x: W / 2, y: H - 150, w: 200, h: 46, label: "Back", onClick: function () { layer.destroy(); } }));
@@ -138,7 +152,7 @@
       x: W / 2, y: 366, w: 360, h: 46, label: "Replay Intro \u25B6",
       onClick: function () {
         Squid.activeSave = Squid.activeSave || Save.continueGame() || Save.newGame({ cls: "swe" });
-        self.scene.start("Intro");
+        Squid.FX.go(self, "Intro");
       },
     }));
     layer.add(Widgets.button(self, {

@@ -22,6 +22,7 @@
     var save = Squid.activeSave;
     var run = save ? save.run : { pulse: 80, maxPulse: 80, deck: [] };
     var Sound = Squid.Sound; Sound.init(); Sound.resume(); Sound.playMusic("rest");
+    Squid.FX.fadeIn(this);
 
     if (this.textures.exists("scene_climb")) {
       var bg = this.add.image(W / 2, H / 2, "scene_climb"); bg.setScale(Math.max(W / bg.width, H / bg.height));

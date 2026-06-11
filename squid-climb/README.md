@@ -22,10 +22,27 @@ Just open **`index.html`** in a modern browser (double-click works — no server
 - Chiptune music + SFX are **synthesized at runtime** via the Web Audio API (zero audio files); every scene — intro, map, combat, boss, rest, event, reward, win — has its own track.
 - Card hand shows a live hover-recognition ring so you can see exactly which card is under the cursor.
 
+## Folder layout
+
+```
+index.html        # the game — loads phaser.min.js then the scripts, in order
+assets/           # art PNGs + cards/ + vendor/phaser.min.js + manifest.json
+data/             # cards, enemies, encounters, stages, events, intros, lore, manifest.js
+src/
+  main.js         # Phaser.Game bootstrap (Canvas renderer)
+  audio/sound.js  # synthesized chiptune music + SFX
+  engine/         # combat engine + save system
+  ui/             # card view, FX, layout, widgets
+  scenes/         # Boot, Preload, MainMenu, Intro, Map, RoomIntro, Combat,
+                  #   Reward, Rest, Event, Compendium, GameOver, Win
+```
+
+Scripts carry a `?v=N` cache-busting token — bump it in `index.html` after edits so a plain double-click never serves a stale cached copy.
+
 ## Disclaimer
 
 This is a work of **satire**. "Squid Technologies" and all characters, bosses, and events are fictional. Any resemblance to a specific company, product, or your last performance cycle is coincidental — and affectionate.
 
 ---
 
-*Vibe-coded with AI coding agents.*
+*Vibe-coded with AI coding agents. Mirrored publicly at `taofeng-sketch/taofeng_vibe_coding` → `squid-climb/`.*

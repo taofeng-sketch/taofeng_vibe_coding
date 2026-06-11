@@ -81,6 +81,7 @@
     var L = Squid.LAYOUT.get();
     var settings = (Squid.Save && Squid.Save.getSettings()) || {};
     this.reduce = !!settings.reduceMotion;
+    Squid.FX.fadeIn(this);
 
     var node = Squid.currentNode || { type: "combat", enemy: "bug_swarm", label: "Fix the Bug" };
     var vm = resolveIntro(node);
@@ -162,7 +163,7 @@
     if (this._going) return;
     this._going = true;
     if (Squid.Sound) Squid.Sound.sfx("select");
-    this.scene.start(this.dest);
+    Squid.FX.go(this, this.dest);
   };
 
   // ---- debug hook for the headless verify harness ----

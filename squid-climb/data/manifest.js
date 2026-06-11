@@ -17,8 +17,12 @@
  * ============================================================================= */
 (function () {
   "use strict";
+  // Cache-bust token for the ART files themselves (the script tags' ?v=N only
+  // busts the .js files). Bump together with index.html's ?v=N whenever PNGs
+  // change, or a returning browser keeps showing the OLD art from its cache.
+  var ART_V = "?av=2";
   window.SQUID_MANIFEST = {
-    version: 1,
+    version: 2,
     images: [
       { key: "scene_hq", path: "assets/scene_hq.png" },
       { key: "scene_climb", path: "assets/scene_climb.png" },
@@ -61,6 +65,8 @@
     atlases: [],
     audio: []
   };
+  // apply the art cache-bust token to every declared path
+  window.SQUID_MANIFEST.images.forEach(function (img) { img.path += ART_V; });
   console.log(
     "[Squid] SQUID_MANIFEST loaded:",
     window.SQUID_MANIFEST.images.length,

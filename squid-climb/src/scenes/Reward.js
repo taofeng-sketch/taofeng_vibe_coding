@@ -21,7 +21,7 @@
       save.screen = "map";
       if (Squid.Save) Squid.Save.autosave(save);
     }
-    scene.scene.start("Map");
+    Squid.FX.go(scene, "Map");
   }
   Reward.resolveToMap = resolveToMap; // shared with Rest/Event
 
@@ -33,6 +33,7 @@
     this._taken = false;
     var save = Squid.activeSave;
     var Sound = Squid.Sound; Sound.init(); Sound.resume(); Sound.playMusic("reward");
+    Squid.FX.fadeIn(this);
 
     // background
     if (this.textures.exists("scene_hq")) {
@@ -49,11 +50,25 @@
     this.choices = shuffle(pool).slice(0, 3);
     var cs = { w: 150, h: 210 };
     var spread = 220, startX = W / 2 - spread, y = 380;
+    var reduce = Squid.FX && Squid.FX.reduce;
     this.choices.forEach(function (id, i) {
       var view = Squid.CardView(self, id, { x: startX + i * spread, y: y, w: cs.w, h: cs.h });
       view.setInteractive(new Phaser.Geom.Rectangle(-cs.w / 2, -cs.h / 2, cs.w, cs.h), Phaser.Geom.Rectangle.Contains);
-      view.on("pointerover", function () { self.tweens.add({ targets: view, y: y - 16, scaleX: 1.05, scaleY: 1.05, duration: 110, ease: "Back.out" }); });
-      view.on("pointerout", function () { self.tweens.add({ targets: view, y: y, scaleX: 1, scaleY: 1, duration: 110 }); });
+      view._rewardY = y;
+      var meta = Squid.CARDS[id];
+      if (Squid.FX && meta && meta.rarity) Squid.FX.cardShimmer(self, view, meta.rarity);
+      if (!reduce) {
+        view.setScale(0.6).setAlpha(0);
+        self.tweens.add({ targets: view, scale: 1, alpha: 1, duration: 260, delay: 120 + i * 110, ease: "Cubic.out" });
+      }
+      view.on("pointerover", function () {
+        self.tweens.killTweensOf(view);
+        self.tweens.add({ targets: view, y: y - 14, scaleX: 1.06, scaleY: 1.06, duration: 160, ease: "Cubic.out" });
+      });
+      view.on("pointerout", function () {
+        self.tweens.killTweensOf(view);
+        self.tweens.add({ targets: view, y: y, scaleX: 1, scaleY: 1, duration: 160, ease: "Cubic.out" });
+      });
       view.on("pointerdown", function () { self.take(id); });
     });
 

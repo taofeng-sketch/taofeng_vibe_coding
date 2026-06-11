@@ -84,13 +84,23 @@
     this.encounterId = enc ? enc.id : null;
     this.planGroup = (enc && enc.planGroup) || independentPlan;
 
+    var hpScale = (enc && enc.hpScale) || 1;
+    var dupTotal = {};
+    ids.forEach(function (id) { dupTotal[id] = (dupTotal[id] || 0) + 1; });
+    var dupSeen = {};
     this.enemies = ids.map(function (id, i) {
       var d = Squid.ENEMIES[id];
       if (!d) throw new Error("[CombatEngine] unknown enemyId: " + id);
+      var maxHp = Math.max(1, Math.round(d.maxHp * hpScale));
+      var name = d.name;
+      if (dupTotal[id] > 1) {
+        dupSeen[id] = (dupSeen[id] || 0) + 1;
+        name = d.name + " #" + dupSeen[id];
+      }
       return {
-        id: d.id, name: d.name, art: d.art, sprite: d.sprite, glyph: d.glyph, tier: d.tier,
+        id: d.id, name: name, art: d.art, sprite: d.sprite, glyph: d.glyph, tier: d.tier,
         aiRole: d.aiRole, slot: i, idx: i,
-        hp: d.maxHp, maxHp: d.maxHp, block: 0, _t: 0, status: { weak: 0 },
+        hp: maxHp, maxHp: maxHp, block: 0, _t: 0, status: { weak: 0 },
         plan: d.plan, intent: null, taunt: d.taunt,
       };
     });

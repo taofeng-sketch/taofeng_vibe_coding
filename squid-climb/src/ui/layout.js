@@ -62,15 +62,17 @@
         { x: 760, y: 250 },
         { x: 960, y: 250 },
       ],
-      player: { x: 200, y: 470 },
-      playerStats: { x: 360, y: 430 },
-      log: { x: 640, y: 372 },
-      handCenter: { x: 700, y: 612 },
-      handSpread: 132, // px between card centers when fanning along bottom
+      player: { x: 200, y: 448 },
+      playerStats: { x: 360, y: 408 },
+      log: { x: 640, y: 352 },
+      // hand sits on a dedicated strip so cards don't fight the battlefield
+      handPanel: { x: 640, y: 628, w: 1120, h: 188 },
+      handCenter: { x: 640, y: 600 },
+      handSpread: 136, // px between card centers when fanning along bottom
       cardSize: { w: 142, h: 196 },
-      drawPile: { x: 60, y: 624 },
-      discardPile: { x: 1224, y: 624, origin: { x: 1, y: 0.5 } },
-      endTurn: { x: 1160, y: 540 },
+      drawPile: { x: 72, y: 612 },
+      discardPile: { x: 1208, y: 612, origin: { x: 1, y: 0.5 } },
+      endTurn: { x: 1140, y: 528 },
     },
     // Generic modal (Reward/Rest/Event/GameOver/Win placeholders)
     modal: {

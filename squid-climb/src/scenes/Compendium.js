@@ -102,6 +102,7 @@
 
     this.Save = Squid.Save;
     this.codex = (this.Save && this.Save.getCodex) ? this.Save.getCodex() : { enemiesSeen: [], enemiesDefeated: [], cardsSeen: [] };
+    if (Squid.FX) Squid.FX.fadeIn(this);
 
     // starter-deck unique ids = discovered-by-default (pre-game guarantee)
     this.starterSet = {};
@@ -165,7 +166,7 @@
 
   Compendium.prototype.onEsc = function () {
     if (this.detailOpen) { this.closeDetail(); return; }
-    this.scene.start("MainMenu");
+    Squid.FX.go(this, "MainMenu");
   };
 
   Compendium.prototype.setTab = function (t) {
@@ -238,7 +239,7 @@
     // ---- back (top-left) ----
     this.ui.add(Squid.Widgets.button(this, {
       x: 96, y: CL.titleY, w: 150, h: 34, fontSize: 14, label: "\u2039 Back",
-      onClick: function () { self.scene.start("MainMenu"); },
+      onClick: function () { Squid.FX.go(self, "MainMenu"); },
     }));
 
     // ---- count line + filters ----
