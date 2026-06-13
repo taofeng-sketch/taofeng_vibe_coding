@@ -16,12 +16,13 @@ This repo is where those experiments live. I call it "vibe coding" on purpose. I
 
 **▶ [Open the interactive World Cup experience →](https://taofeng-sketch.github.io/taofeng_vibe_coding/WorldCupSimulation/)**
 
-A mobile-first 2026 World Cup fan experience with all 48 teams, a three-day match center, explainable win probabilities, free points-based predictions, a local fan wall, and a five-round penalty challenge.
+[![Pulse26 WorldCupSimulation preview](./WorldCupSimulation/assets/preview.jpg)](https://taofeng-sketch.github.io/taofeng_vibe_coding/WorldCupSimulation/)
 
-- Built with vanilla HTML, CSS, and JavaScript with **zero build step**.
-- Predictions use free, non-transferable points only: no deposits, prizes, cash-out, or real-money betting.
-- Team support, predictions, cheers, and game progress stay in the browser through `localStorage`.
-- Includes automated probability-model tests, a QA process, product evaluation, and research notes.
+A mobile-first 2026 World Cup fan experience: explore all 48 teams, follow the match center, compare explainable win probabilities, make free points-based predictions, support a team, leave a cheer, and take a five-round penalty challenge.
+
+- **Interactive, not just informative.** Predictions, fan support, cheers, and a quick skill game turn every visit into something you can do.
+- **Transparent by design.** Probability factors are visible, points have no monetary value, and demo data is clearly labelled.
+- **Portable and tested.** Vanilla HTML/CSS/JS, zero build step, local progress through `localStorage`, plus automated model QA.
 
 Code and project documentation are in **[`WorldCupSimulation/`](./WorldCupSimulation)**.
 
