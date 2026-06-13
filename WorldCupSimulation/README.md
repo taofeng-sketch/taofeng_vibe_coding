@@ -51,3 +51,15 @@ npm run check
 ## 部署
 
 项目位于 `taofeng_vibe_coding/WorldCupSimulation/`。推送到 `main` 后，仓库根目录的 GitHub Pages 会自动发布该子目录；GitHub Actions 同时运行项目 QA。它是纯静态网页，不需要构建步骤或后端服务。
+
+## 每日数据刷新
+
+GitHub Actions 工作流 `WorldCupSimulation Daily Refresh` 每天在伦敦时间 **13:30** 自动运行：
+
+1. 从公开的 ESPN World Cup scoreboard JSON 获取 104 场最新状态。
+2. 映射比赛、比分、进行状态、进球事件、报告和集锦链接。
+3. 拒绝少于 104 场、无法完整映射或状态数量不一致的响应。
+4. 运行全部测试和语法检查。
+5. 仅在校验通过后更新 `live-snapshot.js`，自动提交并触发 GitHub Pages 发布。
+
+定时任务只在 `2026-06-11` 至 `2026-07-20` 的赛事窗口内写入数据，也可以从 GitHub Actions 页面手动触发。页面属于每日快照，不是秒级实时比分服务。

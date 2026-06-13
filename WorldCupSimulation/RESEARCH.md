@@ -8,6 +8,7 @@ Research snapshot: 2026-06-13.
 - Readable UK-time cross-check: Sky Sports day-by-day fixture list.
 - Finished-match score and scorer summaries: FIFA match reports available on the snapshot date.
 - Official report links are used instead of copying copyrighted match photos or video thumbnails.
+- Daily status refresh uses ESPN's publicly readable World Cup scoreboard JSON. It is treated as a replaceable prototype adapter, not a guaranteed or licensed production SLA.
 
 ## Tournament facts used
 

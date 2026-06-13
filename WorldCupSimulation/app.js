@@ -6,7 +6,7 @@ import { calculateProbabilities } from "./model.js";
 const copy = {
   zh: {
     navSchedule: "赛程", navResults: "赛果", navTeams: "球队", navPredict: "预测",
-    snapshotBadge: "2026 世界杯 · 6 月 13 日数据快照",
+    snapshotBadge: "2026 世界杯 · 每日数据快照",
     heroTitle: "不只是看球。<br><span>看懂每场对决，</span><br>规划你的世界杯。",
     heroDescription: "完整赛程、球队核心、已完赛进球与可解释胜率，全部放在一个中英双语界面里。",
     browseSchedule: "浏览完整赛程", exploreTeams: "探索 48 支球队",
@@ -29,11 +29,11 @@ const copy = {
     thisRound: "本轮", chooseDirection: "选择一个方向开始", restart: "重新开始",
     shootLeft: "射向左侧", shootCenter: "射向中路", shootRight: "射向右侧",
     footerTagline: "为足球判断力而生的独立双语互动产品。",
-    dataNote: "数据说明", dataNoteBody: "赛程来自 FIFA 官方 PDF，结果快照截至 2026-06-13 13:30 BST。生产版本需要授权实时数据源。",
+    dataNote: "数据说明", dataNoteBody: "赛程来自 FIFA 官方 PDF；比赛状态由每日自动任务从公开比分数据源刷新。页面不是秒级直播。",
     disclaimer: "重要声明", disclaimerBody: "非 FIFA 官方产品。无真钱、无奖品、无下注功能。官方报告链接归其权利人所有。",
     today: "今天", allDates: "全部日期", match: "比赛", matches: "场",
     matchNo: "第", group: "组", londonTime: "伦敦时间", noMatches: "没有符合筛选条件的比赛。",
-    viewReport: "FIFA 报告 / 集锦 ↗", goals: "关键进球", confirmedScorers: "官方报告已确认的进球者",
+    viewReport: "比赛报告 / 集锦 ↗", goals: "关键进球", confirmedScorers: "数据源已确认的进球者",
     rank: "世界排名", power: "实力指数", form: "状态指数", keyPlayer: "核心球员", viewTeam: "查看球队",
     support: "支持这支球队", supported: "✓ 已加入阵营", analyse: "分析这场比赛", schedule: "球队赛程",
     playerProfile: "球员介绍", groupLabel: "小组", win: "胜", draw: "平", homeWin: "主胜", awayWin: "客胜",
@@ -48,7 +48,7 @@ const copy = {
   },
   en: {
     navSchedule: "Schedule", navResults: "Results", navTeams: "Teams", navPredict: "Predict",
-    snapshotBadge: "World Cup 2026 · data snapshot for 13 June",
+    snapshotBadge: "World Cup 2026 · daily data snapshot",
     heroTitle: "Do more than watch.<br><span>Understand every matchup,</span><br>plan your World Cup.",
     heroDescription: "The complete schedule, key players, finished-match goals and explainable probabilities in one bilingual experience.",
     browseSchedule: "Browse full schedule", exploreTeams: "Explore all 48 teams",
@@ -71,11 +71,11 @@ const copy = {
     thisRound: "This round", chooseDirection: "Choose a direction to begin", restart: "Restart",
     shootLeft: "Shoot left", shootCenter: "Shoot centre", shootRight: "Shoot right",
     footerTagline: "An independent bilingual experience built for football judgement.",
-    dataNote: "Data note", dataNoteBody: "Schedule from FIFA's official PDF. Result snapshot: 13 June 2026, 13:30 BST. Production requires a licensed live feed.",
+    dataNote: "Data note", dataNoteBody: "Schedule from FIFA's official PDF. Match status is refreshed daily from a public scoreboard source; this is not a second-by-second live feed.",
     disclaimer: "Important", disclaimerBody: "Not an official FIFA product. No real money, prizes or betting. Official report links belong to their rights holders.",
     today: "Today", allDates: "All dates", match: "match", matches: "matches",
     matchNo: "Match", group: "Group", londonTime: "London time", noMatches: "No matches fit these filters.",
-    viewReport: "FIFA report / highlights ↗", goals: "Key goals", confirmedScorers: "Scorers confirmed in the official report",
+    viewReport: "Match report / highlights ↗", goals: "Key goals", confirmedScorers: "Scorers confirmed by the data source",
     rank: "World rank", power: "Power index", form: "Form index", keyPlayer: "Key player", viewTeam: "View team",
     support: "Support this team", supported: "✓ Supporting", analyse: "Analyse matchup", schedule: "Team schedule",
     playerProfile: "Player profile", groupLabel: "Group", win: "win", draw: "Draw", homeWin: "Home", awayWin: "Away",
@@ -173,6 +173,19 @@ function applyStaticCopy() {
   $$("[data-i18n-placeholder]").forEach((element) => { element.placeholder = t(element.dataset.i18nPlaceholder); });
   $$("[data-i18n-aria]").forEach((element) => { element.setAttribute("aria-label", t(element.dataset.i18nAria)); });
   $$("[data-lang-option]").forEach((element) => element.classList.toggle("active", element.dataset.langOption === state.lang));
+}
+
+function renderSnapshotMeta() {
+  const generated = new Date(scheduleSource.snapshot);
+  $("#snapshotTime").textContent = new Intl.DateTimeFormat(state.lang === "zh" ? "zh-CN" : "en-GB", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Europe/London",
+    timeZoneName: "short"
+  }).format(generated);
 }
 
 function renderHero() {
@@ -375,6 +388,7 @@ function renderAnalysis() {
 
 function renderAll() {
   applyStaticCopy();
+  renderSnapshotMeta();
   renderHero();
   renderCalendarDays();
   renderSchedule();

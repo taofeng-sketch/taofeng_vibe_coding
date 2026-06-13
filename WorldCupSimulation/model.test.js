@@ -47,7 +47,13 @@ test("every team has three group-stage fixtures and a player profile", () => {
   }
 });
 
-test("finished match accounting matches the data snapshot", () => {
-  assert.equal(schedule.filter((match) => match.status === "finished").length, 4);
-  assert.equal(schedule.filter((match) => match.status === "upcoming").length, 100);
+test("match status accounting remains internally consistent", () => {
+  const validStatuses = new Set(["finished", "live", "upcoming"]);
+  assert.ok(schedule.every((match) => validStatuses.has(match.status)));
+  assert.equal(
+    schedule.filter((match) => match.status === "finished").length
+      + schedule.filter((match) => match.status === "live").length
+      + schedule.filter((match) => match.status === "upcoming").length,
+    104
+  );
 });

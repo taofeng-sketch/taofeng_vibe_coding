@@ -37,7 +37,7 @@
     <main id="top">
       <section class="hero section-shell">
         <div class="hero-copy">
-          <div class="eyebrow"><span class="live-dot"></span><span data-i18n="snapshotBadge">2026 世界杯 · 6 月 13 日数据快照</span></div>
+          <div class="eyebrow"><span class="live-dot"></span><span id="snapshotBadge" data-i18n="snapshotBadge">2026 世界杯 · 每日数据快照</span></div>
           <h1 data-i18n-html="heroTitle">不只是看球。<br><span>看懂每场对决，</span><br>规划你的世界杯。</h1>
           <p class="hero-description" data-i18n="heroDescription">完整赛程、球队核心、已完赛进球与可解释胜率，全部放在一个中英双语界面里。</p>
           <div class="hero-actions">
@@ -55,7 +55,7 @@
 
       <section class="snapshot-strip">
         <div class="section-shell snapshot-grid">
-          <div><span data-i18n="dataAsOf">数据截至</span><b>13 JUN · 13:30 BST</b></div>
+          <div><span data-i18n="dataAsOf">数据截至</span><b id="snapshotTime">—</b></div>
           <div><span data-i18n="liveNow">正在进行</span><b id="liveMatches">0</b></div>
           <div><span data-i18n="groupMatches">小组赛</span><b>72</b></div>
           <div><span data-i18n="knockoutMatches">淘汰赛</span><b>32</b></div>
@@ -174,7 +174,7 @@
     <footer>
       <div class="section-shell footer-layout">
         <div><a class="brand" href="#top"><span class="brand-mark">P26</span><span>PULSE26</span></a><p data-i18n="footerTagline">为足球判断力而生的独立双语互动产品。</p></div>
-        <div><b data-i18n="dataNote">数据说明</b><p data-i18n="dataNoteBody">赛程来自 FIFA 官方 PDF，结果快照截至 2026-06-13 13:30 BST。生产版本需要授权实时数据源。</p></div>
+        <div><b data-i18n="dataNote">数据说明</b><p data-i18n="dataNoteBody">赛程来自 FIFA 官方 PDF；比赛状态由每日自动任务刷新。页面不是秒级直播。</p></div>
         <div><b data-i18n="disclaimer">重要声明</b><p data-i18n="disclaimerBody">非 FIFA 官方产品。无真钱、无奖品、无下注功能。官方报告链接归其权利人所有。</p></div>
       </div>
     </footer>

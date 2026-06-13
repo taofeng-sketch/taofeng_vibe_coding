@@ -8,6 +8,7 @@
 4. **Core journeys:** complete the scenarios below without console errors.
 5. **Safety:** confirm no copy implies cash value, guaranteed outcomes, or official affiliation.
 6. **Accessibility:** keyboard navigation, visible focus, labels, contrast, and reduced-motion behavior.
+7. **Refresh integrity:** provider response must contain and map exactly 104 matches before replacing the published snapshot.
 
 ## Core journeys
 
@@ -38,6 +39,8 @@
 - Mobile layout has no horizontal scrolling.
 - Calendar contains exactly 104 matches: 72 group and 32 knockout.
 - Every team has exactly three group fixtures and a bilingual player profile.
+- Upcoming provider scores must not appear as completed `0–0` results.
+- A partial or malformed provider response must fail without changing `live-snapshot.js`.
 
 ## Data QA
 
@@ -45,3 +48,4 @@
 - Reconcile teams, groups, fixtures, rankings, and results before every release.
 - Never present stale demo results as live.
 - Production requires an authorized data feed, update timestamp, retry state, and source attribution.
+- The current scheduled prototype uses a public ESPN scoreboard JSON endpoint without an SLA; failure keeps the last validated snapshot.

@@ -5,10 +5,12 @@ on:
     paths:
       - "WorldCupSimulation/**"
       - ".github/workflows/worldcup-simulation-qa.yml"
+      - ".github/workflows/worldcup-daily-refresh.yml"
   pull_request:
     paths:
       - "WorldCupSimulation/**"
       - ".github/workflows/worldcup-simulation-qa.yml"
+      - ".github/workflows/worldcup-daily-refresh.yml"
 
 permissions:
   contents: read

@@ -22,7 +22,7 @@ A bilingual, mobile-first 2026 World Cup fan experience: browse the complete 104
 
 - **Complete and bilingual.** Chinese / English switching, all 104 fixtures, 48 team profiles, key-player stories, results and official report links.
 - **Transparent by design.** Probability factors are visible, points have no monetary value, and demo data is clearly labelled.
-- **Portable and tested.** Vanilla HTML/CSS/JS, zero build step, local progress through `localStorage`, plus automated model QA.
+- **Portable, tested, and refreshed daily.** Vanilla HTML/CSS/JS, zero build step, local progress through `localStorage`, automated model QA, and a validated 13:30 London-time scoreboard job.
 
 Code and project documentation are in **[`WorldCupSimulation/`](./WorldCupSimulation)**.
 

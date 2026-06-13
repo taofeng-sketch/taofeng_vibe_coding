@@ -1,35 +1,4 @@
-const finished = {
-  1: {
-    score: [2, 0],
-    goals: [
-      { team: "Mexico", player: "Julián Quiñones" },
-      { team: "Mexico", player: "Raúl Jiménez" }
-    ],
-    report: "https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/articles/mexico-south-africa-highlights-match-report"
-  },
-  2: {
-    score: [2, 1],
-    goals: [
-      { team: "South Korea", player: "Hwang In-beom" },
-      { team: "South Korea", player: "Oh Hyeon-gyu" }
-    ],
-    report: "https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/articles/korea-republic-czechia-highlights-match-report"
-  },
-  3: {
-    score: [1, 1],
-    goals: [
-      { team: "Canada", player: "Cyle Larin" }
-    ],
-    report: "https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/articles/canada-bosnia-and-herzegovina-highlights-match-report"
-  },
-  4: {
-    score: [4, 1],
-    goals: [
-      { team: "United States", player: "Folarin Balogun ×2" }
-    ],
-    report: "https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/articles/usa-paraguay-highlights-match-report"
-  }
-};
+import { liveSnapshot } from "./live-snapshot.js";
 
 const groupFixtures = [
   ["2026-06-11", "20:00", "Mexico", "South Africa", "A", "Mexico City"],
@@ -151,8 +120,8 @@ export const schedule = [
     group,
     venue,
     stage: "Group stage",
-    status: finished[index + 1] ? "finished" : "upcoming",
-    ...finished[index + 1]
+    status: "upcoming",
+    ...liveSnapshot.matches[index + 1]
   })),
   ...knockoutFixtures.map(([date, time, home, away, stage, venue], index) => ({
     id: groupFixtures.length + index + 1,
@@ -162,7 +131,8 @@ export const schedule = [
     away,
     stage,
     venue,
-    status: "upcoming"
+    status: "upcoming",
+    ...liveSnapshot.matches[groupFixtures.length + index + 1]
   }))
 ];
 
@@ -170,5 +140,6 @@ export const scheduleSource = {
   official: "https://digitalhub.fifa.com/m/1be9ce37eb98fcc5/original/FWC26-Match-Schedule_English.pdf",
   readable: "https://www.skysports.com/football/news/11095/13481245/world-cup-2026-fixture-schedule-and-uk-kick-off-times-day-by-day-breakdown-of-all-104-matches-including-england-scotland",
   timezone: "Europe/London",
-  snapshot: "2026-06-13 13:30 BST"
+  snapshot: liveSnapshot.generatedAt,
+  liveSource: liveSnapshot.source
 };
