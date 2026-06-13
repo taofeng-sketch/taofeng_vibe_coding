@@ -6,6 +6,9 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 WORKDIR="${SQUID_PUBLISH_DIR:-$HOME/.cache/squid-climb-publish}"
 REPO="https://github.com/taofeng-sketch/taofeng_vibe_coding.git"
 SKIP_TESTS="${SKIP_TESTS:-0}"
+# Must match a verified email on the taofeng-sketch GitHub account for contributor attribution.
+GIT_AUTHOR_NAME="${SQUID_GIT_AUTHOR_NAME:-Tao Feng}"
+GIT_AUTHOR_EMAIL="${SQUID_GIT_AUTHOR_EMAIL:-tao.feng@me.com}"
 
 if [[ "$SKIP_TESTS" != "1" ]]; then
   echo "==> Running unit tests"
@@ -29,12 +32,19 @@ rsync -a --delete \
   "$ROOT/" "$WORKDIR/squid-climb/"
 
 cd "$WORKDIR"
+git config user.name "$GIT_AUTHOR_NAME"
+git config user.email "$GIT_AUTHOR_EMAIL"
+
 git add squid-climb/
 if git diff --cached --quiet; then
   echo "No changes to publish."
   exit 0
 fi
 
+GIT_AUTHOR_NAME="$GIT_AUTHOR_NAME" \
+GIT_AUTHOR_EMAIL="$GIT_AUTHOR_EMAIL" \
+GIT_COMMITTER_NAME="$GIT_AUTHOR_NAME" \
+GIT_COMMITTER_EMAIL="$GIT_AUTHOR_EMAIL" \
 git commit -m "Update squid-climb: $(date +%Y-%m-%d_%H%M)"
 
 # large PNG push — avoid 408 timeouts
