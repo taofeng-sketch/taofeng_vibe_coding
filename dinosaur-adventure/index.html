@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="theme-color" content="#82d8ff">
+  <meta name="description" content="恐龙大冒险：根据小朋友手绘地图制作的网页闯关游戏。">
+  <title>恐龙大冒险</title>
+  <link rel="stylesheet" href="style.css?v=2">
+</head>
+<body>
+  <main class="game-shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">第一关 · 云朵山谷</p>
+        <h1>恐龙大冒险</h1>
+      </div>
+      <div class="top-actions">
+        <button id="coachButton" class="pill coach-button" type="button" aria-expanded="true">
+          <span aria-hidden="true">✦</span> AI 小教练
+        </button>
+        <button id="restartButton" class="pill secondary" type="button">重新开始</button>
+      </div>
+    </header>
+
+    <section class="stage" aria-label="恐龙大冒险游戏">
+      <canvas id="gameCanvas" width="1280" height="720">
+        你的浏览器需要支持 Canvas 才能玩这个游戏。
+      </canvas>
+
+      <div class="hud" aria-live="polite">
+        <div class="hud-chip"><span>关卡</span><strong>1 / 1</strong></div>
+        <div class="hud-chip"><span>钥匙</span><strong id="keyStatus">还没拿</strong></div>
+        <div class="hud-chip"><span>失败</span><strong id="deathCount">0</strong></div>
+      </div>
+
+      <aside id="coachPanel" class="coach-panel">
+        <div class="coach-avatar" aria-hidden="true">🦕</div>
+        <div>
+          <strong>AI 小恐龙教练</strong>
+          <p id="coachMessage">点一下右边的地面，小恐龙就会跑过去并自动起跳。</p>
+          <small>本地 AI 原型 · 不上传任何数据</small>
+        </div>
+      </aside>
+
+      <div id="startOverlay" class="overlay visible">
+        <div class="card">
+          <span class="card-icon" aria-hidden="true">🦖</span>
+          <p class="eyebrow">准备好了吗？</p>
+          <h2>第一关：云朵山谷</h2>
+          <p>点击你想去的位置。小恐龙会跑过去，遇到台阶时自动跳起来。</p>
+          <button id="startButton" class="primary-button" type="button">开始冒险</button>
+        </div>
+      </div>
+
+      <div id="resultOverlay" class="overlay">
+        <div class="card result-card">
+          <span class="card-icon" aria-hidden="true">🏁</span>
+          <p class="eyebrow">第一关完成</p>
+          <h2>太棒了，你到终点了！</h2>
+          <p id="resultText">你穿过了云朵山谷。</p>
+          <button id="playAgainButton" class="primary-button" type="button">再玩一次</button>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <p><strong>玩法：</strong>点击 / 轻触画面移动。按住也可以连续前进。键盘 ← → 和空格同样可用。</p>
+    </footer>
+  </main>
+  <script src="game.js?v=12"></script>
+</body>
+</html>

@@ -1,0 +1,346 @@
+:root {
+  color-scheme: light;
+  --ink: #17324d;
+  --muted: #55728d;
+  --cream: #fffaf0;
+  --sun: #ffd65a;
+  --leaf: #57bd79;
+  --leaf-dark: #27885a;
+  --sky: #86dcff;
+  --coral: #ff705d;
+  --panel: rgba(255, 255, 255, 0.92);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  overflow-x: hidden;
+  background:
+    radial-gradient(circle at 10% 10%, rgba(255, 255, 255, 0.9), transparent 26rem),
+    linear-gradient(160deg, #dff7ff 0%, #fff4cf 58%, #ffe4c4 100%);
+  color: var(--ink);
+  font-family: "Arial Rounded MT Bold", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+}
+
+button {
+  font: inherit;
+}
+
+.game-shell {
+  width: min(1440px, 100%);
+  margin: 0 auto;
+  padding: 18px clamp(12px, 3vw, 36px) 24px;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 14px;
+}
+
+.eyebrow {
+  margin: 0 0 4px;
+  color: #267b70;
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+h1,
+h2,
+p {
+  margin-top: 0;
+}
+
+h1 {
+  margin-bottom: 0;
+  font-size: clamp(1.7rem, 4vw, 2.7rem);
+  letter-spacing: -0.04em;
+}
+
+.top-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.pill,
+.primary-button {
+  border: 0;
+  cursor: pointer;
+  font-weight: 900;
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+.pill:hover,
+.primary-button:hover {
+  transform: translateY(-2px);
+}
+
+.pill {
+  border: 2px solid rgba(23, 50, 77, 0.1);
+  border-radius: 999px;
+  padding: 10px 15px;
+  background: var(--panel);
+  color: var(--ink);
+  box-shadow: 0 6px 16px rgba(40, 85, 117, 0.12);
+}
+
+.coach-button {
+  background: #fff2b8;
+}
+
+.stage {
+  position: relative;
+  overflow: hidden;
+  border: 5px solid white;
+  border-radius: 28px;
+  background: var(--sky);
+  box-shadow: 0 24px 70px rgba(50, 93, 120, 0.25);
+  isolation: isolate;
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  cursor: pointer;
+  touch-action: none;
+}
+
+.hud {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  display: flex;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.hud-chip {
+  min-width: 78px;
+  border: 2px solid rgba(255, 255, 255, 0.7);
+  border-radius: 15px;
+  padding: 7px 11px;
+  background: rgba(24, 50, 76, 0.8);
+  color: white;
+  box-shadow: 0 5px 14px rgba(23, 50, 77, 0.18);
+  backdrop-filter: blur(8px);
+}
+
+.hud-chip span,
+.hud-chip strong {
+  display: block;
+}
+
+.hud-chip span {
+  font-size: 0.65rem;
+  opacity: 0.72;
+}
+
+.hud-chip strong {
+  font-size: 0.82rem;
+}
+
+.coach-panel {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  display: flex;
+  width: min(370px, calc(100% - 32px));
+  gap: 10px;
+  border: 3px solid rgba(255, 255, 255, 0.85);
+  border-radius: 20px;
+  padding: 12px 14px;
+  background: rgba(255, 250, 226, 0.94);
+  box-shadow: 0 12px 30px rgba(23, 50, 77, 0.22);
+  transform-origin: bottom right;
+  transition: opacity 160ms ease, transform 160ms ease;
+  pointer-events: none;
+}
+
+.coach-panel.hidden {
+  opacity: 0;
+  transform: scale(0.92) translateY(8px);
+}
+
+.coach-avatar {
+  display: grid;
+  flex: 0 0 44px;
+  height: 44px;
+  place-items: center;
+  border-radius: 14px;
+  background: #b9edc7;
+  font-size: 1.55rem;
+}
+
+.coach-panel strong {
+  font-size: 0.88rem;
+}
+
+.coach-panel p {
+  margin: 3px 0 1px;
+  color: #294b67;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.coach-panel small {
+  color: #6f8799;
+  font-size: 0.62rem;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  visibility: hidden;
+  place-items: center;
+  padding: 24px;
+  background: rgba(25, 54, 77, 0.46);
+  opacity: 0;
+  transition: opacity 180ms ease, visibility 180ms ease;
+  backdrop-filter: blur(4px);
+  pointer-events: none;
+}
+
+.overlay.visible {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.card {
+  width: min(460px, 100%);
+  border: 5px solid white;
+  border-radius: 28px;
+  padding: clamp(24px, 5vw, 42px);
+  background: var(--cream);
+  text-align: center;
+  box-shadow: 0 22px 60px rgba(22, 47, 68, 0.32);
+}
+
+.card-icon {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 3rem;
+}
+
+.card h2 {
+  margin-bottom: 12px;
+  font-size: clamp(1.55rem, 4vw, 2.35rem);
+}
+
+.card p:not(.eyebrow) {
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.primary-button {
+  border-radius: 16px;
+  padding: 13px 26px;
+  background: var(--coral);
+  color: white;
+  box-shadow: 0 7px 0 #c8463b, 0 12px 24px rgba(200, 70, 59, 0.2);
+}
+
+.primary-button:active {
+  transform: translateY(5px);
+  box-shadow: 0 2px 0 #c8463b;
+}
+
+footer {
+  padding: 14px 4px 0;
+  color: #526f84;
+  font-size: 0.82rem;
+  text-align: center;
+}
+
+footer p {
+  margin-bottom: 0;
+}
+
+@media (max-width: 700px) {
+  .game-shell {
+    padding: 10px 8px 18px;
+  }
+
+  .topbar {
+    align-items: flex-start;
+  }
+
+  .top-actions {
+    gap: 5px;
+  }
+
+  .pill {
+    padding: 8px 10px;
+    font-size: 0.72rem;
+  }
+
+  .stage {
+    border-width: 3px;
+    border-radius: 18px;
+  }
+
+  .hud {
+    top: 7px;
+    left: 7px;
+    gap: 4px;
+  }
+
+  .hud-chip {
+    min-width: 58px;
+    border-radius: 10px;
+    padding: 4px 7px;
+  }
+
+  .hud-chip span {
+    display: none;
+  }
+
+  .hud-chip strong {
+    font-size: 0.65rem;
+  }
+
+  .coach-panel {
+    right: 8px;
+    bottom: 8px;
+    width: min(285px, calc(100% - 16px));
+    padding: 8px 10px;
+  }
+
+  .coach-avatar {
+    flex-basis: 34px;
+    height: 34px;
+    font-size: 1.1rem;
+  }
+
+  .coach-panel strong {
+    font-size: 0.7rem;
+  }
+
+  .coach-panel p {
+    font-size: 0.64rem;
+  }
+
+  .coach-panel small {
+    display: none;
+  }
+
+  footer {
+    font-size: 0.7rem;
+  }
+}
