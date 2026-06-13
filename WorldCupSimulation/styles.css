@@ -139,6 +139,14 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .calendar-summary { min-width: 140px; min-height: 100px; border-radius: 22px; background: var(--orange); padding: 20px; display: flex; flex-direction: column; justify-content: center; }
 .calendar-summary b { font-size: 34px; letter-spacing: -.05em; }
 .calendar-summary span { font-size: 10px; }
+.viewing-controls { display: grid; grid-template-columns: minmax(190px, 240px) 1fr auto; gap: 12px; align-items: center; margin: 0 0 22px; padding: 18px; border: 1px solid var(--line); border-radius: 20px; background: rgba(255,255,255,.62); }
+.viewing-controls label { display: flex; flex-direction: column; gap: 6px; color: var(--muted); font-size: 9px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.viewing-controls select { min-height: 44px; border: 1px solid var(--line); border-radius: 12px; background: white; padding: 0 12px; color: var(--ink); text-transform: none; letter-spacing: normal; }
+.viewing-detection { display: flex; flex-direction: column; gap: 3px; }
+.viewing-detection b { font-size: 13px; }
+.viewing-detection b.unavailable { color: var(--muted); }
+.viewing-detection span { color: var(--muted); font-size: 10px; }
+.viewing-controls > p { grid-column: 1 / -1; margin: 0; color: var(--muted); font-size: 9px; }
 .calendar-days { display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px 14px; scrollbar-width: thin; }
 .calendar-days button { min-width: 112px; border: 1px solid var(--line); background: rgba(255,255,255,.55); border-radius: 14px; padding: 12px 14px; text-align: left; cursor: pointer; }
 .calendar-days button b, .calendar-days button span { display: block; }
@@ -155,7 +163,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .schedule-day > header b { font-size: 22px; }
 .schedule-day > header span, .schedule-day > header em { color: var(--muted); font-size: 10px; font-style: normal; }
 .fixture-rows { display: flex; flex-direction: column; }
-.fixture-row { min-height: 80px; display: grid; grid-template-columns: 58px 150px 1fr 84px 1fr 150px; align-items: center; gap: 12px; padding: 12px 14px; border-bottom: 1px solid var(--line); background: rgba(255,255,255,.35); }
+.fixture-row { min-height: 104px; display: grid; grid-template-columns: 58px 150px 1fr 100px 1fr 190px; align-items: center; gap: 12px; padding: 12px 14px; border-bottom: 1px solid var(--line); background: rgba(255,255,255,.35); }
 .fixture-row:hover { background: white; }
 .fixture-row.finished { border-left: 3px solid var(--orange); }
 .fixture-number { display: flex; flex-direction: column; color: var(--muted); font-size: 8px; }
@@ -172,6 +180,12 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .fixture-action { text-align: right; }
 .fixture-action a, .fixture-action button { border: 0; background: transparent; color: var(--orange); font-size: 9px; font-weight: 700; cursor: pointer; }
 .fixture-action span { color: var(--muted); font-size: 9px; }
+.watch-option { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 2px; }
+.watch-option small { color: var(--muted); font-size: 8px; text-transform: uppercase; letter-spacing: .08em; }
+.watch-option b { font-size: 10px; }
+.watch-option > div { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px 8px; }
+.fixture-action .watch-link { color: var(--green); font-size: 8px; }
+.watch-option.unverified { opacity: .48; filter: grayscale(1); }
 
 .results-panel { background: var(--green); color: white; padding: 110px 0; }
 .results-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
@@ -345,6 +359,8 @@ footer { background: var(--green); color: white; padding: 65px 0; }
   .trust-strip { grid-template-columns: repeat(2, 1fr); }
   .snapshot-grid { grid-template-columns: repeat(3, 1fr); padding: 14px 0; gap: 12px 0; }
   .schedule-tools { grid-template-columns: repeat(2, 1fr); }
+  .viewing-controls { grid-template-columns: 1fr 1fr; }
+  .viewing-controls > p { grid-column: 1 / -1; }
   .fixture-row { grid-template-columns: 50px 120px 1fr 70px 1fr; }
   .fixture-action { grid-column: 3 / 6; }
   .results-grid { grid-template-columns: 1fr; }
@@ -385,6 +401,8 @@ footer { background: var(--green); color: white; padding: 65px 0; }
   .snapshot-grid > * { padding: 6px 12px; }
   .snapshot-grid > *:first-child { padding-left: 12px; }
   .schedule-tools { grid-template-columns: 1fr; }
+  .viewing-controls { grid-template-columns: 1fr; align-items: stretch; }
+  .viewing-controls > p { grid-column: auto; }
   .fixture-row { grid-template-columns: 34px 1fr 64px 1fr; gap: 6px; padding: 14px 6px; }
   .fixture-number { grid-row: 1 / 3; }
   .fixture-meta { grid-column: 2 / 5; flex-direction: row; justify-content: space-between; }

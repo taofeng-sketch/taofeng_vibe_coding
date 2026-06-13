@@ -4,6 +4,7 @@ import { teams } from "./data.js";
 import { calculateProbabilities, pointsForPrediction } from "./model.js";
 import { schedule } from "./schedule.js";
 import { playerProfiles } from "./profiles.js";
+import { broadcasterFor, dateKeyForMatch, detectViewingRegion, formattedMatchTime } from "./viewing.js";
 
 test("probabilities always sum to 100", () => {
   for (const home of teams) {
@@ -56,4 +57,23 @@ test("match status accounting remains internally consistent", () => {
       + schedule.filter((match) => match.status === "upcoming").length,
     104
   );
+});
+
+test("detects supported viewing regions without requesting precise location", () => {
+  assert.equal(detectViewingRegion("Europe/London", "en-GB"), "gb");
+  assert.equal(detectViewingRegion("America/Los_Angeles", "en-US"), "us");
+  assert.equal(detectViewingRegion("Asia/Shanghai", "zh-CN"), "cn");
+});
+
+test("converts fixture times and dates into the viewer time zone", () => {
+  const match = { startTime: "2026-06-13T22:00:00Z" };
+  assert.match(formattedMatchTime(match, "Europe/London"), /23:00/);
+  assert.match(formattedMatchTime(match, "America/New_York"), /18:00/);
+  assert.equal(dateKeyForMatch(match, "Asia/Shanghai"), "2026-06-14");
+});
+
+test("returns broadcaster links only for verified regions", () => {
+  assert.match(broadcasterFor({ id: 6 }, "gb").label, /BBC One/);
+  assert.equal(broadcasterFor({ id: 6 }, "cn").status, "unverified");
+  assert.equal(broadcasterFor({ id: 6 }, "cn").providers.length, 0);
 });

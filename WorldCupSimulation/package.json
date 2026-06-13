@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "node server.mjs",
     "test": "node --test",
-    "check": "node --check app.js && node --check data.js && node --check schedule.js && node --check live-snapshot.js && node --check profiles.js && node --check model.js && node --check scripts/update-world-cup-data.mjs && node --check server.mjs",
+    "check": "node --check app.js && node --check data.js && node --check schedule.js && node --check live-snapshot.js && node --check profiles.js && node --check model.js && node --check viewing.js && node --check scripts/update-world-cup-data.mjs && node --check server.mjs",
     "update-data": "node scripts/update-world-cup-data.mjs"
   }
 }

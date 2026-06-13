@@ -26,6 +26,14 @@ Research snapshot: 2026-06-13.
 
 Pulse26 combines the low-friction match-center model with explainable probabilities and lightweight participation. It deliberately removes deposits, cash-out, prizes, purchases, and transferable value.
 
+## Broadcast discovery
+
+- Region detection uses the browser's IANA time zone and language. It never requests GPS or precise location.
+- Broadcaster ownership is based on published FIFA media-partner information and broadcaster announcements checked on 13 June 2026.
+- UK match-level labels are shown only where a specific BBC or ITV assignment was independently confirmed. Remaining UK fixtures say `BBC / ITV · check listing`.
+- China and unsupported regions stay visibly disabled until a reliable current rights holder and watch destination can be confirmed.
+- Links open broadcaster discovery pages rather than embedding streams. Availability, subscriptions and geoblocking remain controlled by each rights holder.
+
 ## Design decisions
 
 | Observation | Pulse26 response |

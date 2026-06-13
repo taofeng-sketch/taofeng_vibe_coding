@@ -2,6 +2,14 @@ import { groups, teams } from "./data.js";
 import { schedule, scheduleSource } from "./schedule.js";
 import { playerProfiles } from "./profiles.js";
 import { calculateProbabilities } from "./model.js";
+import {
+  broadcasterFor,
+  dateKeyForMatch,
+  detectViewingRegion,
+  formattedMatchTime,
+  matchDateTime,
+  viewingRegions
+} from "./viewing.js";
 
 const copy = {
   zh: {
@@ -12,7 +20,10 @@ const copy = {
     browseSchedule: "浏览完整赛程", exploreTeams: "探索 48 支球队",
     allMatches: "全部比赛", finished: "已结束", upcoming: "未开始", live: "进行中",
     dataAsOf: "数据截至", liveNow: "正在进行", groupMatches: "小组赛", knockoutMatches: "淘汰赛", officialSource: "官方来源",
-    calendarTitle: "完整比赛日历", calendarIntro: "按伦敦时间（BST）排列。选择日期、阶段或状态，快速找到今天该看什么。",
+    calendarTitle: "完整比赛日历", calendarIntro: "开球时间会自动转换为你的当地时区。选择观赛地区，还可以查看已确认的当地转播入口。",
+    watchRegion: "观赛地区", detectedRegion: "当前选择的观赛地区", localTime: "当地时间", useMyLocation: "使用我的地区",
+    whereToWatch: "在哪里看", listingPending: "请查看转播方的具体节目表",
+    rightsUnverified: "当地转播信息尚未可靠确认", broadcasterNote: "转播权和节目表可能变化，观看链接通常仅在授权地区可用。",
     matchesShown: "场比赛显示中", allStages: "全部阶段", groupStage: "小组赛", knockoutStage: "淘汰赛",
     allStatuses: "全部状态", searchSchedule: "搜索球队或比赛城市…", resetFilters: "重置筛选",
     resultsTitle: "已经发生了什么", resultsIntro: "查看已结束比赛、已确认的关键进球者，并跳转到 FIFA 官方比赛报告和集锦页面。",
@@ -54,7 +65,10 @@ const copy = {
     browseSchedule: "Browse full schedule", exploreTeams: "Explore all 48 teams",
     allMatches: "All matches", finished: "Finished", upcoming: "Upcoming", live: "Live",
     dataAsOf: "Data as of", liveNow: "Live now", groupMatches: "Group matches", knockoutMatches: "Knockout matches", officialSource: "Official source",
-    calendarTitle: "Complete match calendar", calendarIntro: "Shown in London time (BST). Filter by date, stage or status to find exactly what to watch.",
+    calendarTitle: "Complete match calendar", calendarIntro: "Kick-off times automatically use your local time zone. Choose a viewing region to see confirmed local broadcasters.",
+    watchRegion: "Watch in", detectedRegion: "Selected viewing region", localTime: "Local time", useMyLocation: "Use my region",
+    whereToWatch: "Where to watch", listingPending: "Check the broadcaster's listing for this match",
+    rightsUnverified: "Reliable local broadcast information is not confirmed yet", broadcasterNote: "Rights and listings can change. Streams are generally limited to their licensed region.",
     matchesShown: "matches shown", allStages: "All stages", groupStage: "Group stage", knockoutStage: "Knockout stage",
     allStatuses: "All statuses", searchSchedule: "Search team or host city…", resetFilters: "Reset filters",
     resultsTitle: "What has happened", resultsIntro: "Review finished matches and confirmed key scorers, then open FIFA's official report and highlights page.",
@@ -91,7 +105,9 @@ const copy = {
 };
 
 const state = {
-  lang: localStorage.getItem("pulse26-language") || "zh",
+  lang: localStorage.getItem("pulse26-language") || "en",
+  browserTimeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
+  region: localStorage.getItem("pulse26-region") || null,
   points: Number(localStorage.getItem("pulse26-points") || 1250),
   supported: new Set(JSON.parse(localStorage.getItem("pulse26-supported") || "[]")),
   predictions: JSON.parse(localStorage.getItem("pulse26-predictions") || "{}"),
@@ -100,6 +116,7 @@ const state = {
   gameGoals: 0,
   openTeam: null
 };
+state.region ||= detectViewingRegion(state.browserTimeZone, navigator.language);
 
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
@@ -150,11 +167,31 @@ function dateLabel(date, compact = false) {
   }).format(value);
 }
 
+function localDateKey(match) {
+  return dateKeyForMatch(match, state.browserTimeZone);
+}
+
+function matchTimeLabel(match) {
+  return formattedMatchTime(match, state.browserTimeZone, state.lang === "zh" ? "zh-CN" : "en-GB");
+}
+
+function localDateLabel(matchOrDate, compact = false) {
+  const isDateKey = typeof matchOrDate === "string";
+  const value = isDateKey ? new Date(`${matchOrDate}T12:00:00Z`) : matchDateTime(matchOrDate);
+  return new Intl.DateTimeFormat(state.lang === "zh" ? "zh-CN" : "en-GB", {
+    month: compact ? "short" : "long",
+    day: "numeric",
+    weekday: compact ? undefined : "short",
+    timeZone: isDateKey ? "UTC" : state.browserTimeZone
+  }).format(value);
+}
+
 function persist() {
   localStorage.setItem("pulse26-language", state.lang);
   localStorage.setItem("pulse26-points", state.points);
   localStorage.setItem("pulse26-supported", JSON.stringify([...state.supported]));
   localStorage.setItem("pulse26-predictions", JSON.stringify(state.predictions));
+  localStorage.setItem("pulse26-region", state.region);
   $("#userPoints").textContent = state.points.toLocaleString();
 }
 
@@ -188,6 +225,19 @@ function renderSnapshotMeta() {
   }).format(generated);
 }
 
+function renderViewingControls() {
+  const region = viewingRegions[state.region] || viewingRegions.other;
+  $("#regionSelect").innerHTML = Object.entries(viewingRegions).map(([key, item]) =>
+    `<option value="${key}">${item.flag} ${state.lang === "zh" ? item.zh : item.name}${item.status === "unverified" ? " · —" : ""}</option>`
+  ).join("");
+  $("#regionSelect").value = state.region;
+  $("#timezoneLabel").textContent = `${t("localTime")}: ${state.browserTimeZone.replaceAll("_", " ")}`;
+  $("#regionStatus").textContent = region.status === "available"
+    ? `${region.flag} ${t("detectedRegion")}`
+    : t("rightsUnverified");
+  $("#regionStatus").classList.toggle("unavailable", region.status !== "available");
+}
+
 function renderHero() {
   const featured = schedule.find((match) => match.status === "upcoming" && getTeamByName(match.home) && getTeamByName(match.away));
   const home = getTeamByName(featured.home);
@@ -199,7 +249,7 @@ function renderHero() {
       <div class="poster-top"><span>${t("upcomingLabel")}</span><span>${stageLabel(featured)} · ${featured.venue}</span></div>
       <div class="poster-teams">
         <div class="poster-team"><span class="giant-flag">${home.flag}</span><b>${home.name.slice(0, 3).toUpperCase()}</b><small>${teamName(home)}</small></div>
-        <div class="versus"><span>${dateLabel(featured.date, true)} · ${featured.time}</span><b>VS</b><small>BST</small></div>
+        <div class="versus"><span>${localDateLabel(featured, true)} · ${matchTimeLabel(featured)}</span><b>VS</b><small>${state.browserTimeZone.replaceAll("_", " ")}</small></div>
         <div class="poster-team"><span class="giant-flag">${away.flag}</span><b>${away.name.slice(0, 3).toUpperCase()}</b><small>${teamName(away)}</small></div>
       </div>
       <div class="probability-preview">
@@ -211,12 +261,13 @@ function renderHero() {
 }
 
 function renderCalendarDays() {
-  const dates = [...new Set(schedule.map((match) => match.date))];
+  const dates = [...new Set(schedule.map(localDateKey))].sort();
   $("#calendarDays").innerHTML = `
     <button type="button" data-calendar-date="all" class="${state.selectedDate === "all" ? "active" : ""}"><b>104</b><span>${t("allDates")}</span></button>
     ${dates.map((date) => {
-      const count = schedule.filter((match) => match.date === date).length;
-      return `<button type="button" data-calendar-date="${date}" class="${state.selectedDate === date ? "active" : ""}"><b>${dateLabel(date, true)}</b><span>${count} ${count === 1 ? t("match") : t("matches")}</span></button>`;
+      const dateMatches = schedule.filter((match) => localDateKey(match) === date);
+      const count = dateMatches.length;
+      return `<button type="button" data-calendar-date="${date}" class="${state.selectedDate === date ? "active" : ""}"><b>${localDateLabel(dateMatches[0], true)}</b><span>${count} ${count === 1 ? t("match") : t("matches")}</span></button>`;
     }).join("")}`;
 }
 
@@ -227,24 +278,25 @@ function filteredSchedule() {
   return schedule.filter((match) => {
     const stageMatch = stage === "all" || (stage === "knockout" ? match.stage !== "Group stage" : match.stage === stage);
     const text = [match.home, match.away, teamName(match.home), teamName(match.away), match.venue].join(" ").toLowerCase();
-    return (state.selectedDate === "all" || match.date === state.selectedDate)
+    return (state.selectedDate === "all" || localDateKey(match) === state.selectedDate)
       && stageMatch
       && (status === "all" || match.status === status)
       && (!query || text.includes(query));
-  });
+  }).sort((left, right) => matchDateTime(left) - matchDateTime(right));
 }
 
 function renderSchedule() {
   const matches = filteredSchedule();
   $("#visibleMatchCount").textContent = matches.length;
   const groupsByDate = matches.reduce((grouped, match) => {
-    grouped[match.date] ||= [];
-    grouped[match.date].push(match);
+    const date = localDateKey(match);
+    grouped[date] ||= [];
+    grouped[date].push(match);
     return grouped;
   }, {});
   $("#scheduleList").innerHTML = matches.length ? Object.entries(groupsByDate).map(([date, dateMatches]) => `
     <section class="schedule-day">
-      <header><div><b>${dateLabel(date)}</b><span>${date}</span></div><em>${dateMatches.length} ${dateMatches.length === 1 ? t("match") : t("matches")}</em></header>
+      <header><div><b>${localDateLabel(dateMatches[0])}</b><span>${date}</span></div><em>${dateMatches.length} ${dateMatches.length === 1 ? t("match") : t("matches")}</em></header>
       <div class="fixture-rows">${dateMatches.map(renderFixture).join("")}</div>
     </section>`).join("") : `<p class="empty-state">${t("noMatches")}</p>`;
 }
@@ -253,16 +305,25 @@ function renderFixture(match) {
   const home = getTeamByName(match.home);
   const away = getTeamByName(match.away);
   const canAnalyse = home && away;
-  const score = match.score ? `${match.score[0]} — ${match.score[1]}` : match.time;
+  const score = match.score ? `${match.score[0]} — ${match.score[1]}` : matchTimeLabel(match);
+  const viewing = broadcasterFor(match, state.region);
+  const watchLinks = viewing.providers.map((provider) =>
+    `<a class="watch-link" href="${provider.url}" target="_blank" rel="noreferrer">${provider.name} ↗</a>`
+  ).join("");
   return `
     <article class="fixture-row ${match.status}">
       <div class="fixture-number"><span>${t("matchNo")}</span><b>${match.id}</b></div>
       <div class="fixture-meta"><b>${stageLabel(match)}</b><span>${match.venue}</span></div>
       <div class="fixture-team home"><b>${teamName(match.home)}</b><span>${home?.flag || "◯"}</span></div>
-      <div class="fixture-score"><b>${score}</b><span>${match.status === "finished" ? t("finishedLabel") : "BST"}</span></div>
+      <div class="fixture-score"><b>${score}</b><span>${match.status === "finished" ? t("finishedLabel") : state.browserTimeZone.replaceAll("_", " ")}</span></div>
       <div class="fixture-team away"><span>${away?.flag || "◯"}</span><b>${teamName(match.away)}</b></div>
       <div class="fixture-action">
         ${match.report ? `<a href="${match.report}" target="_blank" rel="noreferrer">${t("viewReport")}</a>` : canAnalyse ? `<button type="button" data-analyse-match="${match.id}">${t("analyse")}</button>` : `<span>${t("upcomingLabel")}</span>`}
+        ${match.status !== "finished" ? `<div class="watch-option ${viewing.status}">
+          <small>${t("whereToWatch")}</small>
+          <b>${viewing.label || t("rightsUnverified")}</b>
+          <div>${watchLinks || `<span>${t("listingPending")}</span>`}</div>
+        </div>` : ""}
       </div>
     </article>`;
 }
@@ -330,7 +391,7 @@ function renderTeamModal(teamId) {
     </div>
     <div class="team-fixtures">
       <h3>${t("schedule")}</h3>
-      ${fixtures.map((match) => `<div><span>${dateLabel(match.date, true)} · ${match.time}</span><b>${teamName(match.home)} ${match.score ? `${match.score[0]}—${match.score[1]}` : "vs"} ${teamName(match.away)}</b><small>${match.venue}</small></div>`).join("")}
+      ${fixtures.map((match) => `<div><span>${localDateLabel(match, true)} · ${matchTimeLabel(match)}</span><b>${teamName(match.home)} ${match.score ? `${match.score[0]}—${match.score[1]}` : "vs"} ${teamName(match.away)}</b><small>${match.venue}</small></div>`).join("")}
     </div>
     <div class="modal-actions">
       <button class="button button-dark" type="button" data-support="${team.id}">${state.supported.has(team.id) ? t("supported") : t("support")}</button>
@@ -389,6 +450,7 @@ function renderAnalysis() {
 function renderAll() {
   applyStaticCopy();
   renderSnapshotMeta();
+  renderViewingControls();
   renderHero();
   renderCalendarDays();
   renderSchedule();
@@ -459,6 +521,18 @@ document.addEventListener("click", (event) => {
 $("#languageToggle").addEventListener("click", () => {
   state.lang = state.lang === "zh" ? "en" : "zh";
   renderAll();
+});
+$("#regionSelect").addEventListener("change", (event) => {
+  state.region = event.target.value;
+  persist();
+  renderViewingControls();
+  renderSchedule();
+});
+$("#detectRegion").addEventListener("click", () => {
+  state.region = detectViewingRegion(state.browserTimeZone, navigator.language);
+  persist();
+  renderViewingControls();
+  renderSchedule();
 });
 $("#stageFilter").addEventListener("change", renderSchedule);
 $("#statusFilter").addEventListener("change", renderSchedule);

@@ -16,6 +16,8 @@
 | --- | --- |
 | Switch match day | Cards update and active day is visible |
 | Switch language | Static and dynamic content change between Chinese and English |
+| Change viewing region | Verified broadcasters update and unsupported regions become visibly disabled |
+| Load in another time zone | Match time and local calendar date convert without changing the source fixture |
 | Filter full calendar | Date, stage, status and search filters update the visible count |
 | Open team detail | Key player bio and all three group fixtures are visible |
 | Review a result | Score, confirmed scorers and official report link are visible |
@@ -41,6 +43,8 @@
 - Every team has exactly three group fixtures and a bilingual player profile.
 - Upcoming provider scores must not appear as completed `0–0` results.
 - A partial or malformed provider response must fail without changing `live-snapshot.js`.
+- Default language for a new browser profile is English.
+- Region detection uses browser time zone only and never requests precise geolocation.
 
 ## Data QA
 

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -19,10 +19,10 @@
         <span>PULSE<span class="accent-text">26</span></span>
       </a>
       <nav class="desktop-nav" aria-label="Main navigation">
-        <a href="#calendar" data-i18n="navSchedule">赛程</a>
-        <a href="#results" data-i18n="navResults">赛果</a>
-        <a href="#teams" data-i18n="navTeams">球队</a>
-        <a href="#predict" data-i18n="navPredict">预测</a>
+        <a href="#calendar" data-i18n="navSchedule">Schedule</a>
+        <a href="#results" data-i18n="navResults">Results</a>
+        <a href="#teams" data-i18n="navTeams">Teams</a>
+        <a href="#predict" data-i18n="navPredict">Predict</a>
       </nav>
       <div class="header-actions">
         <button class="language-toggle" id="languageToggle" type="button" aria-label="Switch language">
@@ -69,10 +69,22 @@
         <div class="section-heading">
           <div>
             <span class="section-kicker">104 MATCH CALENDAR</span>
-            <h2 data-i18n="calendarTitle">完整比赛日历</h2>
-            <p class="section-intro" data-i18n="calendarIntro">按伦敦时间（BST）排列。选择日期、阶段或状态，快速找到今天该看什么。</p>
+            <h2 data-i18n="calendarTitle">Complete match calendar</h2>
+            <p class="section-intro" data-i18n="calendarIntro">Kick-off times automatically use your local time zone. Choose a viewing region to see confirmed local broadcasters.</p>
           </div>
           <div class="calendar-summary"><b id="visibleMatchCount">104</b><span data-i18n="matchesShown">场比赛显示中</span></div>
+        </div>
+        <div class="viewing-controls" aria-label="Viewing region and time zone">
+          <label>
+            <span data-i18n="watchRegion">Watch in</span>
+            <select id="regionSelect"></select>
+          </label>
+          <div class="viewing-detection">
+            <b id="regionStatus">—</b>
+            <span id="timezoneLabel">—</span>
+          </div>
+          <button class="button button-ghost" id="detectRegion" type="button" data-i18n="useMyLocation">Use my region</button>
+          <p data-i18n="broadcasterNote">Rights and listings can change. Streams are generally limited to their licensed region.</p>
         </div>
         <div class="calendar-days" id="calendarDays" aria-label="Match dates"></div>
         <div class="schedule-tools">
