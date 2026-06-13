@@ -19,9 +19,9 @@ export function calculateProbabilities(home, away, neutral = true) {
     draw: roundedDraw,
     away: awayWin,
     factors: [
-      { label: "综合强度", home: home.power, away: away.power },
-      { label: "近期状态", home: home.form, away: away.form },
-      { label: "世界排名", home: 101 - Math.min(home.rank, 100), away: 101 - Math.min(away.rank, 100) }
+      { key: "strength", home: home.power, away: away.power, weight: 72 },
+      { key: "form", home: home.form, away: away.form, weight: 18 },
+      { key: "ranking", home: 101 - Math.min(home.rank, 100), away: 101 - Math.min(away.rank, 100), weight: 10 }
     ]
   };
 }

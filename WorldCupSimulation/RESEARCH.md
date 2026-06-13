@@ -2,6 +2,13 @@
 
 Research snapshot: 2026-06-13.
 
+## Current implementation sources
+
+- Full 104-match date, time and venue structure: FIFA official match schedule PDF.
+- Readable UK-time cross-check: Sky Sports day-by-day fixture list.
+- Finished-match score and scorer summaries: FIFA match reports available on the snapshot date.
+- Official report links are used instead of copying copyrighted match photos or video thumbnails.
+
 ## Tournament facts used
 
 - The 2026 tournament runs from June 11 to July 19.

@@ -14,6 +14,10 @@
 | Journey | Expected result |
 | --- | --- |
 | Switch match day | Cards update and active day is visible |
+| Switch language | Static and dynamic content change between Chinese and English |
+| Filter full calendar | Date, stage, status and search filters update the visible count |
+| Open team detail | Key player bio and all three group fixtures are visible |
+| Review a result | Score, confirmed scorers and official report link are visible |
 | Make a prediction | Selection persists after reload and awards participation points once |
 | Compare two teams | Percentages total 100 and factors update |
 | Swap teams | Team order and analysis reverse |
@@ -32,6 +36,8 @@
 - No interaction requires hover.
 - All primary controls have accessible names.
 - Mobile layout has no horizontal scrolling.
+- Calendar contains exactly 104 matches: 72 group and 32 knockout.
+- Every team has exactly three group fixtures and a bilingual player profile.
 
 ## Data QA
 

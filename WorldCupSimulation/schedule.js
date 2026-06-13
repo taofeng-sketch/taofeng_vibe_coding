@@ -1,0 +1,174 @@
+const finished = {
+  1: {
+    score: [2, 0],
+    goals: [
+      { team: "Mexico", player: "Julián Quiñones" },
+      { team: "Mexico", player: "Raúl Jiménez" }
+    ],
+    report: "https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/articles/mexico-south-africa-highlights-match-report"
+  },
+  2: {
+    score: [2, 1],
+    goals: [
+      { team: "South Korea", player: "Hwang In-beom" },
+      { team: "South Korea", player: "Oh Hyeon-gyu" }
+    ],
+    report: "https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/articles/korea-republic-czechia-highlights-match-report"
+  },
+  3: {
+    score: [1, 1],
+    goals: [
+      { team: "Canada", player: "Cyle Larin" }
+    ],
+    report: "https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/articles/canada-bosnia-and-herzegovina-highlights-match-report"
+  },
+  4: {
+    score: [4, 1],
+    goals: [
+      { team: "United States", player: "Folarin Balogun ×2" }
+    ],
+    report: "https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/articles/usa-paraguay-highlights-match-report"
+  }
+};
+
+const groupFixtures = [
+  ["2026-06-11", "20:00", "Mexico", "South Africa", "A", "Mexico City"],
+  ["2026-06-12", "03:00", "South Korea", "Czechia", "A", "Guadalajara"],
+  ["2026-06-12", "20:00", "Canada", "Bosnia & Herzegovina", "B", "Toronto"],
+  ["2026-06-13", "02:00", "United States", "Paraguay", "D", "Los Angeles"],
+  ["2026-06-13", "20:00", "Qatar", "Switzerland", "B", "San Francisco Bay Area"],
+  ["2026-06-13", "23:00", "Brazil", "Morocco", "C", "New York / New Jersey"],
+  ["2026-06-14", "02:00", "Haiti", "Scotland", "C", "Boston"],
+  ["2026-06-14", "05:00", "Australia", "Türkiye", "D", "Vancouver"],
+  ["2026-06-14", "18:00", "Germany", "Curaçao", "E", "Houston"],
+  ["2026-06-14", "21:00", "Netherlands", "Japan", "F", "Dallas"],
+  ["2026-06-15", "00:00", "Ivory Coast", "Ecuador", "E", "Philadelphia"],
+  ["2026-06-15", "03:00", "Sweden", "Tunisia", "F", "Monterrey"],
+  ["2026-06-15", "17:00", "Belgium", "Egypt", "G", "Seattle"],
+  ["2026-06-15", "20:00", "Spain", "Cape Verde", "H", "Atlanta"],
+  ["2026-06-15", "23:00", "Iran", "New Zealand", "G", "Miami"],
+  ["2026-06-16", "02:00", "Saudi Arabia", "Uruguay", "H", "San Francisco Bay Area"],
+  ["2026-06-16", "17:00", "France", "Senegal", "I", "New York / New Jersey"],
+  ["2026-06-16", "20:00", "Argentina", "Algeria", "J", "Kansas City"],
+  ["2026-06-16", "23:00", "Iraq", "Norway", "I", "Boston"],
+  ["2026-06-17", "02:00", "Austria", "Jordan", "J", "San Francisco Bay Area"],
+  ["2026-06-17", "17:00", "Portugal", "DR Congo", "K", "Houston"],
+  ["2026-06-17", "20:00", "England", "Croatia", "L", "Dallas"],
+  ["2026-06-17", "23:00", "Uzbekistan", "Colombia", "K", "Mexico City"],
+  ["2026-06-18", "02:00", "Ghana", "Panama", "L", "Toronto"],
+  ["2026-06-18", "17:00", "South Africa", "South Korea", "A", "Atlanta"],
+  ["2026-06-18", "20:00", "Switzerland", "Bosnia & Herzegovina", "B", "Los Angeles"],
+  ["2026-06-18", "23:00", "Canada", "Qatar", "B", "Vancouver"],
+  ["2026-06-19", "02:00", "Mexico", "Czechia", "A", "Guadalajara"],
+  ["2026-06-19", "17:00", "Scotland", "Morocco", "C", "Boston"],
+  ["2026-06-19", "20:00", "Türkiye", "Paraguay", "D", "Philadelphia"],
+  ["2026-06-19", "23:00", "United States", "Australia", "D", "Seattle"],
+  ["2026-06-20", "02:00", "Brazil", "Haiti", "C", "Miami"],
+  ["2026-06-20", "17:00", "Curaçao", "Ivory Coast", "E", "Toronto"],
+  ["2026-06-20", "20:00", "Netherlands", "Sweden", "F", "Houston"],
+  ["2026-06-20", "23:00", "Germany", "Ecuador", "E", "Kansas City"],
+  ["2026-06-21", "02:00", "Tunisia", "Japan", "F", "Monterrey"],
+  ["2026-06-21", "17:00", "New Zealand", "Egypt", "G", "Vancouver"],
+  ["2026-06-21", "20:00", "Spain", "Saudi Arabia", "H", "Atlanta"],
+  ["2026-06-21", "23:00", "Belgium", "Iran", "G", "Los Angeles"],
+  ["2026-06-22", "02:00", "Uruguay", "Cape Verde", "H", "Miami"],
+  ["2026-06-22", "17:00", "Senegal", "Iraq", "I", "New York / New Jersey"],
+  ["2026-06-22", "20:00", "Argentina", "Austria", "J", "Dallas"],
+  ["2026-06-22", "23:00", "France", "Norway", "I", "Philadelphia"],
+  ["2026-06-23", "02:00", "Jordan", "Algeria", "J", "San Francisco Bay Area"],
+  ["2026-06-23", "17:00", "DR Congo", "Uzbekistan", "K", "Houston"],
+  ["2026-06-23", "20:00", "England", "Ghana", "L", "Boston"],
+  ["2026-06-23", "23:00", "Portugal", "Colombia", "K", "Miami"],
+  ["2026-06-24", "02:00", "Panama", "Croatia", "L", "Toronto"],
+  ["2026-06-24", "20:00", "Switzerland", "Canada", "B", "Vancouver"],
+  ["2026-06-24", "20:00", "Bosnia & Herzegovina", "Qatar", "B", "Seattle"],
+  ["2026-06-24", "23:00", "Scotland", "Brazil", "C", "Miami"],
+  ["2026-06-24", "23:00", "Morocco", "Haiti", "C", "Atlanta"],
+  ["2026-06-25", "02:00", "Czechia", "South Africa", "A", "Monterrey"],
+  ["2026-06-25", "02:00", "South Korea", "Mexico", "A", "Mexico City"],
+  ["2026-06-25", "20:00", "Japan", "Sweden", "F", "Dallas"],
+  ["2026-06-25", "20:00", "Tunisia", "Netherlands", "F", "Kansas City"],
+  ["2026-06-25", "23:00", "Ecuador", "Curaçao", "E", "Philadelphia"],
+  ["2026-06-25", "23:00", "Ivory Coast", "Germany", "E", "New York / New Jersey"],
+  ["2026-06-26", "02:00", "Paraguay", "Australia", "D", "San Francisco Bay Area"],
+  ["2026-06-26", "02:00", "Türkiye", "United States", "D", "Los Angeles"],
+  ["2026-06-26", "20:00", "Norway", "Senegal", "I", "New York / New Jersey"],
+  ["2026-06-26", "20:00", "Iraq", "France", "I", "Boston"],
+  ["2026-06-26", "23:00", "Cape Verde", "Saudi Arabia", "H", "Houston"],
+  ["2026-06-26", "23:00", "Uruguay", "Spain", "H", "Guadalajara"],
+  ["2026-06-27", "02:00", "Egypt", "Iran", "G", "Seattle"],
+  ["2026-06-27", "02:00", "New Zealand", "Belgium", "G", "Vancouver"],
+  ["2026-06-27", "22:00", "Panama", "England", "L", "New York / New Jersey"],
+  ["2026-06-27", "22:00", "Croatia", "Ghana", "L", "Philadelphia"],
+  ["2026-06-27", "01:30", "Colombia", "DR Congo", "K", "Guadalajara"],
+  ["2026-06-27", "01:30", "Uzbekistan", "Portugal", "K", "Mexico City"],
+  ["2026-06-27", "04:00", "Algeria", "Austria", "J", "Kansas City"],
+  ["2026-06-27", "04:00", "Jordan", "Argentina", "J", "Dallas"]
+];
+
+const knockoutFixtures = [
+  ["2026-06-28", "20:00", "Group A runner-up", "Group B runner-up", "Round of 32", "Los Angeles"],
+  ["2026-06-29", "00:30", "Group E winner", "Best third-place team", "Round of 32", "Boston"],
+  ["2026-06-29", "04:00", "Group F winner", "Group C runner-up", "Round of 32", "Monterrey"],
+  ["2026-06-29", "18:00", "Group C winner", "Group F runner-up", "Round of 32", "Houston"],
+  ["2026-06-29", "22:30", "Group I runner-up", "Group J runner-up", "Round of 32", "New York / New Jersey"],
+  ["2026-06-30", "02:00", "Group A winner", "Best third-place team", "Round of 32", "Mexico City"],
+  ["2026-06-30", "18:00", "Group L winner", "Best third-place team", "Round of 32", "Dallas"],
+  ["2026-06-30", "22:00", "Group G winner", "Best third-place team", "Round of 32", "Seattle"],
+  ["2026-07-01", "02:00", "Group D winner", "Best third-place team", "Round of 32", "San Francisco Bay Area"],
+  ["2026-07-01", "17:00", "Group H winner", "Group J runner-up", "Round of 32", "Atlanta"],
+  ["2026-07-01", "21:00", "Group B winner", "Best third-place team", "Round of 32", "Toronto"],
+  ["2026-07-02", "01:00", "Group J winner", "Group H runner-up", "Round of 32", "Los Angeles"],
+  ["2026-07-02", "20:00", "Group K winner", "Best third-place team", "Round of 32", "Miami"],
+  ["2026-07-03", "00:00", "Group D runner-up", "Group G runner-up", "Round of 32", "Kansas City"],
+  ["2026-07-03", "04:00", "Group G runner-up", "Group H runner-up", "Round of 32", "Vancouver"],
+  ["2026-07-03", "02:00", "Group E runner-up", "Group I runner-up", "Round of 32", "Philadelphia"],
+  ["2026-07-04", "16:00", "Winner R32 1", "Winner R32 2", "Round of 16", "Philadelphia"],
+  ["2026-07-04", "20:00", "Winner R32 3", "Winner R32 4", "Round of 16", "Houston"],
+  ["2026-07-05", "00:30", "Winner R32 5", "Winner R32 6", "Round of 16", "New York / New Jersey"],
+  ["2026-07-05", "21:00", "Winner R32 7", "Winner R32 8", "Round of 16", "Mexico City"],
+  ["2026-07-06", "01:00", "Winner R32 9", "Winner R32 10", "Round of 16", "Dallas"],
+  ["2026-07-06", "20:00", "Winner R32 11", "Winner R32 12", "Round of 16", "Seattle"],
+  ["2026-07-07", "01:00", "Winner R32 13", "Winner R32 14", "Round of 16", "Vancouver"],
+  ["2026-07-07", "17:00", "Winner R32 15", "Winner R32 16", "Round of 16", "Atlanta"],
+  ["2026-07-09", "21:00", "Winner R16 1", "Winner R16 2", "Quarter-final", "Boston"],
+  ["2026-07-10", "20:00", "Winner R16 3", "Winner R16 4", "Quarter-final", "Los Angeles"],
+  ["2026-07-11", "22:00", "Winner R16 5", "Winner R16 6", "Quarter-final", "Miami"],
+  ["2026-07-12", "02:00", "Winner R16 7", "Winner R16 8", "Quarter-final", "Kansas City"],
+  ["2026-07-14", "20:00", "Winner QF 1", "Winner QF 2", "Semi-final", "Dallas"],
+  ["2026-07-15", "20:00", "Winner QF 3", "Winner QF 4", "Semi-final", "Atlanta"],
+  ["2026-07-18", "22:00", "Semi-final loser 1", "Semi-final loser 2", "Third-place", "Miami"],
+  ["2026-07-20", "00:00", "Semi-final winner 1", "Semi-final winner 2", "Final", "New York / New Jersey"]
+];
+
+export const schedule = [
+  ...groupFixtures.map(([date, time, home, away, group, venue], index) => ({
+    id: index + 1,
+    date,
+    time,
+    home,
+    away,
+    group,
+    venue,
+    stage: "Group stage",
+    status: finished[index + 1] ? "finished" : "upcoming",
+    ...finished[index + 1]
+  })),
+  ...knockoutFixtures.map(([date, time, home, away, stage, venue], index) => ({
+    id: groupFixtures.length + index + 1,
+    date,
+    time,
+    home,
+    away,
+    stage,
+    venue,
+    status: "upcoming"
+  }))
+];
+
+export const scheduleSource = {
+  official: "https://digitalhub.fifa.com/m/1be9ce37eb98fcc5/original/FWC26-Match-Schedule_English.pdf",
+  readable: "https://www.skysports.com/football/news/11095/13481245/world-cup-2026-fixture-schedule-and-uk-kick-off-times-day-by-day-breakdown-of-all-104-matches-including-england-scotland",
+  timezone: "Europe/London",
+  snapshot: "2026-06-13 13:30 BST"
+};

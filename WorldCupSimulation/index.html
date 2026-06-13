@@ -3,8 +3,8 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Pulse26 - 世界杯球队、赛程、胜率分析与免费积分预测体验。">
-    <title>Pulse26 | 世界杯互动主场</title>
+    <meta name="description" content="Pulse26 bilingual 2026 World Cup schedule, teams, players, results and prediction analysis.">
+    <title>Pulse26 | World Cup Simulation</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700;900&display=swap" rel="stylesheet">
@@ -14,126 +14,138 @@
     <div class="ambient ambient-one"></div>
     <div class="ambient ambient-two"></div>
     <header class="site-header">
-      <a class="brand" href="#top" aria-label="Pulse26 首页">
+      <a class="brand" href="#top" aria-label="Pulse26">
         <span class="brand-mark">P26</span>
         <span>PULSE<span class="accent-text">26</span></span>
       </a>
-      <nav class="desktop-nav" aria-label="主导航">
-        <a class="active" href="#matches">比赛</a>
-        <a href="#teams">球队</a>
-        <a href="#predict">预测场</a>
-        <a href="#game">小游戏</a>
+      <nav class="desktop-nav" aria-label="Main navigation">
+        <a href="#calendar" data-i18n="navSchedule">赛程</a>
+        <a href="#results" data-i18n="navResults">赛果</a>
+        <a href="#teams" data-i18n="navTeams">球队</a>
+        <a href="#predict" data-i18n="navPredict">预测</a>
       </nav>
-      <button class="profile-chip" id="profileButton" type="button">
-        <span class="status-dot"></span>
-        <span><b id="userPoints">1,250</b> PTS</span>
-      </button>
+      <div class="header-actions">
+        <button class="language-toggle" id="languageToggle" type="button" aria-label="Switch language">
+          <span data-lang-option="zh">中文</span><i></i><span data-lang-option="en">EN</span>
+        </button>
+        <button class="profile-chip" id="profileButton" type="button">
+          <span class="status-dot"></span><span><b id="userPoints">1,250</b> PTS</span>
+        </button>
+      </div>
     </header>
 
     <main id="top">
       <section class="hero section-shell">
         <div class="hero-copy">
-          <div class="eyebrow"><span class="live-dot"></span> 2026 世界杯进行中 · 数据演示快照</div>
-          <h1>不只是看球。<br><span>让每一次判断</span><br>都有回声。</h1>
-          <p class="hero-description">选定你的主队，拆解每场对决，用免费积分留下预测。没有真钱、没有提现，只有足球判断力。</p>
+          <div class="eyebrow"><span class="live-dot"></span><span data-i18n="snapshotBadge">2026 世界杯 · 6 月 13 日数据快照</span></div>
+          <h1 data-i18n-html="heroTitle">不只是看球。<br><span>看懂每场对决，</span><br>规划你的世界杯。</h1>
+          <p class="hero-description" data-i18n="heroDescription">完整赛程、球队核心、已完赛进球与可解释胜率，全部放在一个中英双语界面里。</p>
           <div class="hero-actions">
-            <a class="button button-primary" href="#predict">开始预测 <span>→</span></a>
-            <a class="button button-ghost" href="#teams">探索 48 支球队</a>
+            <a class="button button-primary" href="#calendar"><span data-i18n="browseSchedule">浏览完整赛程</span><span>→</span></a>
+            <a class="button button-ghost" href="#teams" data-i18n="exploreTeams">探索 48 支球队</a>
           </div>
           <div class="hero-stats">
-            <div><strong>48</strong><span>参赛球队</span></div>
-            <div><strong>104</strong><span>全部比赛</span></div>
-            <div><strong id="supporterCount">2.8M</strong><span>虚拟助威值</span></div>
+            <div><strong id="totalMatches">104</strong><span data-i18n="allMatches">全部比赛</span></div>
+            <div><strong id="finishedMatches">4</strong><span data-i18n="finished">已结束</span></div>
+            <div><strong id="upcomingMatches">100</strong><span data-i18n="upcoming">未开始</span></div>
           </div>
         </div>
-        <div class="hero-visual" aria-label="今日焦点赛">
-          <div class="orbit orbit-one"></div>
-          <div class="orbit orbit-two"></div>
-          <div class="match-poster">
-            <div class="poster-top">
-              <span>今日焦点</span>
-              <span>GROUP C · NEW YORK</span>
-            </div>
-            <div class="poster-teams">
-              <div class="poster-team"><span class="giant-flag">🇧🇷</span><b>BRA</b><small>巴西</small></div>
-              <div class="versus"><span>18:00</span><b>VS</b><small>当地时间</small></div>
-              <div class="poster-team"><span class="giant-flag">🇲🇦</span><b>MAR</b><small>摩洛哥</small></div>
-            </div>
-            <div class="probability-preview">
-              <div class="probability-labels"><span>巴西 52%</span><span>平 27%</span><span>摩洛哥 21%</span></div>
-              <div class="probability-track"><i style="width:52%"></i><i style="width:27%"></i><i style="width:21%"></i></div>
-              <small>模型基于球队强度、近期状态与赛场因素的演示估算</small>
-            </div>
-          </div>
-          <div class="floating-card float-left"><span>🔥</span><div><b>86%</b><small>球迷热度</small></div></div>
-          <div class="floating-card float-right"><span>↗</span><div><b>+12.4K</b><small>今日助威</small></div></div>
+        <div class="hero-visual" id="heroMatch" aria-label="Featured match"></div>
+      </section>
+
+      <section class="snapshot-strip">
+        <div class="section-shell snapshot-grid">
+          <div><span data-i18n="dataAsOf">数据截至</span><b>13 JUN · 13:30 BST</b></div>
+          <div><span data-i18n="liveNow">正在进行</span><b id="liveMatches">0</b></div>
+          <div><span data-i18n="groupMatches">小组赛</span><b>72</b></div>
+          <div><span data-i18n="knockoutMatches">淘汰赛</span><b>32</b></div>
+          <a href="https://digitalhub.fifa.com/m/1be9ce37eb98fcc5/original/FWC26-Match-Schedule_English.pdf" target="_blank" rel="noreferrer">
+            <span data-i18n="officialSource">官方来源</span><b>FIFA PDF ↗</b>
+          </a>
         </div>
       </section>
 
-      <section class="ticker" aria-label="赛事快讯">
-        <div class="ticker-label">LIVE PULSE</div>
-        <div class="ticker-track">
-          <span><b>FT</b> 🇲🇽 墨西哥 <strong>2 — 0</strong> 南非 🇿🇦</span>
-          <span><b>FT</b> 🇺🇸 美国 <strong>4 — 1</strong> 巴拉圭 🇵🇾</span>
-          <span><b>FT</b> 🇨🇦 加拿大 <strong>1 — 1</strong> 波黑 🇧🇦</span>
-          <span><b>NEXT</b> 🇧🇷 巴西 <strong>VS</strong> 摩洛哥 🇲🇦</span>
-        </div>
-      </section>
-
-      <section class="section-shell content-section" id="matches">
+      <section class="section-shell content-section calendar-section" id="calendar">
         <div class="section-heading">
-          <div><span class="section-kicker">MATCH CENTER</span><h2>比赛脉搏</h2></div>
-          <div class="date-tabs" role="tablist" aria-label="比赛日期">
-            <button type="button" data-day="yesterday">昨日</button>
-            <button class="active" type="button" data-day="today">今日 <span>13 JUN</span></button>
-            <button type="button" data-day="tomorrow">明日</button>
+          <div>
+            <span class="section-kicker">104 MATCH CALENDAR</span>
+            <h2 data-i18n="calendarTitle">完整比赛日历</h2>
+            <p class="section-intro" data-i18n="calendarIntro">按伦敦时间（BST）排列。选择日期、阶段或状态，快速找到今天该看什么。</p>
+          </div>
+          <div class="calendar-summary"><b id="visibleMatchCount">104</b><span data-i18n="matchesShown">场比赛显示中</span></div>
+        </div>
+        <div class="calendar-days" id="calendarDays" aria-label="Match dates"></div>
+        <div class="schedule-tools">
+          <select id="stageFilter" aria-label="Stage filter">
+            <option value="all" data-i18n="allStages">全部阶段</option>
+            <option value="Group stage" data-i18n="groupStage">小组赛</option>
+            <option value="knockout" data-i18n="knockoutStage">淘汰赛</option>
+          </select>
+          <select id="statusFilter" aria-label="Status filter">
+            <option value="all" data-i18n="allStatuses">全部状态</option>
+            <option value="finished" data-i18n="finished">已结束</option>
+            <option value="upcoming" data-i18n="upcoming">未开始</option>
+          </select>
+          <input id="scheduleSearch" type="search" data-i18n-placeholder="searchSchedule" placeholder="搜索球队或比赛城市…">
+          <button class="button button-dark" id="resetSchedule" type="button" data-i18n="resetFilters">重置筛选</button>
+        </div>
+        <div class="schedule-list" id="scheduleList"></div>
+      </section>
+
+      <section class="results-panel" id="results">
+        <div class="section-shell">
+          <div class="section-heading light-heading">
+            <div><span class="section-kicker">RESULTS & GOALS</span><h2 data-i18n="resultsTitle">已经发生了什么</h2></div>
+            <p data-i18n="resultsIntro">查看已结束比赛、已确认的关键进球者，并跳转到 FIFA 官方比赛报告和集锦页面。</p>
+          </div>
+          <div class="results-grid" id="resultsGrid"></div>
+        </div>
+      </section>
+
+      <section class="section-shell content-section" id="teams">
+        <div class="section-heading">
+          <div>
+            <span class="section-kicker">48 TEAMS · 48 KEY PLAYERS</span>
+            <h2 data-i18n="teamsTitle">球队与核心球员</h2>
+            <p class="section-intro" data-i18n="teamsIntro">点击球队查看核心球员特点、模型数据和该队的完整赛程。</p>
+          </div>
+          <div class="team-tools">
+            <input id="teamSearch" type="search" data-i18n-placeholder="searchTeams" placeholder="搜索球队或球员…">
+            <select id="groupFilter" aria-label="Group filter"><option value="all" data-i18n="allGroups">全部小组</option></select>
           </div>
         </div>
-        <div class="match-grid" id="matchGrid"></div>
+        <div class="team-grid" id="teamGrid"></div>
       </section>
 
       <section class="dark-panel" id="predict">
         <div class="section-shell">
           <div class="section-heading light-heading">
-            <div><span class="section-kicker">PREDICTION LAB</span><h2>胜率不是答案，<br>是思考的起点。</h2></div>
-            <p>选择两支球队，查看透明的概率拆解。模型输出仅供娱乐，不构成投注或财务建议。</p>
+            <div><span class="section-kicker">EXPLAINABLE MODEL</span><h2 data-i18n-html="predictTitle">为什么它认为<br>这支球队会赢？</h2></div>
+            <p data-i18n="predictIntro">模型不是预言。它把综合实力、近期状态和排名信号转换为相对概率，并明确展示每项权重。</p>
           </div>
           <div class="lab-layout">
             <div class="lab-controls">
-              <label>主队<select id="homeTeamSelect"></select></label>
-              <button class="swap-button" id="swapTeams" type="button" aria-label="交换球队">⇄</button>
-              <label>客队<select id="awayTeamSelect"></select></label>
-              <button class="button button-primary" id="runAnalysis" type="button">生成分析</button>
+              <label><span data-i18n="homeTeam">主队</span><select id="homeTeamSelect"></select></label>
+              <button class="swap-button" id="swapTeams" type="button" aria-label="Swap teams">⇄</button>
+              <label><span data-i18n="awayTeam">客队</span><select id="awayTeamSelect"></select></label>
+              <button class="button button-primary" id="runAnalysis" type="button" data-i18n="runAnalysis">生成分析</button>
+              <button class="method-link" id="methodButton" type="button" data-i18n="readMethod">阅读完整方法说明 →</button>
             </div>
             <div class="analysis-card" id="analysisCard"></div>
           </div>
         </div>
       </section>
 
-      <section class="section-shell content-section" id="teams">
+      <section class="method-section section-shell content-section" id="method">
         <div class="section-heading">
-          <div><span class="section-kicker">48 NATIONS · ONE STAGE</span><h2>找到你的主队</h2></div>
-          <div class="team-tools">
-            <input id="teamSearch" type="search" placeholder="搜索球队或球星…" aria-label="搜索球队">
-            <select id="groupFilter" aria-label="按小组筛选"><option value="all">全部小组</option></select>
-          </div>
+          <div><span class="section-kicker">MODEL CARD</span><h2 data-i18n="methodTitle">模型如何工作</h2></div>
+          <p class="section-intro" data-i18n="methodIntro">这是一套透明的演示模型，不使用赔率，也不声称掌握伤病、首发或实时战术信息。</p>
         </div>
-        <div class="team-grid" id="teamGrid"></div>
-      </section>
-
-      <section class="community-panel">
-        <div class="section-shell community-layout">
-          <div>
-            <span class="section-kicker">FAN SIGNAL</span>
-            <h2>把你的声音<br>送进看台。</h2>
-            <p>选择球队并发送一句助威。内容仅保存在你的设备上，不上传服务器。</p>
-          </div>
-          <form class="cheer-form" id="cheerForm">
-            <select id="cheerTeam" aria-label="助威球队"></select>
-            <input id="cheerMessage" maxlength="42" placeholder="写一句助威，最多 42 字" required>
-            <button class="button button-primary" type="submit">发出助威</button>
-          </form>
-          <div class="cheer-wall" id="cheerWall" aria-live="polite"></div>
+        <div class="method-grid">
+          <article><b>72%</b><h3 data-i18n="strengthFactor">综合实力</h3><p data-i18n="strengthExplain">人工设定的球队实力指数，反映阵容深度、顶级球员和整体上限。</p></article>
+          <article><b>18%</b><h3 data-i18n="formFactor">近期状态</h3><p data-i18n="formExplain">由实力和排名生成的演示状态值；生产版本应接入近期正式比赛。</p></article>
+          <article><b>10%</b><h3 data-i18n="rankingFactor">世界排名</h3><p data-i18n="rankingExplain">排名差被限制在合理区间，避免单一指标压倒全部判断。</p></article>
+          <article><b>±</b><h3 data-i18n="uncertainty">不确定性</h3><p data-i18n="uncertaintyExplain">足球存在红牌、伤病、临场战术和随机波动，概率绝不是结果承诺。</p></article>
         </div>
       </section>
 
@@ -141,38 +153,38 @@
         <div class="game-card">
           <div class="game-copy">
             <span class="section-kicker">60-SECOND CHALLENGE</span>
-            <h2>点球压力赛</h2>
-            <p>守门员会读你的习惯。连续选择射门方向，看看你能在 5 轮中拿到几分。</p>
-            <div class="game-score"><span>本轮</span><b id="gameScore">0 / 5</b></div>
+            <h2 data-i18n="gameTitle">点球压力赛</h2>
+            <p data-i18n="gameIntro">守门员会读你的习惯。连续选择射门方向，看看你能在 5 轮中拿到几分。</p>
+            <div class="game-score"><span data-i18n="thisRound">本轮</span><b id="gameScore">0 / 5</b></div>
           </div>
           <div class="goal-area">
             <div class="goal">
               <div class="keeper" id="keeper">🧤</div>
-              <button type="button" data-shot="left" aria-label="射向左侧">左</button>
-              <button type="button" data-shot="center" aria-label="射向中路">中</button>
-              <button type="button" data-shot="right" aria-label="射向右侧">右</button>
+              <button type="button" data-shot="left" data-i18n-aria="shootLeft">Left</button>
+              <button type="button" data-shot="center" data-i18n-aria="shootCenter">Center</button>
+              <button type="button" data-shot="right" data-i18n-aria="shootRight">Right</button>
             </div>
-            <p id="gameMessage">选择一个方向开始</p>
-            <button class="text-button" id="resetGame" type="button">重新开始</button>
+            <p id="gameMessage" data-i18n="chooseDirection">选择一个方向开始</p>
+            <button class="text-button" id="resetGame" type="button" data-i18n="restart">重新开始</button>
           </div>
         </div>
-      </section>
-
-      <section class="section-shell trust-strip">
-        <div><span>01</span><b>透明概率</b><p>展示模型因素，不伪装成确定结果。</p></div>
-        <div><span>02</span><b>零真钱机制</b><p>积分不可购买、转让、提现或兑换。</p></div>
-        <div><span>03</span><b>隐私优先</b><p>互动数据默认只存储在本地设备。</p></div>
-        <div><span>04</span><b>可访问设计</b><p>键盘可操作，并兼顾减少动态效果设置。</p></div>
       </section>
     </main>
 
     <footer>
       <div class="section-shell footer-layout">
-        <div><a class="brand" href="#top"><span class="brand-mark">P26</span><span>PULSE26</span></a><p>为足球判断力而生的独立互动概念产品。</p></div>
-        <div><b>数据说明</b><p>赛事信息为 2026-06-13 演示快照。正式产品应接入授权实时数据源。</p></div>
-        <div><b>重要声明</b><p>非 FIFA 官方产品。无真钱、无奖品、无下注功能。</p></div>
+        <div><a class="brand" href="#top"><span class="brand-mark">P26</span><span>PULSE26</span></a><p data-i18n="footerTagline">为足球判断力而生的独立双语互动产品。</p></div>
+        <div><b data-i18n="dataNote">数据说明</b><p data-i18n="dataNoteBody">赛程来自 FIFA 官方 PDF，结果快照截至 2026-06-13 13:30 BST。生产版本需要授权实时数据源。</p></div>
+        <div><b data-i18n="disclaimer">重要声明</b><p data-i18n="disclaimerBody">非 FIFA 官方产品。无真钱、无奖品、无下注功能。官方报告链接归其权利人所有。</p></div>
       </div>
     </footer>
+
+    <div class="modal-backdrop" id="teamModal" hidden>
+      <section class="detail-modal" role="dialog" aria-modal="true" aria-labelledby="teamModalTitle">
+        <button class="modal-close" type="button" data-close-modal aria-label="Close">×</button>
+        <div id="teamModalContent"></div>
+      </section>
+    </div>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
     <script type="module" src="app.js"></script>
   </body>

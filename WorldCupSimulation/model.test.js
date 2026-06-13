@@ -2,6 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { teams } from "./data.js";
 import { calculateProbabilities, pointsForPrediction } from "./model.js";
+import { schedule } from "./schedule.js";
+import { playerProfiles } from "./profiles.js";
 
 test("probabilities always sum to 100", () => {
   for (const home of teams) {
@@ -26,4 +28,26 @@ test("prediction points only reward correct outcomes", () => {
   assert.equal(pointsForPrediction("home", "home"), 100);
   assert.equal(pointsForPrediction("draw", "draw"), 140);
   assert.equal(pointsForPrediction("away", "home"), 0);
+});
+
+test("schedule contains 104 matches split into 72 group and 32 knockout fixtures", () => {
+  assert.equal(schedule.length, 104);
+  assert.equal(schedule.filter((match) => match.stage === "Group stage").length, 72);
+  assert.equal(schedule.filter((match) => match.stage !== "Group stage").length, 32);
+});
+
+test("every team has three group-stage fixtures and a player profile", () => {
+  for (const team of teams) {
+    const fixtures = schedule.filter((match) =>
+      match.stage === "Group stage" && (match.home === team.name || match.away === team.name)
+    );
+    assert.equal(fixtures.length, 3, `${team.name} should have three group matches`);
+    assert.ok(playerProfiles[team.name]?.bioEn);
+    assert.ok(playerProfiles[team.name]?.bioZh);
+  }
+});
+
+test("finished match accounting matches the data snapshot", () => {
+  assert.equal(schedule.filter((match) => match.status === "finished").length, 4);
+  assert.equal(schedule.filter((match) => match.status === "upcoming").length, 100);
 });
