@@ -12,6 +12,21 @@ This repo is where those experiments live. I call it "vibe coding" on purpose. I
 
 ## Projects
 
+### ⚽ WorldCupSimulation: Pulse26
+
+**▶ [Open the interactive World Cup experience →](https://taofeng-sketch.github.io/taofeng_vibe_coding/WorldCupSimulation/)**
+
+A mobile-first 2026 World Cup fan experience with all 48 teams, a three-day match center, explainable win probabilities, free points-based predictions, a local fan wall, and a five-round penalty challenge.
+
+- Built with vanilla HTML, CSS, and JavaScript with **zero build step**.
+- Predictions use free, non-transferable points only: no deposits, prizes, cash-out, or real-money betting.
+- Team support, predictions, cheers, and game progress stay in the browser through `localStorage`.
+- Includes automated probability-model tests, a QA process, product evaluation, and research notes.
+
+Code and project documentation are in **[`WorldCupSimulation/`](./WorldCupSimulation)**.
+
+---
+
 ### 🦑 Squid Technologies: Performance Review Climb
 
 **▶ [Play it in your browser →](https://taofeng-sketch.github.io/taofeng_vibe_coding/squid-climb/)**

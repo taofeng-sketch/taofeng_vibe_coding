@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Pulse26 - 世界杯球队、赛程、胜率分析与免费积分预测体验。">
+    <title>Pulse26 | 世界杯互动主场</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div class="ambient ambient-one"></div>
+    <div class="ambient ambient-two"></div>
+    <header class="site-header">
+      <a class="brand" href="#top" aria-label="Pulse26 首页">
+        <span class="brand-mark">P26</span>
+        <span>PULSE<span class="accent-text">26</span></span>
+      </a>
+      <nav class="desktop-nav" aria-label="主导航">
+        <a class="active" href="#matches">比赛</a>
+        <a href="#teams">球队</a>
+        <a href="#predict">预测场</a>
+        <a href="#game">小游戏</a>
+      </nav>
+      <button class="profile-chip" id="profileButton" type="button">
+        <span class="status-dot"></span>
+        <span><b id="userPoints">1,250</b> PTS</span>
+      </button>
+    </header>
+
+    <main id="top">
+      <section class="hero section-shell">
+        <div class="hero-copy">
+          <div class="eyebrow"><span class="live-dot"></span> 2026 世界杯进行中 · 数据演示快照</div>
+          <h1>不只是看球。<br><span>让每一次判断</span><br>都有回声。</h1>
+          <p class="hero-description">选定你的主队，拆解每场对决，用免费积分留下预测。没有真钱、没有提现，只有足球判断力。</p>
+          <div class="hero-actions">
+            <a class="button button-primary" href="#predict">开始预测 <span>→</span></a>
+            <a class="button button-ghost" href="#teams">探索 48 支球队</a>
+          </div>
+          <div class="hero-stats">
+            <div><strong>48</strong><span>参赛球队</span></div>
+            <div><strong>104</strong><span>全部比赛</span></div>
+            <div><strong id="supporterCount">2.8M</strong><span>虚拟助威值</span></div>
+          </div>
+        </div>
+        <div class="hero-visual" aria-label="今日焦点赛">
+          <div class="orbit orbit-one"></div>
+          <div class="orbit orbit-two"></div>
+          <div class="match-poster">
+            <div class="poster-top">
+              <span>今日焦点</span>
+              <span>GROUP C · NEW YORK</span>
+            </div>
+            <div class="poster-teams">
+              <div class="poster-team"><span class="giant-flag">🇧🇷</span><b>BRA</b><small>巴西</small></div>
+              <div class="versus"><span>18:00</span><b>VS</b><small>当地时间</small></div>
+              <div class="poster-team"><span class="giant-flag">🇲🇦</span><b>MAR</b><small>摩洛哥</small></div>
+            </div>
+            <div class="probability-preview">
+              <div class="probability-labels"><span>巴西 52%</span><span>平 27%</span><span>摩洛哥 21%</span></div>
+              <div class="probability-track"><i style="width:52%"></i><i style="width:27%"></i><i style="width:21%"></i></div>
+              <small>模型基于球队强度、近期状态与赛场因素的演示估算</small>
+            </div>
+          </div>
+          <div class="floating-card float-left"><span>🔥</span><div><b>86%</b><small>球迷热度</small></div></div>
+          <div class="floating-card float-right"><span>↗</span><div><b>+12.4K</b><small>今日助威</small></div></div>
+        </div>
+      </section>
+
+      <section class="ticker" aria-label="赛事快讯">
+        <div class="ticker-label">LIVE PULSE</div>
+        <div class="ticker-track">
+          <span><b>FT</b> 🇲🇽 墨西哥 <strong>2 — 0</strong> 南非 🇿🇦</span>
+          <span><b>FT</b> 🇺🇸 美国 <strong>4 — 1</strong> 巴拉圭 🇵🇾</span>
+          <span><b>FT</b> 🇨🇦 加拿大 <strong>1 — 1</strong> 波黑 🇧🇦</span>
+          <span><b>NEXT</b> 🇧🇷 巴西 <strong>VS</strong> 摩洛哥 🇲🇦</span>
+        </div>
+      </section>
+
+      <section class="section-shell content-section" id="matches">
+        <div class="section-heading">
+          <div><span class="section-kicker">MATCH CENTER</span><h2>比赛脉搏</h2></div>
+          <div class="date-tabs" role="tablist" aria-label="比赛日期">
+            <button type="button" data-day="yesterday">昨日</button>
+            <button class="active" type="button" data-day="today">今日 <span>13 JUN</span></button>
+            <button type="button" data-day="tomorrow">明日</button>
+          </div>
+        </div>
+        <div class="match-grid" id="matchGrid"></div>
+      </section>
+
+      <section class="dark-panel" id="predict">
+        <div class="section-shell">
+          <div class="section-heading light-heading">
+            <div><span class="section-kicker">PREDICTION LAB</span><h2>胜率不是答案，<br>是思考的起点。</h2></div>
+            <p>选择两支球队，查看透明的概率拆解。模型输出仅供娱乐，不构成投注或财务建议。</p>
+          </div>
+          <div class="lab-layout">
+            <div class="lab-controls">
+              <label>主队<select id="homeTeamSelect"></select></label>
+              <button class="swap-button" id="swapTeams" type="button" aria-label="交换球队">⇄</button>
+              <label>客队<select id="awayTeamSelect"></select></label>
+              <button class="button button-primary" id="runAnalysis" type="button">生成分析</button>
+            </div>
+            <div class="analysis-card" id="analysisCard"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section-shell content-section" id="teams">
+        <div class="section-heading">
+          <div><span class="section-kicker">48 NATIONS · ONE STAGE</span><h2>找到你的主队</h2></div>
+          <div class="team-tools">
+            <input id="teamSearch" type="search" placeholder="搜索球队或球星…" aria-label="搜索球队">
+            <select id="groupFilter" aria-label="按小组筛选"><option value="all">全部小组</option></select>
+          </div>
+        </div>
+        <div class="team-grid" id="teamGrid"></div>
+      </section>
+
+      <section class="community-panel">
+        <div class="section-shell community-layout">
+          <div>
+            <span class="section-kicker">FAN SIGNAL</span>
+            <h2>把你的声音<br>送进看台。</h2>
+            <p>选择球队并发送一句助威。内容仅保存在你的设备上，不上传服务器。</p>
+          </div>
+          <form class="cheer-form" id="cheerForm">
+            <select id="cheerTeam" aria-label="助威球队"></select>
+            <input id="cheerMessage" maxlength="42" placeholder="写一句助威，最多 42 字" required>
+            <button class="button button-primary" type="submit">发出助威</button>
+          </form>
+          <div class="cheer-wall" id="cheerWall" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <section class="section-shell content-section game-section" id="game">
+        <div class="game-card">
+          <div class="game-copy">
+            <span class="section-kicker">60-SECOND CHALLENGE</span>
+            <h2>点球压力赛</h2>
+            <p>守门员会读你的习惯。连续选择射门方向，看看你能在 5 轮中拿到几分。</p>
+            <div class="game-score"><span>本轮</span><b id="gameScore">0 / 5</b></div>
+          </div>
+          <div class="goal-area">
+            <div class="goal">
+              <div class="keeper" id="keeper">🧤</div>
+              <button type="button" data-shot="left" aria-label="射向左侧">左</button>
+              <button type="button" data-shot="center" aria-label="射向中路">中</button>
+              <button type="button" data-shot="right" aria-label="射向右侧">右</button>
+            </div>
+            <p id="gameMessage">选择一个方向开始</p>
+            <button class="text-button" id="resetGame" type="button">重新开始</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="section-shell trust-strip">
+        <div><span>01</span><b>透明概率</b><p>展示模型因素，不伪装成确定结果。</p></div>
+        <div><span>02</span><b>零真钱机制</b><p>积分不可购买、转让、提现或兑换。</p></div>
+        <div><span>03</span><b>隐私优先</b><p>互动数据默认只存储在本地设备。</p></div>
+        <div><span>04</span><b>可访问设计</b><p>键盘可操作，并兼顾减少动态效果设置。</p></div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="section-shell footer-layout">
+        <div><a class="brand" href="#top"><span class="brand-mark">P26</span><span>PULSE26</span></a><p>为足球判断力而生的独立互动概念产品。</p></div>
+        <div><b>数据说明</b><p>赛事信息为 2026-06-13 演示快照。正式产品应接入授权实时数据源。</p></div>
+        <div><b>重要声明</b><p>非 FIFA 官方产品。无真钱、无奖品、无下注功能。</p></div>
+      </div>
+    </footer>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script type="module" src="app.js"></script>
+  </body>
+</html>

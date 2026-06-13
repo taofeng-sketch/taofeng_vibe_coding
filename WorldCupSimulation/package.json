@@ -1,0 +1,11 @@
+{
+  "name": "world-cup-simulation",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node server.mjs",
+    "test": "node --test",
+    "check": "node --check app.js && node --check data.js && node --check model.js && node --check server.mjs"
+  }
+}
