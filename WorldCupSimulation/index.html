@@ -37,17 +37,17 @@
     <main id="top">
       <section class="hero section-shell">
         <div class="hero-copy">
-          <div class="eyebrow"><span class="live-dot"></span><span id="snapshotBadge" data-i18n="snapshotBadge">2026 世界杯 · 每日数据快照</span></div>
-          <h1 data-i18n-html="heroTitle">不只是看球。<br><span>看懂每场对决，</span><br>规划你的世界杯。</h1>
-          <p class="hero-description" data-i18n="heroDescription">完整赛程、球队核心、已完赛进球与可解释胜率，全部放在一个中英双语界面里。</p>
+          <div class="eyebrow"><span class="live-dot"></span><span id="snapshotBadge" data-i18n="snapshotBadge">World Cup 2026 · four-hour data snapshot</span></div>
+          <h1 data-i18n-html="heroTitle">Do more than watch.<br><span>Understand every matchup,</span><br>plan your World Cup.</h1>
+          <p class="hero-description" data-i18n="heroDescription">The complete schedule, key players, finished-match goals and explainable probabilities in one bilingual experience.</p>
           <div class="hero-actions">
-            <a class="button button-primary" href="#calendar"><span data-i18n="browseSchedule">浏览完整赛程</span><span>→</span></a>
-            <a class="button button-ghost" href="#teams" data-i18n="exploreTeams">探索 48 支球队</a>
+            <a class="button button-primary" href="#calendar"><span data-i18n="browseSchedule">Browse full schedule</span><span>→</span></a>
+            <a class="button button-ghost" href="#teams" data-i18n="exploreTeams">Explore all 48 teams</a>
           </div>
           <div class="hero-stats">
-            <div><strong id="totalMatches">104</strong><span data-i18n="allMatches">全部比赛</span></div>
-            <div><strong id="finishedMatches">4</strong><span data-i18n="finished">已结束</span></div>
-            <div><strong id="upcomingMatches">100</strong><span data-i18n="upcoming">未开始</span></div>
+            <div><strong id="totalMatches">104</strong><span data-i18n="allMatches">All matches</span></div>
+            <div><strong id="finishedMatches">4</strong><span data-i18n="finished">Finished</span></div>
+            <div><strong id="upcomingMatches">100</strong><span data-i18n="upcoming">Upcoming</span></div>
           </div>
         </div>
         <div class="hero-visual" id="heroMatch" aria-label="Featured match"></div>
@@ -55,12 +55,12 @@
 
       <section class="snapshot-strip">
         <div class="section-shell snapshot-grid">
-          <div><span data-i18n="dataAsOf">数据截至</span><b id="snapshotTime">—</b></div>
-          <div><span data-i18n="liveNow">正在进行</span><b id="liveMatches">0</b></div>
-          <div><span data-i18n="groupMatches">小组赛</span><b>72</b></div>
-          <div><span data-i18n="knockoutMatches">淘汰赛</span><b>32</b></div>
+          <div><span data-i18n="dataAsOf">Data as of</span><b id="snapshotTime">—</b></div>
+          <div><span data-i18n="liveNow">Live now</span><b id="liveMatches">0</b></div>
+          <div><span data-i18n="groupMatches">Group matches</span><b>72</b></div>
+          <div><span data-i18n="knockoutMatches">Knockout matches</span><b>32</b></div>
           <a href="https://digitalhub.fifa.com/m/1be9ce37eb98fcc5/original/FWC26-Match-Schedule_English.pdf" target="_blank" rel="noreferrer">
-            <span data-i18n="officialSource">官方来源</span><b>FIFA PDF ↗</b>
+            <span data-i18n="officialSource">Official source</span><b>FIFA PDF ↗</b>
           </a>
         </div>
       </section>
@@ -69,10 +69,10 @@
         <div class="section-heading">
           <div>
             <span class="section-kicker">104 MATCH CALENDAR</span>
-            <h2 data-i18n="calendarTitle">Complete match calendar</h2>
-            <p class="section-intro" data-i18n="calendarIntro">Kick-off times automatically use your local time zone. Choose a viewing region to see confirmed local broadcasters.</p>
+            <h2 data-i18n="calendarTitle">Today's matches</h2>
+            <p class="section-intro" data-i18n="calendarIntro">Starts with today's fixtures in your local time. If today has no games, it moves to the next match day automatically.</p>
           </div>
-          <div class="calendar-summary"><b id="visibleMatchCount">104</b><span data-i18n="matchesShown">场比赛显示中</span></div>
+          <div class="calendar-summary"><b id="visibleMatchCount">104</b><span data-i18n="matchesShown">matches shown</span></div>
         </div>
         <div class="viewing-controls" aria-label="Viewing region and time zone">
           <label>
@@ -89,17 +89,17 @@
         <div class="calendar-days" id="calendarDays" aria-label="Match dates"></div>
         <div class="schedule-tools">
           <select id="stageFilter" aria-label="Stage filter">
-            <option value="all" data-i18n="allStages">全部阶段</option>
-            <option value="Group stage" data-i18n="groupStage">小组赛</option>
-            <option value="knockout" data-i18n="knockoutStage">淘汰赛</option>
+            <option value="all" data-i18n="allStages">All stages</option>
+            <option value="Group stage" data-i18n="groupStage">Group stage</option>
+            <option value="knockout" data-i18n="knockoutStage">Knockout stage</option>
           </select>
           <select id="statusFilter" aria-label="Status filter">
-            <option value="all" data-i18n="allStatuses">全部状态</option>
-            <option value="finished" data-i18n="finished">已结束</option>
-            <option value="upcoming" data-i18n="upcoming">未开始</option>
+            <option value="all" data-i18n="allStatuses">All statuses</option>
+            <option value="finished" data-i18n="finished">Finished</option>
+            <option value="upcoming" data-i18n="upcoming">Upcoming</option>
           </select>
-          <input id="scheduleSearch" type="search" data-i18n-placeholder="searchSchedule" placeholder="搜索球队或比赛城市…">
-          <button class="button button-dark" id="resetSchedule" type="button" data-i18n="resetFilters">重置筛选</button>
+          <input id="scheduleSearch" type="search" data-i18n-placeholder="searchSchedule" placeholder="Search team or host city…">
+          <button class="button button-dark" id="resetSchedule" type="button" data-i18n="resetFilters">Reset filters</button>
         </div>
         <div class="schedule-list" id="scheduleList"></div>
       </section>
@@ -107,8 +107,8 @@
       <section class="results-panel" id="results">
         <div class="section-shell">
           <div class="section-heading light-heading">
-            <div><span class="section-kicker">RESULTS & GOALS</span><h2 data-i18n="resultsTitle">已经发生了什么</h2></div>
-            <p data-i18n="resultsIntro">查看已结束比赛、已确认的关键进球者，并跳转到 FIFA 官方比赛报告和集锦页面。</p>
+            <div><span class="section-kicker">RESULTS & GOALS</span><h2 data-i18n="resultsTitle">What has happened</h2></div>
+            <p data-i18n="resultsIntro">Review finished matches and confirmed key scorers, then open the official report and highlights page.</p>
           </div>
           <div class="results-grid" id="resultsGrid"></div>
         </div>
@@ -118,12 +118,12 @@
         <div class="section-heading">
           <div>
             <span class="section-kicker">48 TEAMS · 48 KEY PLAYERS</span>
-            <h2 data-i18n="teamsTitle">球队与核心球员</h2>
-            <p class="section-intro" data-i18n="teamsIntro">点击球队查看核心球员特点、模型数据和该队的完整赛程。</p>
+            <h2 data-i18n="teamsTitle">Teams and key players</h2>
+            <p class="section-intro" data-i18n="teamsIntro">Open a team to see its key player, model signals and complete tournament schedule.</p>
           </div>
           <div class="team-tools">
-            <input id="teamSearch" type="search" data-i18n-placeholder="searchTeams" placeholder="搜索球队或球员…">
-            <select id="groupFilter" aria-label="Group filter"><option value="all" data-i18n="allGroups">全部小组</option></select>
+            <input id="teamSearch" type="search" data-i18n-placeholder="searchTeams" placeholder="Search team or player…">
+            <select id="groupFilter" aria-label="Group filter"><option value="all" data-i18n="allGroups">All groups</option></select>
           </div>
         </div>
         <div class="team-grid" id="teamGrid"></div>
@@ -132,16 +132,16 @@
       <section class="dark-panel" id="predict">
         <div class="section-shell">
           <div class="section-heading light-heading">
-            <div><span class="section-kicker">EXPLAINABLE MODEL</span><h2 data-i18n-html="predictTitle">为什么它认为<br>这支球队会赢？</h2></div>
-            <p data-i18n="predictIntro">模型不是预言。它把综合实力、近期状态和排名信号转换为相对概率，并明确展示每项权重。</p>
+            <div><span class="section-kicker">EXPLAINABLE MODEL</span><h2 data-i18n-html="predictTitle">Why does the model think<br>this team will win?</h2></div>
+            <p data-i18n="predictIntro">The model is not a prophecy. It converts team strength, form and ranking signals into relative probabilities and shows every weight.</p>
           </div>
           <div class="lab-layout">
             <div class="lab-controls">
-              <label><span data-i18n="homeTeam">主队</span><select id="homeTeamSelect"></select></label>
+              <label><span data-i18n="homeTeam">Home team</span><select id="homeTeamSelect"></select></label>
               <button class="swap-button" id="swapTeams" type="button" aria-label="Swap teams">⇄</button>
-              <label><span data-i18n="awayTeam">客队</span><select id="awayTeamSelect"></select></label>
-              <button class="button button-primary" id="runAnalysis" type="button" data-i18n="runAnalysis">生成分析</button>
-              <button class="method-link" id="methodButton" type="button" data-i18n="readMethod">阅读完整方法说明 →</button>
+              <label><span data-i18n="awayTeam">Away team</span><select id="awayTeamSelect"></select></label>
+              <button class="button button-primary" id="runAnalysis" type="button" data-i18n="runAnalysis">Run analysis</button>
+              <button class="method-link" id="methodButton" type="button" data-i18n="readMethod">Read the full method →</button>
             </div>
             <div class="analysis-card" id="analysisCard"></div>
           </div>
@@ -150,14 +150,14 @@
 
       <section class="method-section section-shell content-section" id="method">
         <div class="section-heading">
-          <div><span class="section-kicker">MODEL CARD</span><h2 data-i18n="methodTitle">模型如何工作</h2></div>
-          <p class="section-intro" data-i18n="methodIntro">这是一套透明的演示模型，不使用赔率，也不声称掌握伤病、首发或实时战术信息。</p>
+          <div><span class="section-kicker">MODEL CARD</span><h2 data-i18n="methodTitle">How the model works</h2></div>
+          <p class="section-intro" data-i18n="methodIntro">This is a transparent demonstration model. It does not use betting odds or claim access to injuries, lineups or live tactical information.</p>
         </div>
         <div class="method-grid">
-          <article><b>72%</b><h3 data-i18n="strengthFactor">综合实力</h3><p data-i18n="strengthExplain">人工设定的球队实力指数，反映阵容深度、顶级球员和整体上限。</p></article>
-          <article><b>18%</b><h3 data-i18n="formFactor">近期状态</h3><p data-i18n="formExplain">由实力和排名生成的演示状态值；生产版本应接入近期正式比赛。</p></article>
-          <article><b>10%</b><h3 data-i18n="rankingFactor">世界排名</h3><p data-i18n="rankingExplain">排名差被限制在合理区间，避免单一指标压倒全部判断。</p></article>
-          <article><b>±</b><h3 data-i18n="uncertainty">不确定性</h3><p data-i18n="uncertaintyExplain">足球存在红牌、伤病、临场战术和随机波动，概率绝不是结果承诺。</p></article>
+          <article><b>72%</b><h3 data-i18n="strengthFactor">Team strength</h3><p data-i18n="strengthExplain">An editorial power index reflecting squad depth, elite talent and overall ceiling.</p></article>
+          <article><b>18%</b><h3 data-i18n="formFactor">Recent form</h3><p data-i18n="formExplain">A demo form signal derived from strength and ranking; production should use recent competitive matches.</p></article>
+          <article><b>10%</b><h3 data-i18n="rankingFactor">World ranking</h3><p data-i18n="rankingExplain">The ranking gap is capped so one metric cannot overwhelm the entire estimate.</p></article>
+          <article><b>±</b><h3 data-i18n="uncertainty">Uncertainty</h3><p data-i18n="uncertaintyExplain">Red cards, injuries, tactics and random variation matter. Probability is never a result guarantee.</p></article>
         </div>
       </section>
 
@@ -165,9 +165,9 @@
         <div class="game-card">
           <div class="game-copy">
             <span class="section-kicker">60-SECOND CHALLENGE</span>
-            <h2 data-i18n="gameTitle">点球压力赛</h2>
-            <p data-i18n="gameIntro">守门员会读你的习惯。连续选择射门方向，看看你能在 5 轮中拿到几分。</p>
-            <div class="game-score"><span data-i18n="thisRound">本轮</span><b id="gameScore">0 / 5</b></div>
+            <h2 data-i18n="gameTitle">Penalty pressure</h2>
+            <p data-i18n="gameIntro">The goalkeeper learns your habits. Pick a direction for five rounds and see how many you score.</p>
+            <div class="game-score"><span data-i18n="thisRound">This round</span><b id="gameScore">0 / 5</b></div>
           </div>
           <div class="goal-area">
             <div class="goal">
@@ -176,8 +176,8 @@
               <button type="button" data-shot="center" data-i18n-aria="shootCenter">Center</button>
               <button type="button" data-shot="right" data-i18n-aria="shootRight">Right</button>
             </div>
-            <p id="gameMessage" data-i18n="chooseDirection">选择一个方向开始</p>
-            <button class="text-button" id="resetGame" type="button" data-i18n="restart">重新开始</button>
+            <p id="gameMessage" data-i18n="chooseDirection">Choose a direction to begin</p>
+            <button class="text-button" id="resetGame" type="button" data-i18n="restart">Restart</button>
           </div>
         </div>
       </section>
@@ -185,9 +185,9 @@
 
     <footer>
       <div class="section-shell footer-layout">
-        <div><a class="brand" href="#top"><span class="brand-mark">P26</span><span>PULSE26</span></a><p data-i18n="footerTagline">为足球判断力而生的独立双语互动产品。</p></div>
-        <div><b data-i18n="dataNote">数据说明</b><p data-i18n="dataNoteBody">赛程来自 FIFA 官方 PDF；比赛状态由每日自动任务刷新。页面不是秒级直播。</p></div>
-        <div><b data-i18n="disclaimer">重要声明</b><p data-i18n="disclaimerBody">非 FIFA 官方产品。无真钱、无奖品、无下注功能。官方报告链接归其权利人所有。</p></div>
+        <div><a class="brand" href="#top"><span class="brand-mark">P26</span><span>PULSE26</span></a><p data-i18n="footerTagline">An independent bilingual experience built for football judgement.</p></div>
+        <div><b data-i18n="dataNote">Data note</b><p data-i18n="dataNoteBody">Schedule from FIFA's official PDF. Match status refreshes every four hours from a public scoreboard source; this is not a second-by-second live feed.</p></div>
+        <div><b data-i18n="disclaimer">Important</b><p data-i18n="disclaimerBody">Not an official FIFA product. No real money, prizes or betting. Official report links belong to their rights holders.</p></div>
       </div>
     </footer>
 

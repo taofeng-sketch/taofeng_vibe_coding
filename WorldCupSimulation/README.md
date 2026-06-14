@@ -27,7 +27,7 @@
 - 积分不可购买、转让、提现或兑换，不包含真钱赌博功能。
 - 概率仅为娱乐性模型估算，不构成投注或财务建议。
 - 用户互动默认保存在浏览器 `localStorage`，不会上传服务器。
-- 赛程来自 FIFA 官方 PDF；结果信息是 `2026-06-13 13:30 BST` 的演示快照，正式产品应接入授权实时数据源。
+- 赛程来自 FIFA 官方 PDF；比赛状态由四小时自动快照更新，正式产品仍应接入授权实时数据源。
 - 本项目并非 FIFA 官方产品，也不使用球队徽章或受保护赛事标识。
 
 ## 本地运行
@@ -55,9 +55,9 @@ npm run check
 
 项目位于 `taofeng_vibe_coding/WorldCupSimulation/`。推送到 `main` 后，仓库根目录的 GitHub Pages 会自动发布该子目录；GitHub Actions 同时运行项目 QA。它是纯静态网页，不需要构建步骤或后端服务。
 
-## 每日数据刷新
+## 每四小时数据刷新
 
-GitHub Actions 工作流 `WorldCupSimulation Daily Refresh` 每天在伦敦时间 **13:30** 自动运行：
+GitHub Actions 工作流 `WorldCupSimulation Four-Hour Refresh` 每天按伦敦时间在 **01:30、05:30、09:30、13:30、17:30、21:30** 自动运行：
 
 1. 从公开的 ESPN World Cup scoreboard JSON 获取 104 场最新状态。
 2. 映射比赛、比分、进行状态、进球事件、报告和集锦链接。
@@ -65,4 +65,4 @@ GitHub Actions 工作流 `WorldCupSimulation Daily Refresh` 每天在伦敦时�
 4. 运行全部测试和语法检查。
 5. 仅在校验通过后更新 `live-snapshot.js`，自动提交并触发 GitHub Pages 发布。
 
-定时任务只在 `2026-06-11` 至 `2026-07-20` 的赛事窗口内写入数据，也可以从 GitHub Actions 页面手动触发。页面属于每日快照，不是秒级实时比分服务。
+定时任务只在 `2026-06-11` 至 `2026-07-20` 的赛事窗口内写入数据，也可以从 GitHub Actions 页面手动触发。页面属于四小时快照，不是秒级实时比分服务。

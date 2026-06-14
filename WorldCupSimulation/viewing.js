@@ -102,11 +102,33 @@ export function matchDateTime(match) {
 }
 
 export function dateKeyForMatch(match, timeZone) {
+  return dateKeyForInstant(matchDateTime(match), timeZone);
+}
+
+export function dateKeyForInstant(instant, timeZone) {
   const parts = new Intl.DateTimeFormat("en-CA", {
     year: "numeric", month: "2-digit", day: "2-digit", timeZone
-  }).formatToParts(matchDateTime(match));
+  }).formatToParts(new Date(instant));
   const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
   return `${values.year}-${values.month}-${values.day}`;
+}
+
+export function nextMatch(matches, now = new Date()) {
+  const current = new Date(now);
+  return [...matches]
+    .filter((match) => match.status !== "finished" && matchDateTime(match) >= current)
+    .sort((left, right) => matchDateTime(left) - matchDateTime(right))[0]
+    || [...matches]
+      .filter((match) => match.status !== "finished")
+      .sort((left, right) => matchDateTime(left) - matchDateTime(right))[0]
+    || matches[matches.length - 1];
+}
+
+export function defaultScheduleDate(matches, timeZone, now = new Date()) {
+  const today = dateKeyForInstant(now, timeZone);
+  if (matches.some((match) => dateKeyForMatch(match, timeZone) === today)) return today;
+  const upcoming = nextMatch(matches, now);
+  return upcoming ? dateKeyForMatch(upcoming, timeZone) : "all";
 }
 
 export function formattedMatchTime(match, timeZone, locale = "en-GB") {

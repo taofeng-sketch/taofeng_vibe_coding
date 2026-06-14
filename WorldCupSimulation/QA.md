@@ -44,6 +44,8 @@
 - Upcoming provider scores must not appear as completed `0–0` results.
 - A partial or malformed provider response must fail without changing `live-snapshot.js`.
 - Default language for a new browser profile is English.
+- Initial schedule view uses the viewer's local match day, falling forward to the next match day when needed.
+- Hero and initial prediction use the next fixture by kick-off time, not the first stale `upcoming` record.
 - Region detection uses browser time zone only and never requests precise geolocation.
 
 ## Data QA

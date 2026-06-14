@@ -5,22 +5,24 @@ import { calculateProbabilities } from "./model.js";
 import {
   broadcasterFor,
   dateKeyForMatch,
+  defaultScheduleDate,
   detectViewingRegion,
   formattedMatchTime,
   matchDateTime,
+  nextMatch,
   viewingRegions
 } from "./viewing.js";
 
 const copy = {
   zh: {
     navSchedule: "赛程", navResults: "赛果", navTeams: "球队", navPredict: "预测",
-    snapshotBadge: "2026 世界杯 · 每日数据快照",
+    snapshotBadge: "2026 世界杯 · 每四小时数据快照",
     heroTitle: "不只是看球。<br><span>看懂每场对决，</span><br>规划你的世界杯。",
     heroDescription: "完整赛程、球队核心、已完赛进球与可解释胜率，全部放在一个中英双语界面里。",
     browseSchedule: "浏览完整赛程", exploreTeams: "探索 48 支球队",
     allMatches: "全部比赛", finished: "已结束", upcoming: "未开始", live: "进行中",
     dataAsOf: "数据截至", liveNow: "正在进行", groupMatches: "小组赛", knockoutMatches: "淘汰赛", officialSource: "官方来源",
-    calendarTitle: "完整比赛日历", calendarIntro: "开球时间会自动转换为你的当地时区。选择观赛地区，还可以查看已确认的当地转播入口。",
+    calendarTitle: "今天的比赛", calendarIntro: "默认显示你当地今天的赛程；当天无比赛时自动跳到下一比赛日。开球时间使用你的当地时区。",
     watchRegion: "观赛地区", detectedRegion: "当前选择的观赛地区", localTime: "当地时间", useMyLocation: "使用我的地区",
     whereToWatch: "在哪里看", listingPending: "请查看转播方的具体节目表",
     rightsUnverified: "当地转播信息尚未可靠确认", broadcasterNote: "转播权和节目表可能变化，观看链接通常仅在授权地区可用。",
@@ -40,7 +42,7 @@ const copy = {
     thisRound: "本轮", chooseDirection: "选择一个方向开始", restart: "重新开始",
     shootLeft: "射向左侧", shootCenter: "射向中路", shootRight: "射向右侧",
     footerTagline: "为足球判断力而生的独立双语互动产品。",
-    dataNote: "数据说明", dataNoteBody: "赛程来自 FIFA 官方 PDF；比赛状态由每日自动任务从公开比分数据源刷新。页面不是秒级直播。",
+    dataNote: "数据说明", dataNoteBody: "赛程来自 FIFA 官方 PDF；比赛状态由自动任务每四小时从公开比分数据源刷新。页面不是秒级直播。",
     disclaimer: "重要声明", disclaimerBody: "非 FIFA 官方产品。无真钱、无奖品、无下注功能。官方报告链接归其权利人所有。",
     today: "今天", allDates: "全部日期", match: "比赛", matches: "场",
     matchNo: "第", group: "组", londonTime: "伦敦时间", noMatches: "没有符合筛选条件的比赛。",
@@ -59,13 +61,13 @@ const copy = {
   },
   en: {
     navSchedule: "Schedule", navResults: "Results", navTeams: "Teams", navPredict: "Predict",
-    snapshotBadge: "World Cup 2026 · daily data snapshot",
+    snapshotBadge: "World Cup 2026 · four-hour data snapshot",
     heroTitle: "Do more than watch.<br><span>Understand every matchup,</span><br>plan your World Cup.",
     heroDescription: "The complete schedule, key players, finished-match goals and explainable probabilities in one bilingual experience.",
     browseSchedule: "Browse full schedule", exploreTeams: "Explore all 48 teams",
     allMatches: "All matches", finished: "Finished", upcoming: "Upcoming", live: "Live",
     dataAsOf: "Data as of", liveNow: "Live now", groupMatches: "Group matches", knockoutMatches: "Knockout matches", officialSource: "Official source",
-    calendarTitle: "Complete match calendar", calendarIntro: "Kick-off times automatically use your local time zone. Choose a viewing region to see confirmed local broadcasters.",
+    calendarTitle: "Today's matches", calendarIntro: "Starts with today's fixtures in your local time. If today has no games, it moves to the next match day automatically.",
     watchRegion: "Watch in", detectedRegion: "Selected viewing region", localTime: "Local time", useMyLocation: "Use my region",
     whereToWatch: "Where to watch", listingPending: "Check the broadcaster's listing for this match",
     rightsUnverified: "Reliable local broadcast information is not confirmed yet", broadcasterNote: "Rights and listings can change. Streams are generally limited to their licensed region.",
@@ -85,7 +87,7 @@ const copy = {
     thisRound: "This round", chooseDirection: "Choose a direction to begin", restart: "Restart",
     shootLeft: "Shoot left", shootCenter: "Shoot centre", shootRight: "Shoot right",
     footerTagline: "An independent bilingual experience built for football judgement.",
-    dataNote: "Data note", dataNoteBody: "Schedule from FIFA's official PDF. Match status is refreshed daily from a public scoreboard source; this is not a second-by-second live feed.",
+    dataNote: "Data note", dataNoteBody: "Schedule from FIFA's official PDF. Match status refreshes every four hours from a public scoreboard source; this is not a second-by-second live feed.",
     disclaimer: "Important", disclaimerBody: "Not an official FIFA product. No real money, prizes or betting. Official report links belong to their rights holders.",
     today: "Today", allDates: "All dates", match: "match", matches: "matches",
     matchNo: "Match", group: "Group", londonTime: "London time", noMatches: "No matches fit these filters.",
@@ -111,12 +113,13 @@ const state = {
   points: Number(localStorage.getItem("pulse26-points") || 1250),
   supported: new Set(JSON.parse(localStorage.getItem("pulse26-supported") || "[]")),
   predictions: JSON.parse(localStorage.getItem("pulse26-predictions") || "{}"),
-  selectedDate: "all",
+  selectedDate: null,
   gameRound: 0,
   gameGoals: 0,
   openTeam: null
 };
 state.region ||= detectViewingRegion(state.browserTimeZone, navigator.language);
+state.selectedDate = defaultScheduleDate(schedule, state.browserTimeZone);
 
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
@@ -239,7 +242,7 @@ function renderViewingControls() {
 }
 
 function renderHero() {
-  const featured = schedule.find((match) => match.status === "upcoming" && getTeamByName(match.home) && getTeamByName(match.away));
+  const featured = nextMatch(schedule.filter((match) => getTeamByName(match.home) && getTeamByName(match.away)));
   const home = getTeamByName(featured.home);
   const away = getTeamByName(featured.away);
   const probability = calculateProbabilities(home, away);
@@ -408,8 +411,9 @@ function closeModal() {
 }
 
 function fillSelects(keepValues = false) {
-  const homeValue = keepValues ? $("#homeTeamSelect").value : getTeamByName("Brazil").id;
-  const awayValue = keepValues ? $("#awayTeamSelect").value : getTeamByName("Morocco").id;
+  const nextFixture = nextMatch(schedule.filter((match) => getTeamByName(match.home) && getTeamByName(match.away)));
+  const homeValue = keepValues && $("#homeTeamSelect").value ? $("#homeTeamSelect").value : getTeamByName(nextFixture.home).id;
+  const awayValue = keepValues && $("#awayTeamSelect").value ? $("#awayTeamSelect").value : getTeamByName(nextFixture.away).id;
   const options = teams.map((team) => `<option value="${team.id}">${team.flag} ${teamName(team)} · #${team.rank}</option>`).join("");
   $("#homeTeamSelect").innerHTML = options;
   $("#awayTeamSelect").innerHTML = options;
@@ -538,7 +542,7 @@ $("#stageFilter").addEventListener("change", renderSchedule);
 $("#statusFilter").addEventListener("change", renderSchedule);
 $("#scheduleSearch").addEventListener("input", renderSchedule);
 $("#resetSchedule").addEventListener("click", () => {
-  state.selectedDate = "all";
+  state.selectedDate = defaultScheduleDate(schedule, state.browserTimeZone);
   $("#stageFilter").value = "all";
   $("#statusFilter").value = "all";
   $("#scheduleSearch").value = "";

@@ -4,7 +4,14 @@ import { teams } from "./data.js";
 import { calculateProbabilities, pointsForPrediction } from "./model.js";
 import { schedule } from "./schedule.js";
 import { playerProfiles } from "./profiles.js";
-import { broadcasterFor, dateKeyForMatch, detectViewingRegion, formattedMatchTime } from "./viewing.js";
+import {
+  broadcasterFor,
+  dateKeyForMatch,
+  defaultScheduleDate,
+  detectViewingRegion,
+  formattedMatchTime,
+  nextMatch
+} from "./viewing.js";
 
 test("probabilities always sum to 100", () => {
   for (const home of teams) {
@@ -76,4 +83,22 @@ test("returns broadcaster links only for verified regions", () => {
   assert.match(broadcasterFor({ id: 6 }, "gb").label, /BBC One/);
   assert.equal(broadcasterFor({ id: 6 }, "cn").status, "unverified");
   assert.equal(broadcasterFor({ id: 6 }, "cn").providers.length, 0);
+});
+
+test("defaults the schedule to the viewer's local today or next match day", () => {
+  const fixtures = [
+    { startTime: "2026-06-14T01:00:00Z", status: "upcoming" },
+    { startTime: "2026-06-15T17:00:00Z", status: "upcoming" }
+  ];
+  assert.equal(defaultScheduleDate(fixtures, "Europe/London", "2026-06-14T12:00:00Z"), "2026-06-14");
+  assert.equal(defaultScheduleDate(fixtures, "Europe/London", "2026-06-13T12:00:00Z"), "2026-06-14");
+});
+
+test("selects the next fixture from start time instead of a stale status order", () => {
+  const fixtures = [
+    { id: 1, startTime: "2026-06-12T12:00:00Z", status: "upcoming" },
+    { id: 2, startTime: "2026-06-14T18:00:00Z", status: "upcoming" },
+    { id: 3, startTime: "2026-06-14T20:00:00Z", status: "upcoming" }
+  ];
+  assert.equal(nextMatch(fixtures, "2026-06-14T17:00:00Z").id, 2);
 });

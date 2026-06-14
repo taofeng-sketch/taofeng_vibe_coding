@@ -1,8 +1,8 @@
-name: WorldCupSimulation Daily Refresh
+name: WorldCupSimulation Four-Hour Refresh
 
 on:
   schedule:
-    - cron: "30 13 * * *"
+    - cron: "30 1,5,9,13,17,21 * * *"
       timezone: "Europe/London"
   workflow_dispatch:
 
@@ -10,7 +10,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: worldcup-daily-refresh
+  group: worldcup-four-hour-refresh
   cancel-in-progress: false
 
 jobs:
@@ -41,5 +41,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add live-snapshot.js
-          git commit -m "Update World Cup daily snapshot $(date -u +%F)"
+          git commit -m "Update World Cup snapshot $(date -u '+%F %H:%M UTC')"
           git push
