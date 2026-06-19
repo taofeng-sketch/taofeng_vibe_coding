@@ -12,6 +12,24 @@ This repo is where those experiments live. I call it "vibe coding" on purpose. I
 
 ## Projects
 
+### 🧬 HabitApp iOS: Longevity Habit OS
+
+A native SwiftUI iOS app for habits, recovery, protein tracking, and identity-based coaching.
+
+It combines daily habit check-ins, breakfast photo analysis, HealthKit integration, protein targets, Peter Attia-style longevity training pillars, Pro paywall scaffolding, habit packs, AI coach memory, and WidgetKit source files.
+
+<a href="./habitapp-ios">
+  <img src="./habitapp-ios/assets/screenshots/today.png" alt="HabitApp iOS preview" width="260">
+</a>
+
+- **Built as a real iOS app.** SwiftUI, SwiftData, HealthKit, StoreKit 2, WidgetKit source, Keychain, local notifications, and CloudKit-ready models.
+- **Designed around behavior change.** Tiny Habits anchors, identity tags, habit packs, recovery rituals, and weekly reviews.
+- **AI where it is useful.** Claude-powered breakfast photo analysis and coaching prompts, with fallback copy when Pro/API access is unavailable.
+
+Code, screenshots, setup notes, and validation details are in **[`habitapp-ios/`](./habitapp-ios)**.
+
+---
+
 ### ⚽ WorldCupSimulation: Pulse26
 
 **▶ [Open the interactive World Cup experience →](https://taofeng-sketch.github.io/taofeng_vibe_coding/WorldCupSimulation/)**
@@ -50,7 +68,7 @@ Code, design notes, and the honest "why I built this" are in **[`squid-climb/`](
 
 - **One idea at a time.** Get it playable, then decide if it's worth going deeper.
 - **Test it like a user.** Every project here gets actually run — clicked, played, broken on purpose — before I call it done.
-- **Keep it boringly portable.** No bundlers, no servers; double-click an `index.html` and it works offline.
+- **Keep it boringly portable.** Web projects should run from a folder; native projects should include clear local build steps.
 - **Stay honest in the README.** What works, what's faked, what I'd do differently — written down, not hidden.
 
 More small things will land here over time. If you play something and it breaks (or makes you laugh), that's useful — open an issue.
