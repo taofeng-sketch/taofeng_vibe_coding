@@ -5,6 +5,7 @@ import UserNotifications
 struct HabitListView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Habit.createdAt) private var habits: [Habit]
+    @AppStorage(AppLanguage.storageKey) private var appLanguage = AppLanguage.system.rawValue
     @State private var showingNewHabit = false
     @State private var showingHabitPacks = false
     @State private var editingHabit: Habit?
@@ -24,9 +25,9 @@ struct HabitListView: View {
                                 .foregroundStyle(Color.accentColor)
 
                             VStack(alignment: .leading, spacing: 4) {
-                                Text("从模板包开始")
+                                Text(AppLanguage.text("从模板包开始", "Start From Packs"))
                                     .font(.headline)
-                                Text("导入长寿基础、高蛋白、恢复和训练周系统")
+                                Text(AppLanguage.text("导入长寿基础、高蛋白、恢复和训练周系统", "Import longevity, protein, recovery, and training-week systems"))
                                     .font(.subheadline)
                                     .foregroundStyle(.secondary)
                             }
@@ -42,7 +43,7 @@ struct HabitListView: View {
                     .buttonStyle(.plain)
                 }
 
-                Section("我的系统") {
+                Section(AppLanguage.text("我的系统", "My System")) {
                     ForEach(habits) { habit in
                         Button {
                             editingHabit = habit
@@ -54,7 +55,7 @@ struct HabitListView: View {
                     .onDelete(perform: deleteHabits)
                 }
             }
-            .navigationTitle("习惯")
+            .navigationTitle(AppLanguage.text("习惯", "Habits"))
             .toolbar {
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     Button {
@@ -108,7 +109,7 @@ private struct HabitRow: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(habit.name)
                     .font(.headline)
-                Text(habit.anchorText.isEmpty ? habit.reminderTimeText : "\(habit.anchorText) 后 · \(habit.reminderTimeText)")
+                Text(habit.anchorText.isEmpty ? habit.reminderTimeText : AppLanguage.text("\(habit.anchorText) 后 · \(habit.reminderTimeText)", "After \(habit.anchorText) · \(habit.reminderTimeText)"))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 chainDots
@@ -130,7 +131,7 @@ private struct HabitRow: View {
                     .foregroundStyle(hasCheckIn(on: date) ? .green : .secondary.opacity(0.45))
             }
         }
-        .accessibilityLabel("最近 14 天打卡链")
+        .accessibilityLabel(AppLanguage.text("最近 14 天打卡链", "Last 14 days check-in chain"))
     }
 
     private func lastFourteenDays() -> [Date] {

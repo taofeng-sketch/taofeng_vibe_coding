@@ -9,7 +9,7 @@ struct DailyBriefWidgetEntry: TimelineEntry {
 
 struct DailyBriefWidgetProvider: TimelineProvider {
     func placeholder(in context: Context) -> DailyBriefWidgetEntry {
-        DailyBriefWidgetEntry(date: .now, briefText: "你是一个把健康当作长期资产的人。今天先抓住第一餐。")
+        DailyBriefWidgetEntry(date: .now, briefText: AppLanguage.text("你是一个把健康当作长期资产的人。今天先抓住第一餐。", "You are treating health as a long-term asset. Start with the first meal."))
     }
 
     func getSnapshot(in context: Context, completion: @escaping (DailyBriefWidgetEntry) -> Void) {
@@ -34,7 +34,7 @@ struct DailyBriefWidgetProvider: TimelineProvider {
         return DailyBriefWidgetEntry(date: .now, briefText: text)
     }
 
-    private static let fallback = "你是一个把健康当作长期资产的人。今天先做一个小动作。"
+    private static let fallback = AppLanguage.text("你是一个把健康当作长期资产的人。今天先做一个小动作。", "You are treating health as a long-term asset. Do one small action today.")
 }
 
 struct DailyBriefWidget: Widget {
@@ -42,8 +42,8 @@ struct DailyBriefWidget: Widget {
         StaticConfiguration(kind: "DailyBriefWidget", provider: DailyBriefWidgetProvider()) { entry in
             DailyBriefWidgetView(entry: entry)
         }
-        .configurationDisplayName("晨间简报")
-        .description("在桌面查看今天晨间简报的第一句话。")
+        .configurationDisplayName(AppLanguage.text("晨间简报", "Morning Brief"))
+        .description(AppLanguage.text("在桌面查看今天晨间简报的第一句话。", "View the first sentence of today's morning brief."))
         .supportedFamilies([.systemMedium])
     }
 }
@@ -60,13 +60,13 @@ private struct DailyBriefWidgetView: View {
                 .background(Color.orange.opacity(0.14), in: Circle())
 
             VStack(alignment: .leading, spacing: 8) {
-                Text("晨间简报")
+                Text(AppLanguage.text("晨间简报", "Morning Brief"))
                     .font(.headline)
                 Text(entry.briefText)
                     .font(.body)
                     .foregroundStyle(.primary)
                     .lineLimit(3)
-                Text("打开 HabitApp 继续今天的系统")
+                Text(AppLanguage.text("打开 HabitApp 继续今天的系统", "Open HabitApp to continue today's system"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

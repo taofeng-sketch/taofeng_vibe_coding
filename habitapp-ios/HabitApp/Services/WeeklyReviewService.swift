@@ -57,7 +57,7 @@ actor WeeklyReviewService {
             sleepAverage: snapshot.sleepSevenDayAverage,
             hrvAverage: snapshot.hrvSevenDayAverage,
             decathlonText: pillars.map { "\($0.title) \(Int($0.current))/\(Int($0.target))\($0.unit)" }.joined(separator: ", "),
-            identityTags: identityTags.isEmpty ? "行动可靠的" : identityTags.replacingOccurrences(of: ",", with: "、"),
+            identityTags: identityTags.isEmpty ? AppLanguage.text("行动可靠的", "reliable") : identityTags.replacingOccurrences(of: ",", with: AppLanguage.isEnglish ? ", " : "、"),
             coachMemory: coachMemory
         )
 
@@ -109,11 +109,11 @@ actor WeeklyReviewService {
         - Decathlon weekly progress: \(input.decathlonText)
         - Identity tags: \(input.identityTags)
 
-        Write a Chinese 周报 in 4 short paragraphs:
+        Write a \(AppLanguage.isEnglish ? "weekly review in English" : "Chinese 周报") in 4 short paragraphs:
         1. One specific win this week (call out the data point)
         2. One trend to keep an eye on (don't sugarcoat, but be compassionate)
         3. One concrete action to adjust next week (single sentence)
-        4. Identity-affirming close ("你正在成为...")
+        4. Identity-affirming close ("\(AppLanguage.isEnglish ? "You are becoming..." : "你正在成为...")")
 
         Use the user memory when it changes what advice is realistic.
         No emoji. No "great job" / "good work" — be specific.
@@ -148,13 +148,25 @@ actor WeeklyReviewService {
 
     private func fallbackReview(input: WeeklyReviewInput) -> String {
         """
-        本周最值得保留的是你已经把系统搭起来了：习惯、蛋白质、训练和恢复都开始进入同一个节奏。
+        \(AppLanguage.text(
+            "本周最值得保留的是你已经把系统搭起来了：习惯、蛋白质、训练和恢复都开始进入同一个节奏。",
+            "The most important win this week is that the system is now in place: habits, protein, training, and recovery are starting to live in one rhythm."
+        ))
 
-        需要留意的是，数据还不完整时，不要急着从一天判断自己。先让 Apple Health 和打卡记录积累一周，趋势会比情绪更可靠。
+        \(AppLanguage.text(
+            "需要留意的是，数据还不完整时，不要急着从一天判断自己。先让 Apple Health 和打卡记录积累一周，趋势会比情绪更可靠。",
+            "The trend to watch is data completeness. Do not judge yourself from one day; let Apple Health and check-ins accumulate for a week so the trend is more reliable than mood."
+        ))
 
-        下周只调整一件事：每天第一餐先靠近 \(input.proteinTargetG)g 蛋白质目标。
+        \(AppLanguage.text(
+            "下周只调整一件事：每天第一餐先靠近 \(input.proteinTargetG)g 蛋白质目标。",
+            "Next week, adjust only one thing: make the first meal move you toward the \(input.proteinTargetG)g protein target."
+        ))
 
-        你正在成为一个\(input.identityTags.replacingOccurrences(of: ",", with: "、"))的人。
+        \(AppLanguage.text(
+            "你正在成为一个\(input.identityTags.replacingOccurrences(of: ",", with: "、"))的人。",
+            "You are becoming someone who is \(input.identityTags)."
+        ))
         """
     }
 }

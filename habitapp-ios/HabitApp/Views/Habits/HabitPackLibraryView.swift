@@ -6,6 +6,7 @@ struct HabitPackLibraryView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Habit.createdAt) private var habits: [Habit]
     @AppStorage(EntitlementService.proAccessKey) private var hasProAccess = false
+    @AppStorage(AppLanguage.storageKey) private var appLanguage = AppLanguage.system.rawValue
 
     @State private var showingPaywall = false
     @State private var importMessage = ""
@@ -24,9 +25,9 @@ struct HabitPackLibraryView: View {
                         }
                     }
                 } header: {
-                    Text("模板包")
+                    Text(AppLanguage.text("模板包", "Template Packs"))
                 } footer: {
-                    Text("模板只会新增还不存在的习惯，不会覆盖你已经改过的提醒。")
+                    Text(AppLanguage.text("模板只会新增还不存在的习惯，不会覆盖你已经改过的提醒。", "Templates only add habits that do not exist yet. They will not overwrite reminders you have edited."))
                 }
 
                 if !importMessage.isEmpty {
@@ -37,10 +38,10 @@ struct HabitPackLibraryView: View {
                     }
                 }
             }
-            .navigationTitle("习惯模板")
+            .navigationTitle(AppLanguage.text("习惯模板", "Habit Templates"))
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("关闭") { dismiss() }
+                    Button(AppLanguage.text("关闭", "Close")) { dismiss() }
                 }
             }
             .sheet(isPresented: $showingPaywall) {
@@ -69,13 +70,13 @@ struct HabitPackLibraryView: View {
             }
 
         guard !newHabits.isEmpty else {
-            importMessage = "这个模板包里的习惯已经都在你的系统里。"
+            importMessage = AppLanguage.text("这个模板包里的习惯已经都在你的系统里。", "Every habit in this pack is already in your system.")
             return
         }
 
         newHabits.forEach(modelContext.insert)
         try? modelContext.save()
-        importMessage = "已导入 \(newHabits.count) 个习惯：\(pack.title)。"
+        importMessage = AppLanguage.text("已导入 \(newHabits.count) 个习惯：\(pack.title)。", "Imported \(newHabits.count) habits from \(pack.title).")
 
         Task {
             for habit in newHabits {
@@ -128,20 +129,20 @@ private struct HabitPackCard: View {
 
             VStack(alignment: .leading, spacing: 6) {
                 ForEach(pack.templates) { template in
-                    Label("\(template.anchorText) 后 · \(template.name)", systemImage: template.iconSymbol)
+                    Label(AppLanguage.text("\(template.anchorText) 后 · \(template.name)", "After \(template.anchorText) · \(template.name)"), systemImage: template.iconSymbol)
                         .font(.footnote)
                         .foregroundStyle(.primary)
                 }
             }
 
             HStack {
-                Text("\(importedCount)/\(pack.templates.count) 已在系统")
+                Text(AppLanguage.text("\(importedCount)/\(pack.templates.count) 已在系统", "\(importedCount)/\(pack.templates.count) already in system"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
                 Spacer()
 
-                Button(isLocked ? "查看 Pro" : "导入") {
+                Button(isLocked ? AppLanguage.text("查看 Pro", "View Pro") : AppLanguage.text("导入", "Import")) {
                     action()
                 }
                 .buttonStyle(.borderedProminent)

@@ -14,15 +14,16 @@ This repo is where those experiments live. I call it "vibe coding" on purpose. I
 
 ### 🧬 HabitApp iOS: Longevity Habit OS
 
-A native SwiftUI iOS app for habits, recovery, protein tracking, and identity-based coaching.
+A bilingual native SwiftUI iOS app for habits, recovery, protein tracking, and identity-based coaching.
 
-It combines daily habit check-ins, breakfast photo analysis, HealthKit integration, protein targets, Peter Attia-style longevity training pillars, Pro paywall scaffolding, habit packs, AI coach memory, and WidgetKit source files.
+It combines daily habit check-ins, breakfast photo analysis, HealthKit integration, protein targets, Peter Attia-style longevity training pillars, Pro paywall scaffolding, habit packs, AI coach memory, WidgetKit source files, and English / Chinese language modes.
 
 <a href="./habitapp-ios">
   <img src="./habitapp-ios/assets/screenshots/today.png" alt="HabitApp iOS preview" width="260">
 </a>
 
 - **Built as a real iOS app.** SwiftUI, SwiftData, HealthKit, StoreKit 2, WidgetKit source, Keychain, local notifications, and CloudKit-ready models.
+- **Bilingual for demos.** The app can follow system language or switch manually between English and Chinese, with English screenshots included for GitHub readers.
 - **Designed around behavior change.** Tiny Habits anchors, identity tags, habit packs, recovery rituals, and weekly reviews.
 - **AI where it is useful.** Claude-powered breakfast photo analysis and coaching prompts, with fallback copy when Pro/API access is unavailable.
 

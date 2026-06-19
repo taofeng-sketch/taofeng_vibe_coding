@@ -42,4 +42,15 @@ extension Habit {
     var reminderTimeText: String {
         String(format: "%02d:%02d", reminderHour, reminderMinute)
     }
+
+    var isBreakfastPhotoHabit: Bool {
+        let lowercasedName = name.lowercased()
+        return iconSymbol == "fork.knife.circle"
+            && (
+                name.contains("早餐")
+                    || name.contains("第一餐")
+                    || lowercasedName.contains("breakfast")
+                    || lowercasedName.contains("first meal")
+            )
+    }
 }

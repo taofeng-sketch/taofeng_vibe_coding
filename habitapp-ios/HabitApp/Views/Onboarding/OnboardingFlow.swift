@@ -8,9 +8,14 @@ struct OnboardingFlow: View {
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @AppStorage("identityTags") private var identityTagsStorage = ""
     @AppStorage("bodyMassKg") private var bodyMassKg = 75.0
+    @AppStorage(AppLanguage.storageKey) private var appLanguage = AppLanguage.system.rawValue
     @State private var step = 0
 
-    private let identityOptions = ["有力量的", "有体能的", "睡得好的", "吃得对的", "内心稳定的", "行动可靠的"]
+    private var identityOptions: [String] {
+        AppLanguage.isEnglish
+            ? ["strong", "fit", "well-rested", "well-fueled", "calm", "reliable"]
+            : ["有力量的", "有体能的", "睡得好的", "吃得对的", "内心稳定的", "行动可靠的"]
+    }
 
     private var selectedTags: Set<String> {
         get {
@@ -75,7 +80,7 @@ struct OnboardingFlow: View {
             .toolbar {
                 if step < 5 {
                     ToolbarItem(placement: .topBarTrailing) {
-                        Button("稍后") {
+                        Button(AppLanguage.text("稍后", "Skip")) {
                             if step < 5 {
                                 step += 1
                             }
@@ -119,9 +124,9 @@ private struct WelcomeStep: View {
     var body: some View {
         OnboardingStepLayout(
             systemImage: "figure.strengthtraining.traditional",
-            title: "你不是在追踪习惯",
-            subtitle: "你是在打磨一个版本更好的自己。稳定的人不靠意志，靠系统。",
-            primaryTitle: "开始"
+            title: AppLanguage.text("你不是在追踪习惯", "You are not just tracking habits"),
+            subtitle: AppLanguage.text("你是在打磨一个版本更好的自己。稳定的人不靠意志，靠系统。", "You are shaping a better version of yourself. Reliable people do not rely on willpower. They use systems."),
+            primaryTitle: AppLanguage.text("开始", "Start")
         ) {
             onNext()
         }
@@ -139,7 +144,7 @@ private struct IdentityStep: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 24) {
             Spacer()
-            Text("未来 10 年，你想成为一个 ___ 的人？")
+            Text(AppLanguage.text("未来 10 年，你想成为一个 ___ 的人？", "In the next 10 years, what kind of person do you want to become?"))
                 .font(.largeTitle.bold())
                 .fixedSize(horizontal: false, vertical: true)
 
@@ -160,13 +165,13 @@ private struct IdentityStep: View {
                 }
             }
 
-            Text("选 1-3 个就够了。身份越具体，系统越容易帮你做决定。")
+            Text(AppLanguage.text("选 1-3 个就够了。身份越具体，系统越容易帮你做决定。", "Pick 1-3. The more specific the identity, the easier it is for the system to guide decisions."))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
 
             Spacer()
 
-            Button("下一步", action: onNext)
+            Button(AppLanguage.text("下一步", "Next"), action: onNext)
                 .buttonStyle(.borderedProminent)
                 .frame(maxWidth: .infinity, alignment: .trailing)
         }
@@ -185,9 +190,9 @@ private struct BodyMassStep: View {
             Image(systemName: "scalemass.fill")
                 .font(.system(size: 64))
                 .foregroundStyle(Color.accentColor)
-            Text("体重多少 kg？")
+            Text(AppLanguage.text("体重多少 kg？", "What is your body mass?"))
                 .font(.largeTitle.bold())
-            Text("用来计算每天的蛋白质目标。没有 Apple Health 体重数据时，我们会用这里的数字。")
+            Text(AppLanguage.text("用来计算每天的蛋白质目标。没有 Apple Health 体重数据时，我们会用这里的数字。", "This is used to calculate your daily protein target. If Apple Health has no body mass data, we use this number."))
                 .font(.body)
                 .foregroundStyle(.secondary)
 
@@ -202,7 +207,7 @@ private struct BodyMassStep: View {
 
             Spacer()
 
-            Button("下一步") {
+            Button(AppLanguage.text("下一步", "Next")) {
                 if let value = Double(text), value > 25 {
                     bodyMassKg = value
                 }
@@ -230,11 +235,11 @@ private struct HabitPackPickerStep: View {
         VStack(alignment: .leading, spacing: 20) {
             Spacer(minLength: 12)
 
-            Text("要不要从一个习惯包开始？")
+            Text(AppLanguage.text("要不要从一个习惯包开始？", "Start from a habit pack?"))
                 .font(.largeTitle.bold())
                 .fixedSize(horizontal: false, vertical: true)
 
-            Text("先导入一套免费系统，后面随时可以改。Pro 包先展示方向，不会在 onboarding 里强行付费。")
+            Text(AppLanguage.text("先导入一套免费系统，后面随时可以改。Pro 包先展示方向，不会在 onboarding 里强行付费。", "Import a free system first and edit it later. Pro packs show the direction, but onboarding will not force a purchase."))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
 
@@ -254,7 +259,7 @@ private struct HabitPackPickerStep: View {
 
             if let selectedPack {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("将添加")
+                    Text(AppLanguage.text("将添加", "Will Add"))
                         .font(.caption.bold())
                         .foregroundStyle(.secondary)
                     ForEach(selectedPack.templates) { template in
@@ -267,12 +272,12 @@ private struct HabitPackPickerStep: View {
             }
 
             HStack {
-                Button("我自己来", action: onSkip)
+                Button(AppLanguage.text("我自己来", "I'll Build My Own"), action: onSkip)
                     .buttonStyle(.bordered)
 
                 Spacer()
 
-                Button(selectedPack?.access == .pro ? "Pro 包稍后解锁" : "用这个") {
+                Button(selectedPack?.access == .pro ? AppLanguage.text("Pro 包稍后解锁", "Unlock Pro Packs Later") : AppLanguage.text("用这个", "Use This")) {
                     guard let selectedPack, selectedPack.access == .free else { return }
                     onUsePack(selectedPack)
                 }
@@ -336,21 +341,21 @@ private struct PermissionsStep: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             Spacer()
-            Text("三个权限，都是为了少打扰你")
+            Text(AppLanguage.text("三个权限，都是为了少打扰你", "Three permissions, all to reduce friction"))
                 .font(.largeTitle.bold())
                 .fixedSize(horizontal: false, vertical: true)
 
             PermissionRow(
-                title: "通知",
-                subtitle: "只在你设定的时间提醒习惯。",
+                title: AppLanguage.text("通知", "Notifications"),
+                subtitle: AppLanguage.text("只在你设定的时间提醒习惯。", "Only remind you at the times you set."),
                 systemImage: "bell.badge.fill"
             ) {
                 Task { await NotificationService.shared.requestAuthorization() }
             }
 
             PermissionRow(
-                title: "相机",
-                subtitle: "用于记录早餐，不保存到相册。",
+                title: AppLanguage.text("相机", "Camera"),
+                subtitle: AppLanguage.text("用于记录早餐，不保存到相册。", "Used to log breakfast. Photos are not saved to your library."),
                 systemImage: "camera.fill"
             ) {
                 AVCaptureDevice.requestAccess(for: .video) { _ in }
@@ -358,7 +363,7 @@ private struct PermissionsStep: View {
 
             PermissionRow(
                 title: "Apple Health",
-                subtitle: "读取恢复和训练信号，写回营养记录。",
+                subtitle: AppLanguage.text("读取恢复和训练信号，写回营养记录。", "Read recovery and training signals, and write nutrition entries."),
                 systemImage: "heart.text.square.fill"
             ) {
                 Task { _ = await HealthKitService.shared.requestAuthorization() }
@@ -366,7 +371,7 @@ private struct PermissionsStep: View {
 
             Spacer()
 
-            Button("继续") {
+            Button(AppLanguage.text("继续", "Continue")) {
                 onNext()
             }
             .buttonStyle(.borderedProminent)
@@ -382,9 +387,9 @@ private struct ReadyStep: View {
     var body: some View {
         OnboardingStepLayout(
             systemImage: "checkmark.seal.fill",
-            title: "系统已经准备好",
-            subtitle: "今天的第一个动作：记录今天的第一餐。你正在成为一个行动可靠的人。",
-            primaryTitle: "进入今日"
+            title: AppLanguage.text("系统已经准备好", "Your system is ready"),
+            subtitle: AppLanguage.text("今天的第一个动作：记录今天的第一餐。你正在成为一个行动可靠的人。", "Today's first action: log your first meal. You are becoming a reliable person."),
+            primaryTitle: AppLanguage.text("进入今日", "Enter Today")
         ) {
             UserDefaults.standard.set("today", forKey: "selectedTab")
             onFinish()
@@ -416,7 +421,7 @@ private struct PermissionRow: View {
 
             Spacer()
 
-            Button("允许", action: action)
+            Button(AppLanguage.text("允许", "Allow"), action: action)
                 .buttonStyle(.bordered)
                 .controlSize(.small)
         }

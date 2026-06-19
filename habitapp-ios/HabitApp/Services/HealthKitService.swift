@@ -25,12 +25,12 @@ struct DecathlonPillarProgress: Identifiable {
     var remainingText: String {
         let remaining = max(target - current, 0)
         if remaining == 0 {
-            return "本周已达标"
+            return AppLanguage.text("本周已达标", "Target met this week")
         }
-        if unit == "次" {
-            return "本周还差 \(Int(ceil(remaining))) 次"
+        if unit == "次" || unit == "x" {
+            return AppLanguage.text("本周还差 \(Int(ceil(remaining))) 次", "\(Int(ceil(remaining))) sessions left this week")
         }
-        return "本周还差 \(Int(ceil(remaining))) 分钟"
+        return AppLanguage.text("本周还差 \(Int(ceil(remaining))) 分钟", "\(Int(ceil(remaining))) minutes left this week")
     }
 }
 
@@ -129,38 +129,38 @@ actor HealthKitService {
         return [
             DecathlonPillarProgress(
                 id: "strength",
-                title: "力量",
-                subtitle: "3 次力量训练",
+                title: AppLanguage.text("力量", "Strength"),
+                subtitle: AppLanguage.text("3 次力量训练", "3 strength sessions"),
                 current: Double(strength.count),
                 target: 3,
-                unit: "次",
+                unit: AppLanguage.text("次", "x"),
                 sourceWorkouts: strength.map(Self.summary)
             ),
             DecathlonPillarProgress(
                 id: "zone2",
-                title: "有氧基础",
-                subtitle: "4 次 45 分钟 Zone 2",
+                title: AppLanguage.text("有氧基础", "Aerobic Base"),
+                subtitle: AppLanguage.text("4 次 45 分钟 Zone 2", "4 x 45-min Zone 2"),
                 current: Double(zone2.count),
                 target: 4,
-                unit: "次",
+                unit: AppLanguage.text("次", "x"),
                 sourceWorkouts: zone2.map(Self.summary)
             ),
             DecathlonPillarProgress(
                 id: "vo2",
-                title: "无氧爆发",
-                subtitle: "1 次 30 分钟 VO2 max",
+                title: AppLanguage.text("无氧爆发", "VO2 Max"),
+                subtitle: AppLanguage.text("1 次 30 分钟 VO2 max", "1 x 30-min VO2 max"),
                 current: Double(vo2.count),
                 target: 1,
-                unit: "次",
+                unit: AppLanguage.text("次", "x"),
                 sourceWorkouts: vo2.map(Self.summary)
             ),
             DecathlonPillarProgress(
                 id: "stability",
-                title: "稳定性",
-                subtitle: "60 分钟稳定性/灵活性",
+                title: AppLanguage.text("稳定性", "Stability"),
+                subtitle: AppLanguage.text("60 分钟稳定性/灵活性", "60 min stability / mobility"),
                 current: stabilityMinutes,
                 target: 60,
-                unit: "分钟",
+                unit: AppLanguage.text("分钟", "min"),
                 sourceWorkouts: stability.map(Self.summary)
             ),
         ]
@@ -168,10 +168,10 @@ actor HealthKitService {
 
     nonisolated static func fallbackDecathlonProgress() -> [DecathlonPillarProgress] {
         [
-            DecathlonPillarProgress(id: "strength", title: "力量", subtitle: "3 次力量训练", current: 0, target: 3, unit: "次", sourceWorkouts: []),
-            DecathlonPillarProgress(id: "zone2", title: "有氧基础", subtitle: "4 次 45 分钟 Zone 2", current: 0, target: 4, unit: "次", sourceWorkouts: []),
-            DecathlonPillarProgress(id: "vo2", title: "无氧爆发", subtitle: "1 次 30 分钟 VO2 max", current: 0, target: 1, unit: "次", sourceWorkouts: []),
-            DecathlonPillarProgress(id: "stability", title: "稳定性", subtitle: "60 分钟稳定性/灵活性", current: 0, target: 60, unit: "分钟", sourceWorkouts: []),
+            DecathlonPillarProgress(id: "strength", title: AppLanguage.text("力量", "Strength"), subtitle: AppLanguage.text("3 次力量训练", "3 strength sessions"), current: 0, target: 3, unit: AppLanguage.text("次", "x"), sourceWorkouts: []),
+            DecathlonPillarProgress(id: "zone2", title: AppLanguage.text("有氧基础", "Aerobic Base"), subtitle: AppLanguage.text("4 次 45 分钟 Zone 2", "4 x 45-min Zone 2"), current: 0, target: 4, unit: AppLanguage.text("次", "x"), sourceWorkouts: []),
+            DecathlonPillarProgress(id: "vo2", title: AppLanguage.text("无氧爆发", "VO2 Max"), subtitle: AppLanguage.text("1 次 30 分钟 VO2 max", "1 x 30-min VO2 max"), current: 0, target: 1, unit: AppLanguage.text("次", "x"), sourceWorkouts: []),
+            DecathlonPillarProgress(id: "stability", title: AppLanguage.text("稳定性", "Stability"), subtitle: AppLanguage.text("60 分钟稳定性/灵活性", "60 min stability / mobility"), current: 0, target: 60, unit: AppLanguage.text("分钟", "min"), sourceWorkouts: []),
         ]
     }
 
@@ -300,20 +300,20 @@ actor HealthKitService {
 private extension HKWorkoutActivityType {
     var displayName: String {
         switch self {
-        case .traditionalStrengthTraining: "力量训练"
-        case .functionalStrengthTraining: "功能力量"
-        case .running: "跑步"
-        case .cycling: "骑行"
-        case .walking: "步行"
-        case .hiking: "徒步"
-        case .elliptical: "椭圆机"
+        case .traditionalStrengthTraining: AppLanguage.text("力量训练", "Strength Training")
+        case .functionalStrengthTraining: AppLanguage.text("功能力量", "Functional Strength")
+        case .running: AppLanguage.text("跑步", "Running")
+        case .cycling: AppLanguage.text("骑行", "Cycling")
+        case .walking: AppLanguage.text("步行", "Walking")
+        case .hiking: AppLanguage.text("徒步", "Hiking")
+        case .elliptical: AppLanguage.text("椭圆机", "Elliptical")
         case .highIntensityIntervalTraining: "HIIT"
-        case .rowing: "划船"
-        case .yoga: "瑜伽"
-        case .mindAndBody: "身心"
-        case .flexibility: "灵活性"
-        case .pilates: "普拉提"
-        default: "训练"
+        case .rowing: AppLanguage.text("划船", "Rowing")
+        case .yoga: AppLanguage.text("瑜伽", "Yoga")
+        case .mindAndBody: AppLanguage.text("身心", "Mind and Body")
+        case .flexibility: AppLanguage.text("灵活性", "Flexibility")
+        case .pilates: AppLanguage.text("普拉提", "Pilates")
+        default: AppLanguage.text("训练", "Workout")
         }
     }
 }

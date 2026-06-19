@@ -4,6 +4,7 @@ import UIKit
 struct BreathSessionView: View {
     @Environment(\.dismiss) private var dismiss
     @AppStorage("breathMode") private var breathModeRaw = BreathMode.box.rawValue
+    @AppStorage(AppLanguage.storageKey) private var appLanguage = AppLanguage.system.rawValue
 
     @State private var phaseIndex = 0
     @State private var cycleIndex = 0
@@ -24,7 +25,7 @@ struct BreathSessionView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 26) {
-                Picker("呼吸模式", selection: $breathModeRaw) {
+                Picker(AppLanguage.text("呼吸模式", "Breathing Mode"), selection: $breathModeRaw) {
                     ForEach(BreathMode.allCases) { mode in
                         Text(mode.title).tag(mode.rawValue)
                     }
@@ -52,20 +53,20 @@ struct BreathSessionView: View {
                 .frame(width: 300, height: 300)
                 .background(phase.color.opacity(0.12), in: RoundedRectangle(cornerRadius: 24))
 
-                Text(isComplete ? "注意你的肩膀和下颌是不是放松了。" : "第 \(cycleIndex + 1)/\(totalCycles) 轮")
+                Text(isComplete ? AppLanguage.text("注意你的肩膀和下颌是不是放松了。", "Notice whether your shoulders and jaw have softened.") : AppLanguage.text("第 \(cycleIndex + 1)/\(totalCycles) 轮", "Round \(cycleIndex + 1)/\(totalCycles)"))
                     .font(.headline)
                     .foregroundStyle(.secondary)
 
                 Spacer()
 
-                Button(isComplete ? "完成" : "结束") {
+                Button(isComplete ? AppLanguage.text("完成", "Done") : AppLanguage.text("结束", "End")) {
                     dismiss()
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
             }
             .padding()
-            .navigationTitle("呼吸调节")
+            .navigationTitle(AppLanguage.text("呼吸调节", "Breathwork"))
             .navigationBarTitleDisplayMode(.inline)
             .onAppear(perform: reset)
             .onReceive(timer) { _ in
@@ -82,7 +83,7 @@ struct BreathSessionView: View {
                     .frame(width: 7, height: 7)
             }
         }
-        .accessibilityLabel("呼吸阶段进度")
+        .accessibilityLabel(AppLanguage.text("呼吸阶段进度", "Breathing phase progress"))
     }
 
     @ViewBuilder
@@ -212,16 +213,16 @@ private enum BreathMode: String, CaseIterable, Identifiable {
         switch self {
         case .box:
             [
-                BreathPhase(label: "吸气", duration: 4, color: .green),
-                BreathPhase(label: "屏息", duration: 4, color: .yellow),
-                BreathPhase(label: "呼气", duration: 4, color: .red),
-                BreathPhase(label: "屏息", duration: 4, color: .purple),
+                BreathPhase(label: AppLanguage.text("吸气", "Inhale"), duration: 4, color: .green),
+                BreathPhase(label: AppLanguage.text("屏息", "Hold"), duration: 4, color: .yellow),
+                BreathPhase(label: AppLanguage.text("呼气", "Exhale"), duration: 4, color: .red),
+                BreathPhase(label: AppLanguage.text("屏息", "Hold"), duration: 4, color: .purple),
             ]
         case .fourSevenEight:
             [
-                BreathPhase(label: "吸气", duration: 4, color: .green),
-                BreathPhase(label: "屏息", duration: 7, color: .yellow),
-                BreathPhase(label: "呼气", duration: 8, color: .red),
+                BreathPhase(label: AppLanguage.text("吸气", "Inhale"), duration: 4, color: .green),
+                BreathPhase(label: AppLanguage.text("屏息", "Hold"), duration: 7, color: .yellow),
+                BreathPhase(label: AppLanguage.text("呼气", "Exhale"), duration: 8, color: .red),
             ]
         }
     }

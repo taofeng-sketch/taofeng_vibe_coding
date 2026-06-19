@@ -46,7 +46,9 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
 
         let content = UNMutableNotificationContent()
         content.title = habit.name
-        content.body = isBreakfastPhotoHabit(habit) ? "拍一张早餐照片，顺手完成打卡。" : "该完成今天的习惯了。"
+        content.body = habit.isBreakfastPhotoHabit
+            ? AppLanguage.text("拍一张早餐照片，顺手完成打卡。", "Take a breakfast photo and check this off.")
+            : AppLanguage.text("该完成今天的习惯了。", "Time to complete today's habit.")
         content.sound = .default
         content.userInfo = [
             "habitId": habit.id.uuidString,
@@ -85,13 +87,13 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
     }
 
     private func isBreakfastPhotoHabit(_ habit: Habit) -> Bool {
-        habit.name == "早餐 + 拍照"
+        habit.isBreakfastPhotoHabit
     }
 
     private func registerCategories() {
         let takePhotoAction = UNNotificationAction(
             identifier: NotificationConstants.takeBreakfastPhotoActionIdentifier,
-            title: "立即拍照",
+            title: AppLanguage.text("立即拍照", "Take Photo"),
             options: [.foreground]
         )
         let breakfastCategory = UNNotificationCategory(

@@ -11,7 +11,7 @@ struct LockScreenEntry: TimelineEntry {
 
 struct LockScreenProvider: TimelineProvider {
     func placeholder(in context: Context) -> LockScreenEntry {
-        LockScreenEntry(date: .now, completedCount: 2, totalCount: 4, briefSnippet: "先抓住第一餐。")
+        LockScreenEntry(date: .now, completedCount: 2, totalCount: 4, briefSnippet: AppLanguage.text("先抓住第一餐。", "Start with the first meal."))
     }
 
     func getSnapshot(in context: Context, completion: @escaping (LockScreenEntry) -> Void) {
@@ -51,7 +51,7 @@ struct LockScreenProvider: TimelineProvider {
         )
     }
 
-    private static let fallback = "今天先完成一个小动作。"
+    private static let fallback = AppLanguage.text("今天先完成一个小动作。", "Complete one small action today.")
 }
 
 struct LockScreenWidget: Widget {
@@ -59,8 +59,8 @@ struct LockScreenWidget: Widget {
         StaticConfiguration(kind: "LockScreenWidget", provider: LockScreenProvider()) { entry in
             LockScreenWidgetView(entry: entry)
         }
-        .configurationDisplayName("累计")
-        .description("在锁屏查看今天习惯进度和简报片段。")
+        .configurationDisplayName(AppLanguage.text("累计", "Progress"))
+        .description(AppLanguage.text("在锁屏查看今天习惯进度和简报片段。", "View today's habit progress and brief snippet on the Lock Screen."))
         .supportedFamilies([.accessoryCircular, .accessoryRectangular])
     }
 }
@@ -85,7 +85,7 @@ private struct LockScreenWidgetView: View {
         default:
             HStack(spacing: 8) {
                 Gauge(value: progress) {
-                    Text("今日")
+                    Text(AppLanguage.text("今日", "Today"))
                 } currentValueLabel: {
                     Text("\(entry.completedCount)/\(entry.totalCount)")
                 }

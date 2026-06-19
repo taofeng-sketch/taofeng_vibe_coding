@@ -68,9 +68,9 @@ struct MealAnalysis: Codable {
 
     var confidenceText: String {
         switch confidence.lowercased() {
-        case "high": "高"
-        case "medium": "中"
-        case "low": "低"
+        case "high": AppLanguage.text("高", "High")
+        case "medium": AppLanguage.text("中", "Medium")
+        case "low": AppLanguage.text("低", "Low")
         default: confidence
         }
     }
@@ -89,21 +89,21 @@ enum ClaudeVisionError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .missingAPIKey:
-            "请先在设置里添加 Anthropic API key。"
+            AppLanguage.text("请先在设置里添加 Anthropic API key。", "Add an Anthropic API key in Settings first.")
         case .imageEncodingFailed:
-            "图片压缩失败，请重新拍照。"
+            AppLanguage.text("图片压缩失败，请重新拍照。", "Image compression failed. Please retake the photo.")
         case .network(let error):
-            "网络请求失败：\(error.localizedDescription)"
+            AppLanguage.text("网络请求失败：\(error.localizedDescription)", "Network request failed: \(error.localizedDescription)")
         case .unauthorized:
-            "API key 无效或已过期，请在设置里更新。"
+            AppLanguage.text("API key 无效或已过期，请在设置里更新。", "The API key is invalid or expired. Update it in Settings.")
         case .rateLimited:
-            "Anthropic 请求过于频繁，请稍后手动重试。"
+            AppLanguage.text("Anthropic 请求过于频繁，请稍后手动重试。", "Too many Anthropic requests. Please retry later.")
         case .badStatus(let code, let body):
-            "Anthropic 返回 HTTP \(code)：\(body)"
+            "Anthropic HTTP \(code): \(body)"
         case .emptyResponse:
-            "Anthropic 没有返回可解析内容。"
+            AppLanguage.text("Anthropic 没有返回可解析内容。", "Anthropic did not return parseable content.")
         case .parseFailed:
-            "分析返回内容不是严格 JSON，可查看原文或重新分析。"
+            AppLanguage.text("分析返回内容不是严格 JSON，可查看原文或重新分析。", "The analysis response was not strict JSON. View the raw text or retry.")
         }
     }
 }

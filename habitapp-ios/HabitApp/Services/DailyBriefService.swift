@@ -95,7 +95,7 @@ actor DailyBriefService {
         - Habit completion: \(input.habitCompletionText)
         - Protein: \(input.proteinG)g (target \(input.proteinTargetG)g = body mass kg x 1.6)
 
-        Write a 2-3 sentence morning brief in Chinese.
+        Write a 2-3 sentence morning brief in \(AppLanguage.isEnglish ? "English" : "Chinese").
         - Identity-based language ("你是一个 X 的人") not transactional
         - One concrete suggestion for today
         - Compassionate, not pushy
@@ -113,7 +113,7 @@ actor DailyBriefService {
         This is his first day using the app, or Apple Health data is not available yet.
         His protein target is \(input.proteinTargetG)g based on body mass kg x 1.6.
 
-        Write a 2-3 sentence morning brief in Chinese.
+        Write a 2-3 sentence morning brief in \(AppLanguage.isEnglish ? "English" : "Chinese").
         - Identity-based language ("你是一个 X 的人") not transactional
         - One concrete suggestion for today
         - Compassionate, not pushy
@@ -150,13 +150,16 @@ actor DailyBriefService {
     }
 
     private func fallbackBrief(input: DailyBriefInput) -> String {
-        "你是一个把健康当作长期资产的人。今天先抓住一个具体动作：在第一餐里优先补足蛋白质，向 \(input.proteinTargetG)g 的目标靠近。"
+        AppLanguage.text(
+            "你是一个把健康当作长期资产的人。今天先抓住一个具体动作：在第一餐里优先补足蛋白质，向 \(input.proteinTargetG)g 的目标靠近。",
+            "You are treating health as a long-term asset. Start with one concrete action today: prioritize protein in your first meal and move toward your \(input.proteinTargetG)g target."
+        )
     }
 
     nonisolated private static func identityTagsText() -> String {
         let raw = UserDefaults.standard.string(forKey: "identityTags") ?? ""
         let text = raw.replacingOccurrences(of: ",", with: "、")
-        return text.isEmpty ? "行动可靠的" : text
+        return text.isEmpty ? AppLanguage.text("行动可靠的", "reliable") : text
     }
 }
 

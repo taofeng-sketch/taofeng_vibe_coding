@@ -10,12 +10,7 @@ enum HabitStore {
             return
         }
 
-        let defaults = [
-            Habit(name: "早上排便", iconSymbol: "figure.seated.side.right", reminderHour: 7, reminderMinute: 30),
-            Habit(name: "早餐 + 拍照", iconSymbol: "fork.knife.circle", reminderHour: 8, reminderMinute: 0),
-            Habit(name: "中午吃饭", iconSymbol: "takeoutbag.and.cup.and.straw", reminderHour: 12, reminderMinute: 30),
-            Habit(name: "健身锻炼", iconSymbol: "dumbbell.fill", reminderHour: 18, reminderMinute: 30),
-        ]
+        let defaults = AppLanguage.isEnglish ? englishDefaults : chineseDefaults
 
         defaults.forEach(context.insert)
         try? context.save()
@@ -45,5 +40,23 @@ enum HabitStore {
         Task {
             await NotificationService.shared.scheduleNext(for: habit, forceTomorrow: true)
         }
+    }
+
+    private static var chineseDefaults: [Habit] {
+        [
+            Habit(name: "早上排便", iconSymbol: "figure.seated.side.right", reminderHour: 7, reminderMinute: 30),
+            Habit(name: "早餐 + 拍照", iconSymbol: "fork.knife.circle", reminderHour: 8, reminderMinute: 0),
+            Habit(name: "中午吃饭", iconSymbol: "takeoutbag.and.cup.and.straw", reminderHour: 12, reminderMinute: 30),
+            Habit(name: "健身锻炼", iconSymbol: "dumbbell.fill", reminderHour: 18, reminderMinute: 30),
+        ]
+    }
+
+    private static var englishDefaults: [Habit] {
+        [
+            Habit(name: "Morning bathroom", iconSymbol: "figure.seated.side.right", reminderHour: 7, reminderMinute: 30),
+            Habit(name: "Breakfast + Photo", iconSymbol: "fork.knife.circle", reminderHour: 8, reminderMinute: 0),
+            Habit(name: "Lunch", iconSymbol: "takeoutbag.and.cup.and.straw", reminderHour: 12, reminderMinute: 30),
+            Habit(name: "Strength workout", iconSymbol: "dumbbell.fill", reminderHour: 18, reminderMinute: 30),
+        ]
     }
 }

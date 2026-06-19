@@ -23,12 +23,12 @@ struct HabitCardView: View {
                         .font(.subheadline)
                         .foregroundStyle(isCompleted ? .white.opacity(0.9) : .secondary)
                 } else {
-                    Text("\(habit.anchorText) 后 · \(habit.reminderTimeText)")
+                    Text(AppLanguage.text("\(habit.anchorText) 后 · \(habit.reminderTimeText)", "After \(habit.anchorText) · \(habit.reminderTimeText)"))
                         .font(.subheadline)
                         .foregroundStyle(isCompleted ? .white.opacity(0.9) : .secondary)
                 }
                 if isBreakfastPhotoHabit, !isCompleted, !canAnalyzeBreakfast {
-                    Text("前往设置添加 API key")
+                    Text(AppLanguage.text("前往设置添加 API key", "Add API key in Settings"))
                         .font(.caption)
                         .foregroundStyle(.orange)
                 }
@@ -40,7 +40,7 @@ struct HabitCardView: View {
                 Button {
                     onPhotoCheckIn?()
                 } label: {
-                    Label("记录第一餐", systemImage: "camera.fill")
+                    Label(AppLanguage.text("记录第一餐", "Log First Meal"), systemImage: "camera.fill")
                         .font(.subheadline.bold())
                 }
                 .buttonStyle(.borderedProminent)
@@ -54,7 +54,7 @@ struct HabitCardView: View {
                 .buttonStyle(.plain)
                 .foregroundStyle(isCompleted ? Color.white : Color.accentColor)
                 .disabled(isCompleted)
-                .accessibilityLabel(isCompleted ? "已打卡" : "打卡")
+                .accessibilityLabel(isCompleted ? AppLanguage.text("已打卡", "Checked In") : AppLanguage.text("打卡", "Check In"))
             }
         }
         .padding()
@@ -74,13 +74,13 @@ struct HabitCardView: View {
     }
 
     private var isBreakfastPhotoHabit: Bool {
-        habit.name == "早餐 + 拍照"
+        habit.isBreakfastPhotoHabit
     }
 }
 
 #Preview {
     HabitCardView(
-        habit: Habit(name: "健身锻炼", iconSymbol: "dumbbell.fill", reminderHour: 18, reminderMinute: 30),
+        habit: Habit(name: "Strength workout", iconSymbol: "dumbbell.fill", reminderHour: 18, reminderMinute: 30),
         isCompleted: false,
         canAnalyzeBreakfast: true,
         onPhotoCheckIn: {},

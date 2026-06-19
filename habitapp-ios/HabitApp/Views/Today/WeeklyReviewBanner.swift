@@ -5,6 +5,7 @@ struct WeeklyReviewBanner: View {
     let onDismiss: () -> Void
 
     @State private var showingReview = false
+    @AppStorage(AppLanguage.storageKey) private var appLanguage = AppLanguage.system.rawValue
 
     private var firstParagraph: String {
         review.bodyText
@@ -16,7 +17,7 @@ struct WeeklyReviewBanner: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Label("本周复盘", systemImage: "chart.line.uptrend.xyaxis")
+                Label(AppLanguage.text("本周复盘", "Weekly Review"), systemImage: "chart.line.uptrend.xyaxis")
                     .font(.headline)
                     .foregroundStyle(.blue)
                 Spacer()
@@ -27,14 +28,14 @@ struct WeeklyReviewBanner: View {
                         .foregroundStyle(.secondary)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("本周不再显示")
+                .accessibilityLabel(AppLanguage.text("本周不再显示", "Hide this week"))
             }
 
             Text(firstParagraph)
                 .font(.subheadline)
                 .fixedSize(horizontal: false, vertical: true)
 
-            Button("展开周报") {
+            Button(AppLanguage.text("展开周报", "Open Review")) {
                 showingReview = true
             }
             .font(.subheadline.bold())
@@ -50,10 +51,10 @@ struct WeeklyReviewBanner: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding()
                 }
-                .navigationTitle("本周复盘")
+                .navigationTitle(AppLanguage.text("本周复盘", "Weekly Review"))
                 .toolbar {
                     ToolbarItem(placement: .confirmationAction) {
-                        Button("完成") {
+                        Button(AppLanguage.text("完成", "Done")) {
                             showingReview = false
                         }
                     }
@@ -65,7 +66,7 @@ struct WeeklyReviewBanner: View {
 
 #Preview {
     WeeklyReviewBanner(
-        review: WeeklyReview(bodyText: "本周你完成了第一轮系统搭建。\n\n下周只调整一件事。"),
+        review: WeeklyReview(bodyText: "You completed the first version of the system this week.\n\nNext week, adjust only one thing."),
         onDismiss: {}
     )
 }

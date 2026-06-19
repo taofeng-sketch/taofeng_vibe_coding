@@ -43,8 +43,8 @@ struct ProteinRingWidget: Widget {
         StaticConfiguration(kind: "ProteinRingWidget", provider: ProteinRingProvider()) { entry in
             ProteinRingWidgetView(entry: entry)
         }
-        .configurationDisplayName("蛋白质")
-        .description("查看今天蛋白质目标进度。")
+        .configurationDisplayName(AppLanguage.text("蛋白质", "Protein"))
+        .description(AppLanguage.text("查看今天蛋白质目标进度。", "View today's protein target progress."))
         .supportedFamilies([.systemSmall])
     }
 }
@@ -68,7 +68,7 @@ private struct ProteinRingWidgetView: View {
                 }
             }
 
-            Text("目标 \(entry.targetG)g")
+            Text(AppLanguage.text("目标 \(entry.targetG)g", "Target \(entry.targetG)g"))
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }

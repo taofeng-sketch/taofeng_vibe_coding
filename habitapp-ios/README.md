@@ -2,7 +2,7 @@
 
 > A native iOS habit and longevity coach built with SwiftUI, SwiftData, HealthKit, StoreKit 2, and AI-assisted product iteration.
 
-HabitApp started as a simple habit tracker and grew into a more opinionated system: track small daily actions, understand recovery and protein intake, use identity-based coaching, and make the app useful from day one with habit packs and widgets.
+HabitApp started as a simple habit tracker and grew into a more opinionated system: track small daily actions, understand recovery and protein intake, use identity-based coaching, and make the app useful from day one with habit packs and widgets. It now includes a bilingual companion mode: English for a broader GitHub/demo audience, Chinese for Tao's original personal workflow.
 
 The positioning is deliberately narrow: **a longevity habit OS for men 35+**. It is not trying to beat nutrition apps on food-database accuracy. It focuses on decision quality, behavior change, and daily retention.
 
@@ -15,9 +15,17 @@ The positioning is deliberately narrow: **a longevity habit OS for men 35+**. It
   <img src="./assets/screenshots/habit-packs.png" alt="Habit Packs" width="190">
 </p>
 
+English companion mode:
+
+<p>
+  <img src="./assets/screenshots/english-onboarding.png" alt="English onboarding" width="220">
+  <img src="./assets/screenshots/english-today.png" alt="English Today screen" width="220">
+</p>
+
 ## What It Does
 
 - **Habit system**: create, edit, enable, and check in habits with local notifications.
+- **Bilingual experience**: System, English, and Chinese modes for the main app flows, AI prompts, habit packs, widgets, and onboarding.
 - **Tiny Habits anchors**: each habit can include an anchor such as "after brushing teeth".
 - **Breakfast photo analysis**: camera capture sends a compressed JPEG to Claude using the user's own Anthropic API key.
 - **Meal logging**: parsed calories and macros are stored in SwiftData and can be written back to Apple Health.
@@ -114,6 +122,16 @@ The key is used for:
 
 The key is not stored in UserDefaults, not written to SwiftData, and not synced through iCloud.
 
+## Language Support
+
+The app has a lightweight bilingual layer in `HabitApp/Services/AppLanguage.swift`.
+
+- **System** follows the device language. Chinese system locales use Chinese; other locales default to English.
+- **English** is intended for GitHub, demos, and non-Chinese users.
+- **中文** preserves the original personal workflow and coaching tone.
+
+The language picker lives in **Settings -> Language**. New default habits and habit packs are created in the selected language. Existing habits keep the names the user already created, so switching language never rewrites personal data.
+
 ## Pro Gating
 
 Free:
@@ -144,7 +162,7 @@ To enable widgets:
 2. Choose **File -> New -> Target -> Widget Extension**.
 3. Name it `HabitAppWidgets`.
 4. Add the files from `HabitAppWidgets/` to the widget target.
-5. Add shared model files to the widget target membership: `Habit.swift`, `CheckIn.swift`, `MealEntry.swift`, `DailyBrief.swift`, and `WeeklyReview.swift`.
+5. Add shared app files to the widget target membership: `AppLanguage.swift`, `Habit.swift`, `CheckIn.swift`, `MealEntry.swift`, `DailyBrief.swift`, and `WeeklyReview.swift`.
 6. Enable App Groups for both app and widget targets with `group.com.taofeng.habitapp`.
 7. Set the widget target entitlements file to `HabitAppWidgets/HabitAppWidgets.entitlements`.
 

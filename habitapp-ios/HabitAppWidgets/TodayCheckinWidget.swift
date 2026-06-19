@@ -56,9 +56,9 @@ struct TodayCheckinProvider: TimelineProvider {
     }
 
     private static let placeholderHabits = [
-        TodayCheckinHabit(id: UUID(), name: "第一餐", iconSymbol: "fork.knife.circle", reminderText: "08:00", isComplete: true),
-        TodayCheckinHabit(id: UUID(), name: "力量训练", iconSymbol: "dumbbell.fill", reminderText: "18:30", isComplete: false),
-        TodayCheckinHabit(id: UUID(), name: "睡前降速", iconSymbol: "moon.stars.fill", reminderText: "22:30", isComplete: false),
+        TodayCheckinHabit(id: UUID(), name: AppLanguage.text("第一餐", "First Meal"), iconSymbol: "fork.knife.circle", reminderText: "08:00", isComplete: true),
+        TodayCheckinHabit(id: UUID(), name: AppLanguage.text("力量训练", "Strength"), iconSymbol: "dumbbell.fill", reminderText: "18:30", isComplete: false),
+        TodayCheckinHabit(id: UUID(), name: AppLanguage.text("睡前降速", "Wind Down"), iconSymbol: "moon.stars.fill", reminderText: "22:30", isComplete: false),
     ]
 }
 
@@ -67,8 +67,8 @@ struct TodayCheckinWidget: Widget {
         StaticConfiguration(kind: "TodayCheckinWidget", provider: TodayCheckinProvider()) { entry in
             TodayCheckinWidgetView(entry: entry)
         }
-        .configurationDisplayName("今日打卡")
-        .description("查看今天最多 4 个核心习惯的完成状态。")
+        .configurationDisplayName(AppLanguage.text("今日打卡", "Today Check-In"))
+        .description(AppLanguage.text("查看今天最多 4 个核心习惯的完成状态。", "View completion for up to four core habits today."))
         .supportedFamilies([.systemSmall, .systemMedium])
     }
 }
@@ -91,7 +91,7 @@ private struct TodayCheckinWidgetView: View {
 
     private var smallView: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("今日")
+            Text(AppLanguage.text("今日", "Today"))
                 .font(.headline)
             LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 10) {
                 ForEach(entry.habits.prefix(4)) { habit in
@@ -102,7 +102,7 @@ private struct TodayCheckinWidgetView: View {
                     }
                 }
             }
-            Text("\(completedCount)/\(max(entry.habits.count, 1)) 已完成")
+            Text(AppLanguage.text("\(completedCount)/\(max(entry.habits.count, 1)) 已完成", "\(completedCount)/\(max(entry.habits.count, 1)) complete"))
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -113,7 +113,7 @@ private struct TodayCheckinWidgetView: View {
     private var mediumView: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("今日系统")
+                Text(AppLanguage.text("今日系统", "Today's System"))
                     .font(.headline)
                 Spacer()
                 Text("\(completedCount)/\(max(entry.habits.count, 1))")

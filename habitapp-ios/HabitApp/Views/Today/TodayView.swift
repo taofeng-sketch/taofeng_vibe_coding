@@ -14,6 +14,7 @@ struct TodayView: View {
     @AppStorage("dismissedDailyBriefDate") private var dismissedDailyBriefDate = ""
     @AppStorage("dismissedWeeklyReviewWeekStart") private var dismissedWeeklyReviewWeekStart = ""
     @AppStorage(EntitlementService.proAccessKey) private var hasProAccess = false
+    @AppStorage(AppLanguage.storageKey) private var appLanguage = AppLanguage.system.rawValue
     @State private var hasAPIKey = KeychainHelper.hasAnthropicAPIKey()
     @State private var showingImagePicker = false
     @State private var showingProteinSheet = false
@@ -90,7 +91,11 @@ struct TodayView: View {
                     summaryHeader
 
                     if enabledHabits.isEmpty {
-                        ContentUnavailableView("等你做第一件事", systemImage: "plus.circle", description: Text("先建立一个小到不会失败的系统。"))
+                        ContentUnavailableView(
+                            AppLanguage.text("等你做第一件事", "Ready for your first action"),
+                            systemImage: "plus.circle",
+                            description: Text(AppLanguage.text("先建立一个小到不会失败的系统。", "Start with a system small enough to be reliable."))
+                        )
                             .padding(.top, 48)
                     } else {
                         LazyVStack(spacing: 14) {
@@ -111,14 +116,14 @@ struct TodayView: View {
                 }
                 .padding()
             }
-            .navigationTitle("今日")
+            .navigationTitle(AppLanguage.text("今日", "Today"))
             .task {
                 HabitStore.seedDefaultsIfNeeded(context: modelContext, habits: habits)
                 refreshAPIKeyState()
                 recoveryStatus = await RecoveryService.shared.status()
             }
             .onReceive(NotificationCenter.default.publisher(for: .triggerBreakfastCamera)) { _ in
-                guard let breakfast = enabledHabits.first(where: { $0.name == "早餐 + 拍照" }) else { return }
+                guard let breakfast = enabledHabits.first(where: \.isBreakfastPhotoHabit) else { return }
                 startBreakfastCapture(for: breakfast)
             }
             .sheet(isPresented: $showingImagePicker) {
@@ -154,7 +159,7 @@ struct TodayView: View {
                             .ignoresSafeArea()
                         VStack(spacing: 14) {
                             ProgressView()
-                            Text("正在分析早餐...")
+                            Text(AppLanguage.text("正在分析早餐...", "Analyzing breakfast..."))
                                 .font(.headline)
                         }
                         .padding(24)
@@ -162,21 +167,21 @@ struct TodayView: View {
                     }
                 }
             }
-            .alert("早餐拍照", isPresented: $showingAlert) {
+            .alert(AppLanguage.text("早餐拍照", "Breakfast Photo"), isPresented: $showingAlert) {
                 if alertAllowsManualCheckIn {
-                    Button("手动打卡") {
+                    Button(AppLanguage.text("手动打卡", "Manual Check-In")) {
                         if let pendingBreakfastHabit {
                             HabitStore.checkIn(habit: pendingBreakfastHabit, context: modelContext)
                         }
                     }
                 }
                 if alertOpensSettings {
-                    Button("打开系统设置") {
+                    Button(AppLanguage.text("打开系统设置", "Open Settings")) {
                         guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
                         UIApplication.shared.open(url)
                     }
                 }
-                Button("好", role: .cancel) {}
+                Button(AppLanguage.text("好", "OK"), role: .cancel) {}
             } message: {
                 Text(alertMessage)
             }
@@ -185,11 +190,11 @@ struct TodayView: View {
 
     private var dailyBriefBanner: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Label("晨间简报", systemImage: "sun.max.fill")
+            Label(AppLanguage.text("晨间简报", "Morning Brief"), systemImage: "sun.max.fill")
                 .font(.headline)
                 .foregroundStyle(.orange)
             HStack(alignment: .top) {
-                Text(todayBrief?.bodyText ?? "你是一个把健康当作长期资产的人。今天先抓住一个小动作：第一餐优先补足蛋白质，然后把训练留给未来的自己。")
+                Text(todayBrief?.bodyText ?? AppLanguage.text("你是一个把健康当作长期资产的人。今天先抓住一个小动作：第一餐优先补足蛋白质，然后把训练留给未来的自己。", "You are treating health as a long-term asset. Start with one concrete action today: prioritize protein in your first meal, then leave training for your future self."))
                     .font(.subheadline)
                     .foregroundStyle(.primary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -201,7 +206,7 @@ struct TodayView: View {
                         .foregroundStyle(.secondary)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("今天不再显示晨间简报")
+                .accessibilityLabel(AppLanguage.text("今天不再显示晨间简报", "Hide morning brief today"))
             }
         }
         .padding()
@@ -211,13 +216,13 @@ struct TodayView: View {
 
     private var recoveryCard: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Label("恢复信号偏低", systemImage: "wind")
+            Label(AppLanguage.text("恢复信号偏低", "Recovery Signal Is Low"), systemImage: "wind")
                 .font(.headline)
                 .foregroundStyle(.purple)
-            Text("你是一个会听身体信号的人。来 4 分钟呼吸调节，先把肩膀和下颌松下来。")
+            Text(AppLanguage.text("你是一个会听身体信号的人。来 4 分钟呼吸调节，先把肩膀和下颌松下来。", "You are someone who listens to body signals. Take four minutes to breathe and release your shoulders and jaw."))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
-            Button("开始呼吸") {
+            Button(AppLanguage.text("开始呼吸", "Start Breathing")) {
                 if hasProAccess {
                     showingBreathSession = true
                 } else {
@@ -233,9 +238,9 @@ struct TodayView: View {
 
     private var summaryHeader: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("今天已完成 \(completedCount)/\(enabledHabits.count)")
+            Text(AppLanguage.text("今天已完成 \(completedCount)/\(enabledHabits.count)", "\(completedCount)/\(enabledHabits.count) completed today"))
                 .font(.title.bold())
-            Text("稳定的人不靠意志，靠系统")
+            Text(AppLanguage.text("稳定的人不靠意志，靠系统", "Reliable people do not rely on willpower. They use systems."))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
             ProgressView(value: enabledHabits.isEmpty ? 0 : Double(completedCount), total: Double(max(enabledHabits.count, 1)))
@@ -252,7 +257,7 @@ struct TodayView: View {
                     .frame(width: 44, height: 44)
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("今日蛋白质")
+                    Text(AppLanguage.text("今日蛋白质", "Today's Protein"))
                         .font(.headline)
                     Text("\(Int(todayProteinG.rounded())) / \(proteinTargetG) g")
                         .font(.subheadline)
@@ -261,7 +266,7 @@ struct TodayView: View {
 
                 Spacer()
 
-                Button("+ 加一餐") {
+                Button(AppLanguage.text("+ 加一餐", "+ Add Meal")) {
                     showingProteinSheet = true
                 }
                 .buttonStyle(.borderedProminent)
@@ -280,7 +285,7 @@ struct TodayView: View {
         refreshAPIKeyState()
 
         guard hasAPIKey else {
-            showAlert("前往设置添加 Anthropic API key 后再拍照分析。", allowsManualCheckIn: false)
+            showAlert(AppLanguage.text("前往设置添加 Anthropic API key 后再拍照分析。", "Add an Anthropic API key in Settings before photo analysis."), allowsManualCheckIn: false)
             return
         }
 
@@ -291,7 +296,7 @@ struct TodayView: View {
 
     private func ensureCameraAccess() -> Bool {
         guard UIImagePickerController.isSourceTypeAvailable(.camera) else {
-            showAlert("当前设备没有可用相机。请在真机上运行，或先手动打卡。", allowsManualCheckIn: true)
+            showAlert(AppLanguage.text("当前设备没有可用相机。请在真机上运行，或先手动打卡。", "This device has no available camera. Run on a real iPhone or check in manually."), allowsManualCheckIn: true)
             return false
         }
 
@@ -309,16 +314,16 @@ struct TodayView: View {
                     if granted {
                         showingImagePicker = true
                     } else {
-                        showAlert("相机权限未开启。请在系统设置里允许相机访问，或先手动打卡。", allowsManualCheckIn: true, opensSettings: true)
+                        showAlert(AppLanguage.text("相机权限未开启。请在系统设置里允许相机访问，或先手动打卡。", "Camera permission is off. Enable camera access in Settings or check in manually."), allowsManualCheckIn: true, opensSettings: true)
                     }
                 }
             }
             return false
         case .denied, .restricted:
-            showAlert("相机权限已关闭。请在系统设置里允许相机访问，或先手动打卡。", allowsManualCheckIn: true, opensSettings: true)
+            showAlert(AppLanguage.text("相机权限已关闭。请在系统设置里允许相机访问，或先手动打卡。", "Camera permission is disabled. Enable camera access in Settings or check in manually."), allowsManualCheckIn: true, opensSettings: true)
             return false
         @unknown default:
-            showAlert("无法确认相机权限。请检查系统设置，或先手动打卡。", allowsManualCheckIn: true, opensSettings: true)
+            showAlert(AppLanguage.text("无法确认相机权限。请检查系统设置，或先手动打卡。", "Could not confirm camera permission. Check system settings or check in manually."), allowsManualCheckIn: true, opensSettings: true)
             return false
         }
     }
@@ -500,21 +505,21 @@ private struct ProteinLogSheet: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("手动记录蛋白质") {
-                    TextField("蛋白质克数", text: $gramsText)
+                Section(AppLanguage.text("手动记录蛋白质", "Manual Protein Log")) {
+                    TextField(AppLanguage.text("蛋白质克数", "Protein grams"), text: $gramsText)
                         .keyboardType(.decimalPad)
-                    Text("用于午餐、晚餐或加餐。会把蛋白质和估算热量写回 Apple Health。")
+                    Text(AppLanguage.text("用于午餐、晚餐或加餐。会把蛋白质和估算热量写回 Apple Health。", "Use this for lunch, dinner, or snacks. Protein and estimated calories are written back to Apple Health."))
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
             }
-            .navigationTitle("+ 加一餐")
+            .navigationTitle(AppLanguage.text("+ 加一餐", "+ Add Meal"))
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("取消") { dismiss() }
+                    Button(AppLanguage.text("取消", "Cancel")) { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("保存") {
+                    Button(AppLanguage.text("保存", "Save")) {
                         onSave(grams)
                         dismiss()
                     }

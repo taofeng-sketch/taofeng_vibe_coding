@@ -4,6 +4,7 @@ import SwiftUI
 struct HistoryView: View {
     @Query(sort: \Habit.createdAt) private var habits: [Habit]
     @Query(sort: \CheckIn.date, order: .reverse) private var checkIns: [CheckIn]
+    @AppStorage(AppLanguage.storageKey) private var appLanguage = AppLanguage.system.rawValue
 
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 8), count: 7)
     private var enabledHabits: [Habit] { habits.filter(\.isEnabled) }
@@ -17,7 +18,7 @@ struct HistoryView: View {
                 }
                 .padding()
             }
-            .navigationTitle("历史")
+            .navigationTitle(AppLanguage.text("历史", "History"))
         }
     }
 
@@ -27,7 +28,7 @@ struct HistoryView: View {
                 .font(.title2.bold())
 
             LazyVGrid(columns: columns, spacing: 10) {
-                ForEach(["一", "二", "三", "四", "五", "六", "日"], id: \.self) { day in
+                ForEach(AppLanguage.isEnglish ? ["M", "T", "W", "T", "F", "S", "S"] : ["一", "二", "三", "四", "五", "六", "日"], id: \.self) { day in
                     Text(day)
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -48,7 +49,7 @@ struct HistoryView: View {
 
     private var streakSection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("连续打卡")
+            Text(AppLanguage.text("连续打卡", "Current Streaks"))
                 .font(.title2.bold())
 
             ForEach(enabledHabits) { habit in
@@ -57,7 +58,7 @@ struct HistoryView: View {
                         .frame(width: 28)
                     Text(habit.name)
                     Spacer()
-                    Text("\(currentStreak(for: habit)) 天")
+                    Text(AppLanguage.text("\(currentStreak(for: habit)) 天", "\(currentStreak(for: habit)) days"))
                         .font(.headline)
                         .foregroundStyle(.green)
                 }

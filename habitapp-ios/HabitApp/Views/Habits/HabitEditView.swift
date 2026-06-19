@@ -4,6 +4,7 @@ import SwiftUI
 struct HabitEditView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @AppStorage(AppLanguage.storageKey) private var appLanguage = AppLanguage.system.rawValue
 
     let habit: Habit?
 
@@ -35,8 +36,8 @@ struct HabitEditView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("基本信息") {
-                    TextField("名称", text: $name)
+                Section(AppLanguage.text("基本信息", "Basic Info")) {
+                    TextField(AppLanguage.text("名称", "Name"), text: $name)
 
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 4), spacing: 12) {
                         ForEach(symbols, id: \.self) { symbol in
@@ -55,25 +56,25 @@ struct HabitEditView: View {
                     .padding(.vertical, 6)
                 }
 
-                Section("提醒") {
-                    DatePicker("提醒时间", selection: $reminderDate, displayedComponents: .hourAndMinute)
-                    Toggle("启用通知", isOn: $isEnabled)
+                Section(AppLanguage.text("提醒", "Reminder")) {
+                    DatePicker(AppLanguage.text("提醒时间", "Reminder Time"), selection: $reminderDate, displayedComponents: .hourAndMinute)
+                    Toggle(AppLanguage.text("启用通知", "Enable Notifications"), isOn: $isEnabled)
                 }
 
-                Section("习惯结构（Tiny Habits）") {
-                    TextField("锚点（已有的可靠日常）", text: $anchorText)
-                    Text("公式：After [锚点], I will [\(name.isEmpty ? "这个习惯" : name)]. 例如“刷牙后我会做 5 次深蹲”。")
+                Section(AppLanguage.text("习惯结构（Tiny Habits）", "Habit Structure (Tiny Habits)")) {
+                    TextField(AppLanguage.text("锚点（已有的可靠日常）", "Anchor (existing reliable routine)"), text: $anchorText)
+                    Text(AppLanguage.text("公式：After [锚点], I will [\(name.isEmpty ? "这个习惯" : name)]. 例如“刷牙后我会做 5 次深蹲”。", "Formula: After [anchor], I will [\(name.isEmpty ? "this habit" : name)]. Example: after brushing teeth, I will do five squats."))
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
             }
-            .navigationTitle(habit == nil ? "新习惯" : "编辑习惯")
+            .navigationTitle(habit == nil ? AppLanguage.text("新习惯", "New Habit") : AppLanguage.text("编辑习惯", "Edit Habit"))
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("取消") { dismiss() }
+                    Button(AppLanguage.text("取消", "Cancel")) { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("保存", action: save)
+                    Button(AppLanguage.text("保存", "Save"), action: save)
                         .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }

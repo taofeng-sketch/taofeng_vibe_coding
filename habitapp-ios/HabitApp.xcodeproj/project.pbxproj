@@ -41,6 +41,7 @@
 		BF0000010000000000000022 /* PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0001010000000000000022 /* PaywallView.swift */; };
 		BF0000010000000000000023 /* CoachMemory.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0001010000000000000023 /* CoachMemory.swift */; };
 		BF0000010000000000000024 /* CoachMemoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0001010000000000000024 /* CoachMemoryView.swift */; };
+		BF0000010000000000000025 /* AppLanguage.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0001010000000000000025 /* AppLanguage.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -81,6 +82,7 @@
 		BF0001010000000000000022 /* PaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallView.swift; sourceTree = "<group>"; };
 		BF0001010000000000000023 /* CoachMemory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachMemory.swift; sourceTree = "<group>"; };
 		BF0001010000000000000024 /* CoachMemoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachMemoryView.swift; sourceTree = "<group>"; };
+		BF0001010000000000000025 /* AppLanguage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLanguage.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -167,6 +169,7 @@
 				BF000101000000000000001B /* WeeklyReviewService.swift */,
 				BF000101000000000000001D /* RecoveryService.swift */,
 				BF0001010000000000000020 /* EntitlementService.swift */,
+				BF0001010000000000000025 /* AppLanguage.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -351,6 +354,7 @@
 				BF0000010000000000000022 /* PaywallView.swift in Sources */,
 				BF0000010000000000000023 /* CoachMemory.swift in Sources */,
 				BF0000010000000000000024 /* CoachMemoryView.swift in Sources */,
+				BF0000010000000000000025 /* AppLanguage.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
