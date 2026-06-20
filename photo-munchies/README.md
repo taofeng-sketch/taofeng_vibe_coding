@@ -1,0 +1,88 @@
+# Photo Munchies
+
+An iPhone-friendly photo minigame prototype for kids.
+
+Source of truth: this incubator folder. The GitHub publish clone under `~/.cache/photo-munchies-publish` is only a temporary deployment workspace, not the place to edit source code.
+
+Published web prototype:
+
+- GitHub folder: <https://github.com/taofeng-sketch/taofeng_vibe_coding/tree/main/photo-munchies>
+- Play URL: <https://taofeng-sketch.github.io/taofeng_vibe_coding/photo-munchies/> (redirects straight to the live camera game)
+- Web live prototype: <https://taofeng-sketch.github.io/taofeng_vibe_coding/photo-munchies/live.html>
+
+## How To Play
+
+1. For the fastest phone test, open the Web live prototype in Safari.
+2. Tap **Start camera game** and allow camera access.
+3. Open your mouth when fruit reaches your tracked mouth.
+4. Close your mouth to recharge energy; do not hold it open forever.
+5. Chase the roaming fruit by moving your head, avoid messy splats, and save a replay if the browser supports recording.
+
+The Web live version now uses MediaPipe Face Landmarker for browser mouth tracking. It also has Kimi fruit-smash art in [`art/`](./art/), an image-model-generated bomb explosion sprite, bomb hazards that only explode when eaten, 3-2-1 bomb countdowns that disappear safely if ignored, 10 hearts, energy reset, arcade-style pop text, and an 80s-style Game Over overlay that fades out before the final share card appears. The final result still uses the pre-Game-Over messy play screenshot, so the share image stays playful instead of becoming a plain "GAME OVER" card. It also includes face-attached saturated fruit splats, chaotic mixed-size fruit paths, double-speed final rush movement, a front-layer mouth, oversized blinking peek-out eyes with lashes, countdown hover rings, a fallback hold-mouth button if tracking fails, local replay recording, and procedural WebAudio music/SFX for fruit chomps, fruit splats, countdown ticks, bomb blasts, safe bombs, final rush, win, and Game Over. The native iPhone app remains the better path for Apple Vision + ReplayKit experimentation.
+
+## Local Run
+
+Double-click `index.html`, or start a local server:
+
+```bash
+python3 -m http.server 4174
+```
+
+Open <http://localhost:4174>.
+
+Open the web live version locally:
+
+```bash
+python3 -m http.server 4174
+```
+
+Then visit <http://localhost:4174/live.html>.
+
+For a no-camera verification pass, open <http://localhost:4174/live.html?debugFace=1>. Add `&debugBomb=1` to seed an eaten-bomb explosion, `&debugBombMiss=1` to verify an ignored bomb disappears safely, and `&debugFatal=1` to force the Game Over path. These modes simulate a moving face and write `data-debug-state` on the game canvas so face-attached splats can be checked against the moving face anchor.
+
+## iPhone Test
+
+For the easiest iPhone test, run:
+
+```bash
+./scripts/serve_iphone.sh
+```
+
+It prints the iPhone URL and creates a local QR launch page. On the iPhone, join the same Wi-Fi as the Mac and open the printed URL. Then use Safari's Share button -> **Add to Home Screen** if you want it to feel more app-like.
+
+## Technical Notes
+
+- Plain HTML, CSS, and JavaScript.
+- No install, no build, no backend.
+- Photos are processed locally in the browser using Canvas.
+- Sound is generated locally with WebAudio, then mixed into the replay stream when the browser supports it. A future pass can swap in model-generated audio files once a `MUAPI_KEY` is available.
+- Designed for iPhone Safari touch input, with mouse support for desktop testing.
+- Default mode is **Gentle**, with longer timers for the first kid playtest.
+
+## Native iOS App
+
+There is also a native SwiftUI version in [`ios/`](./ios/):
+
+```bash
+open ios/PhotoMunchies/PhotoMunchies.xcodeproj
+```
+
+See [`ios/README.md`](./ios/README.md) for simulator and real-device instructions.
+
+Native scope includes front-camera selfie capture, Vision face detection, Live Kebab Munch v2 scoring/combo/hold-mouth challenge, haptic/audio feedback, and ReplayKit recording so the finished round can be saved from Apple's preview screen. The current Web prototype has moved ahead as Live Fruit Munch with MediaPipe mouth tracking, messy fruit splats, mouth energy, roaming fruit, local replay download, and optional two-player mode.
+
+## Verification
+
+Run the automated browser smoke test:
+
+```bash
+./scripts/smoke_test.sh
+```
+
+Publish the web version to GitHub Pages:
+
+```bash
+./scripts/publish_to_github.sh
+```
+
+See [`design_plan.md`](./design_plan.md) for the product plan, [`dependency_plan.md`](./dependency_plan.md) for the end-to-end dependency plan, [`MONETIZATION.md`](./MONETIZATION.md) for AdSense notes, and [`playtest_checklist.md`](./playtest_checklist.md) for the first kid/iPhone test.
