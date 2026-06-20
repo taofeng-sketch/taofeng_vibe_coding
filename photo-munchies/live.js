@@ -37,7 +37,7 @@ const DEBUG_BOMB = DEBUG_PARAMS.has("debugBomb");
 const DEBUG_BOMB_MISS = DEBUG_PARAMS.has("debugBombMiss");
 const DEBUG_FATAL = DEBUG_PARAMS.has("debugFatal");
 const DEBUG_SECONDS = Number(DEBUG_PARAMS.get("debugSeconds") || 0);
-const mouth = { x: 0.5, y: 0.57, targetX: 0.5, targetY: 0.57, faceX: 0.5, faceY: 0.46, openness: 0 };
+const mouth = makeMouthState(0.5);
 const duration = DEBUG_SECONDS >= 4 && DEBUG_SECONDS <= 32 ? DEBUG_SECONDS : 32;
 const MAX_SMEARS = 20;
 const BOMB_LOCK_SECONDS = 1.2;
@@ -145,7 +145,7 @@ const FRUIT_SOUND = {
 
 function makePlayer2() {
   return {
-    mouth: { x: 0.64, y: 0.57, targetX: 0.64, targetY: 0.57, faceX: 0.64, faceY: 0.46, openness: 0 },
+    mouth: makeMouthState(0.64),
     mouthOpen: false,
     mouthWantsOpen: false,
     mouthTired: false,
@@ -159,6 +159,22 @@ function makePlayer2() {
     openSmooth: 0,
     biteFlash: 0,
     lastTrackingAt: 0,
+  };
+}
+
+function makeMouthState(centerX = 0.5) {
+  return {
+    x: centerX,
+    y: 0.57,
+    targetX: centerX,
+    targetY: 0.57,
+    faceX: centerX,
+    faceY: 0.46,
+    leftEyeX: centerX - 0.085,
+    leftEyeY: 0.39,
+    rightEyeX: centerX + 0.085,
+    rightEyeY: 0.39,
+    openness: 0,
   };
 }
 
@@ -392,6 +408,8 @@ function choosePlayTarget(spawn, kind, placedTargets, targetPlayer = 0, chaotic 
   const spreadY = kind === "bomb" ? 0.20 : chaotic ? 0.46 : 0.34;
   const baseY = kind === "bomb" ? 0.42 : 0.55;
   let fallback = { x: centerX, y: baseY };
+  let bestFallback = fallback;
+  let bestDistance = -1;
 
   for (let tries = 0; tries < 18; tries += 1) {
     const target = {
@@ -399,18 +417,23 @@ function choosePlayTarget(spawn, kind, placedTargets, targetPlayer = 0, chaotic 
       y: clamp(baseY + (Math.random() - 0.5) * spreadY, 0.30, 0.76),
     };
     fallback = target;
-    const close = placedTargets.some((other) => (
-      Math.abs(other.spawn - spawn) < timeWindow
-      && Math.hypot(other.x - target.x, other.y - target.y) < minDistance
-    ));
+    const nearbyTargets = placedTargets.filter((other) => Math.abs(other.spawn - spawn) < timeWindow);
+    const nearest = nearbyTargets.length
+      ? Math.min(...nearbyTargets.map((other) => Math.hypot(other.x - target.x, other.y - target.y)))
+      : Infinity;
+    if (nearest > bestDistance) {
+      bestDistance = nearest;
+      bestFallback = target;
+    }
+    const close = nearest < minDistance;
     if (!close) {
       placedTargets.push({ ...target, spawn, kind });
       return target;
     }
   }
 
-  placedTargets.push({ ...fallback, spawn, kind });
-  return fallback;
+  placedTargets.push({ ...bestFallback, spawn, kind });
+  return bestFallback;
 }
 
 function prepareBombDrop(item) {
@@ -606,6 +629,10 @@ function startRound() {
   mouth.y = mouth.targetY = 0.57;
   mouth.faceX = 0.5;
   mouth.faceY = 0.46;
+  mouth.leftEyeX = 0.415;
+  mouth.leftEyeY = 0.39;
+  mouth.rightEyeX = 0.585;
+  mouth.rightEyeY = 0.39;
   mouth.openness = 0;
   if (DEBUG_FACE) {
     updateDebugFace(performance.now());
@@ -1131,6 +1158,10 @@ function updateDebugFace(now) {
   faceTrackingFailed = false;
   mouth.faceX = 0.50 + Math.sin(t * 1.45) * 0.18;
   mouth.faceY = 0.42 + Math.cos(t * 1.12) * 0.055;
+  mouth.leftEyeX = mouth.faceX - 0.085;
+  mouth.leftEyeY = mouth.faceY - 0.055 + Math.sin(t * 1.8) * 0.004;
+  mouth.rightEyeX = mouth.faceX + 0.085;
+  mouth.rightEyeY = mouth.faceY - 0.055 + Math.cos(t * 1.6) * 0.004;
   mouth.x = mouth.faceX + Math.sin(t * 2.1) * 0.018;
   mouth.y = mouth.faceY + 0.15 + Math.cos(t * 1.8) * 0.015;
   mouth.targetX = mouth.x;
@@ -1216,6 +1247,10 @@ function readMouthFromLandmarks(landmarks, targetMouth, previousSmooth) {
   targetMouth.y += (targetMouth.targetY - targetMouth.y) * 0.38;
   targetMouth.faceX += (clamp((eyeMid.x + nose.x + center.x) / 3, 0.14, 0.86) - targetMouth.faceX) * 0.34;
   targetMouth.faceY += (clamp((eyeMid.y * 1.6 + nose.y + center.y * 0.5) / 3.1, 0.16, 0.76) - targetMouth.faceY) * 0.34;
+  targetMouth.leftEyeX += (clamp(leftEye.x, 0.08, 0.92) - targetMouth.leftEyeX) * 0.42;
+  targetMouth.leftEyeY += (clamp(leftEye.y, 0.10, 0.72) - targetMouth.leftEyeY) * 0.42;
+  targetMouth.rightEyeX += (clamp(rightEye.x, 0.08, 0.92) - targetMouth.rightEyeX) * 0.42;
+  targetMouth.rightEyeY += (clamp(rightEye.y, 0.10, 0.72) - targetMouth.rightEyeY) * 0.42;
   return { smooth };
 }
 
@@ -1597,6 +1632,11 @@ function debugState() {
     duration,
     faceX: Number(mouth.faceX.toFixed(4)),
     faceY: Number(mouth.faceY.toFixed(4)),
+    leftEyeX: Number(mouth.leftEyeX.toFixed(4)),
+    leftEyeY: Number(mouth.leftEyeY.toFixed(4)),
+    rightEyeX: Number(mouth.rightEyeX.toFixed(4)),
+    rightEyeY: Number(mouth.rightEyeY.toFixed(4)),
+    eyeMess: Number(clamp((faceSplatCount(0) - 2) / 7, 0, 1).toFixed(4)),
     mouthX: Number(mouth.x.toFixed(4)),
     mouthY: Number(mouth.y.toFixed(4)),
     lives,
@@ -1627,81 +1667,125 @@ function faceSplatCount(playerIndex = 0) {
 }
 
 function drawPeekEyes(playerIndex = 0) {
-  if (faceSplatCount(playerIndex) < 4) return;
+  const isTracked = playerIndex === 1 ? player2.tracked : (faceTracked || DEBUG_FACE);
+  if (!isTracked) return;
   const activeMouth = playerIndex === 1 ? player2.mouth : mouth;
-  const cx = activeMouth.faceX * W;
-  const cy = activeMouth.faceY * H - 30;
-  const blinkWave = Math.sin(performance.now() / 155);
-  const blink = blinkWave > 0.55;
-  const spread = 64;
-  const eyeW = 38;
-  const eyeH = blink ? 8 : 47;
+  const mess = clamp((faceSplatCount(playerIndex) - 2) / 7, 0, 1);
+  const blinkWave = Math.sin(performance.now() / (mess > 0.55 ? 150 : 230));
+  const blink = blinkWave > (mess > 0.55 ? 0.58 : 0.78);
+  const left = {
+    x: activeMouth.leftEyeX * W,
+    y: activeMouth.leftEyeY * H,
+  };
+  const right = {
+    x: activeMouth.rightEyeX * W,
+    y: activeMouth.rightEyeY * H,
+  };
+  const distance = Math.max(96, Math.hypot(right.x - left.x, right.y - left.y));
+  const eyeW = clamp(distance * (0.17 + mess * 0.18), 28, 76);
+  const cleanEyeH = clamp(distance * 0.095, 15, 25);
+  const bigEyeH = clamp(distance * 0.34, 48, 88);
   ctx.save();
   ctx.shadowColor = "#fff6ff";
-  ctx.shadowBlur = 24;
-  for (const side of [-1, 1]) {
-    const x = cx + side * spread;
+  ctx.shadowBlur = 14 + mess * 18;
+  [
+    { ...left, side: -1 },
+    { ...right, side: 1 },
+  ].forEach(({ x, y, side }) => {
+    const flirtOffset = Math.sin(performance.now() / 360 + side) * (1 - mess) * 3;
+    const cy = y + flirtOffset;
+    const eyeH = blink ? 7 : cleanEyeH + mess * (bigEyeH - cleanEyeH);
     ctx.fillStyle = "#fff6ff";
     ctx.strokeStyle = "#0a0612";
-    ctx.lineWidth = 8;
+    ctx.lineWidth = 7 + mess * 2;
     ctx.lineJoin = "round";
     ctx.lineCap = "round";
     ctx.beginPath();
     if (blink) {
-      ctx.moveTo(x - eyeW, cy);
-      ctx.quadraticCurveTo(x, cy + 12, x + eyeW, cy);
+      ctx.moveTo(x - eyeW * 0.98, cy);
+      ctx.quadraticCurveTo(x, cy + 8 + mess * 7, x + eyeW * 0.98, cy);
       ctx.stroke();
-      drawEyelashes(x, cy, side, true, eyeW, 20);
+      drawEyelashes(x, cy, side, true, eyeW, 20, mess);
     } else {
-      ctx.ellipse(x, cy, eyeW, eyeH, side * 0.06, 0, Math.PI * 2);
+      if (mess < 0.45) {
+        ctx.moveTo(x - eyeW, cy);
+        ctx.bezierCurveTo(x - eyeW * 0.45, cy - eyeH * 1.28, x + eyeW * 0.45, cy - eyeH * 1.20, x + eyeW, cy - 2);
+        ctx.bezierCurveTo(x + eyeW * 0.35, cy + eyeH * 0.52, x - eyeW * 0.40, cy + eyeH * 0.52, x - eyeW, cy);
+        ctx.closePath();
+      } else {
+        ctx.ellipse(x, cy, eyeW, eyeH, side * 0.035, 0, Math.PI * 2);
+      }
       ctx.fill();
       ctx.stroke();
+      if (mess >= 0.45) {
+        ctx.strokeStyle = "rgba(255,246,255,0.78)";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.ellipse(x, cy, eyeW + 7, eyeH + 7, side * 0.035, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.fillStyle = `rgba(255,45,142,${0.22 * (1 - mess)})`;
+      ctx.beginPath();
+      ctx.ellipse(x - side * eyeW * 0.18, cy - eyeH * 0.54, eyeW * 0.72, eyeH * 0.32, side * 0.10, 0, Math.PI * 2);
+      ctx.fill();
       ctx.fillStyle = "#0a0612";
       ctx.beginPath();
-      ctx.arc(x + side * 8, cy + 5, 15, 0, Math.PI * 2);
+      ctx.arc(x + side * (6 + mess * 6), cy + mess * 5, clamp(9 + mess * 10, 9, 20), 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = "#fff";
       ctx.beginPath();
-      ctx.arc(x + side * 14, cy - 7, 5, 0, Math.PI * 2);
+      ctx.arc(x + side * (10 + mess * 7), cy - eyeH * 0.26, 4 + mess * 3, 0, Math.PI * 2);
       ctx.fill();
-      drawEyelashes(x, cy, side, false, eyeW, eyeH);
+      drawEyelashes(x, cy, side, false, eyeW, eyeH, mess);
     }
+  });
+  if (mess > 0.42) {
+    const cx = (left.x + right.x) / 2;
+    const cy = (left.y + right.y) / 2 + bigEyeH + 22;
+    ctx.fillStyle = "#c6ff36";
+    ctx.font = "900 29px 'Bangers', system-ui";
+    ctx.textAlign = "center";
+    ctx.strokeStyle = "#0a0612";
+    ctx.lineWidth = 6;
+    const label = playerIndex === 1 ? "P2 PEEK!" : "PEEK!";
+    ctx.strokeText(label, cx, cy);
+    ctx.fillText(label, cx, cy);
   }
-  ctx.fillStyle = "#c6ff36";
-  ctx.font = "900 29px 'Bangers', system-ui";
-  ctx.textAlign = "center";
-  ctx.strokeStyle = "#0a0612";
-  ctx.lineWidth = 6;
-  const label = playerIndex === 1 ? "P2 PEEK!" : "PEEK!";
-  ctx.strokeText(label, cx, cy + 78);
-  ctx.fillText(label, cx, cy + 78);
   ctx.restore();
 }
 
-function drawEyelashes(cx, cy, side, blink, eyeW, eyeH) {
+function drawEyelashes(cx, cy, side, blink, eyeW, eyeH, mess = 0) {
   const t = performance.now() / 240;
-  const colors = ["#ff5f7d", "#c6ff36", "#9b6bff", "#ff9d2e"];
+  const colors = mess > 0.45 ? ["#ff5f7d", "#c6ff36", "#9b6bff", "#ff9d2e"] : ["#0a0612", "#0a0612", "#ff2d8e", "#0a0612"];
   ctx.save();
   ctx.lineCap = "round";
-  for (let i = 0; i < 5; i += 1) {
-    const p = i / 4;
+  const lashCount = mess > 0.45 ? 6 : 5;
+  for (let i = 0; i < lashCount; i += 1) {
+    const p = lashCount === 1 ? 0.5 : i / (lashCount - 1);
     const baseX = cx - eyeW * 0.66 + p * eyeW * 1.32;
     const baseY = cy - (blink ? 1 : eyeH * (0.78 + Math.sin(t + i) * 0.02));
-    const lean = (p - 0.5) * 22 + side * 5 + Math.sin(t + i) * 4;
+    const lean = (p - 0.5) * (18 + mess * 10) + side * (5 + mess * 3) + Math.sin(t + i) * (3 + mess * 3);
     const tipX = baseX + lean;
-    const tipY = baseY - 32 - Math.sin(t * 1.6 + i) * 5;
+    const tipY = baseY - (24 + mess * 16) - Math.sin(t * 1.6 + i) * (4 + mess * 3);
     ctx.strokeStyle = "#0a0612";
-    ctx.lineWidth = 7;
+    ctx.lineWidth = 6 + mess * 2;
     ctx.beginPath();
     ctx.moveTo(baseX, baseY);
     ctx.quadraticCurveTo((baseX + tipX) / 2, baseY - 20, tipX, tipY);
     ctx.stroke();
     ctx.strokeStyle = colors[i % colors.length];
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.moveTo(tipX - 9, tipY + 5);
-    ctx.lineTo(tipX + 9, tipY - 3);
-    ctx.stroke();
+    ctx.lineWidth = mess > 0.45 ? 4 : 2.8;
+    if (mess > 0.45) {
+      ctx.beginPath();
+      ctx.moveTo(tipX - 9, tipY + 5);
+      ctx.lineTo(tipX + 9, tipY - 3);
+      ctx.stroke();
+    } else {
+      ctx.beginPath();
+      ctx.moveTo(tipX, tipY);
+      ctx.quadraticCurveTo(tipX + side * 10, tipY - 5, tipX + side * 18, tipY + 1);
+      ctx.stroke();
+    }
   }
   ctx.restore();
 }
