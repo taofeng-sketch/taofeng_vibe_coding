@@ -280,10 +280,14 @@ p {
 }
 
 .button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 8px;
   padding: 11px 16px;
   color: var(--ink);
   box-shadow: 0 8px 16px rgba(28, 37, 51, 0.12);
+  text-decoration: none;
 }
 
 .button:active,
@@ -299,6 +303,12 @@ p {
 
 .button.primary {
   background: var(--sun);
+}
+
+.button.live-link {
+  width: 100%;
+  background: var(--berry);
+  color: white;
 }
 
 .button.secondary {

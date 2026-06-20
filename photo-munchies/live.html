@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#ffcf5c">
+  <title>Live Kebab Munch</title>
+  <link rel="stylesheet" href="live.css">
+</head>
+<body>
+  <main class="live-shell">
+    <section id="startPanel" class="panel">
+      <p class="eyebrow">Photo Munchies Lab</p>
+      <h1>Live Kebab Munch</h1>
+      <p class="lede">Camera game prototype: flying kebabs, giant mouth, score, combo, and replay recording.</p>
+      <button id="startButton" class="primary">Start camera game</button>
+      <a class="secondary-link" href="./">Back to photo game</a>
+      <p class="note">Web version uses a press-and-hold mouth button. Native iPhone can use Vision mouth detection.</p>
+    </section>
+
+    <section id="gamePanel" class="game-panel hidden">
+      <div class="hud">
+        <div>
+          <span>Score</span>
+          <strong id="scoreText">0</strong>
+        </div>
+        <div>
+          <span>Combo</span>
+          <strong id="comboText">x0</strong>
+        </div>
+        <div>
+          <span>Time</span>
+          <strong id="timeText">20</strong>
+        </div>
+      </div>
+
+      <div class="stage">
+        <video id="cameraVideo" autoplay playsinline muted></video>
+        <canvas id="gameCanvas" width="720" height="1080"></canvas>
+      </div>
+
+      <div class="controls">
+        <button id="mouthButton" class="mouth-button">Hold open mouth</button>
+        <button id="restartButton" class="ghost">Restart</button>
+      </div>
+      <p id="statusText" class="status">Hold when food reaches the giant mouth.</p>
+    </section>
+
+    <section id="resultPanel" class="panel hidden">
+      <p class="eyebrow">Round complete</p>
+      <h2 id="rankText">Hungry Hero</h2>
+      <p id="finalText">Score 0</p>
+      <div class="result-actions">
+        <button id="saveButton" class="primary" disabled>Save replay</button>
+        <button id="playAgainButton" class="ghost">Play again</button>
+      </div>
+      <p id="saveHint" class="note">Replay saving depends on browser MediaRecorder support.</p>
+    </section>
+  </main>
+  <script src="live.js"></script>
+</body>
+</html>
