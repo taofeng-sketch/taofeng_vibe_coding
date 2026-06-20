@@ -12,7 +12,11 @@
     <section id="startPanel" class="panel">
       <p class="eyebrow">Photo Munchies Lab</p>
       <h1>Live Fruit Munch</h1>
-      <p class="lede">Track your face, open your mouth, catch flying fruit, dodge the splats, and save the replay.</p>
+      <p class="lede">Track your face, open your mouth, chase flying fruit, dodge messy splats, and save the replay.</p>
+      <label class="mode-toggle">
+        <input id="twoPlayerToggle" type="checkbox">
+        <span>Two player face-off</span>
+      </label>
       <button id="startButton" class="primary">Start camera game</button>
       <a class="secondary-link" href="./">Back to photo game</a>
       <p class="note">This web version uses MediaPipe face landmarks in your browser. No photo or camera frame is uploaded by this app.</p>
@@ -21,8 +25,12 @@
     <section id="gamePanel" class="game-panel hidden">
       <div class="hud">
         <div>
-          <span>Score</span>
+          <span>P1</span>
           <strong id="scoreText">0</strong>
+        </div>
+        <div id="p2Stat" class="hidden">
+          <span>P2</span>
+          <strong id="score2Text">0</strong>
         </div>
         <div>
           <span>Combo</span>
@@ -30,7 +38,7 @@
         </div>
         <div>
           <span>Time</span>
-          <strong id="timeText">20</strong>
+          <strong id="timeText">32</strong>
         </div>
         <div>
           <span>Energy</span>

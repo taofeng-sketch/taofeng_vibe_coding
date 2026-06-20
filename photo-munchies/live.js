@@ -5,7 +5,11 @@ const els = {
   startButton: document.getElementById("startButton"),
   video: document.getElementById("cameraVideo"),
   canvas: document.getElementById("gameCanvas"),
+  hud: document.querySelector(".hud"),
+  twoPlayerToggle: document.getElementById("twoPlayerToggle"),
   scoreText: document.getElementById("scoreText"),
+  score2Text: document.getElementById("score2Text"),
+  p2Stat: document.getElementById("p2Stat"),
   comboText: document.getElementById("comboText"),
   timeText: document.getElementById("timeText"),
   energyText: document.getElementById("energyText"),
@@ -26,7 +30,7 @@ const ctx = els.canvas.getContext("2d");
 const W = els.canvas.width;
 const H = els.canvas.height;
 const mouth = { x: 0.5, y: 0.57, targetX: 0.5, targetY: 0.57, openness: 0 };
-const duration = 20;
+const duration = 32;
 const FRUITS = {
   watermelon: { label: "WATERMELON", color: "#4fcf96", flesh: "#ff5f7d", seed: "#131b2a", points: 120, radius: 40 },
   mango: { label: "MANGO", color: "#ffb02e", flesh: "#ffcf5c", seed: "#7a4b11", points: 130, radius: 38 },
@@ -51,6 +55,8 @@ let mouthOpen = false;
 let mouthWantsOpen = false;
 let mouthTired = false;
 let stamina = 1;
+let player2 = makePlayer2();
+let twoPlayerMode = false;
 let manualMouthOpen = false;
 let hold = 0;
 let score = 0;
@@ -68,28 +74,54 @@ let lastTrackingAt = 0;
 let lastVideoTime = -1;
 let mouthOpenSmooth = 0;
 let biteFlash = 0;
+let screenShake = 0;
+
+function makePlayer2() {
+  return {
+    mouth: { x: 0.64, y: 0.57, targetX: 0.64, targetY: 0.57, openness: 0 },
+    mouthOpen: false,
+    mouthWantsOpen: false,
+    mouthTired: false,
+    stamina: 1,
+    score: 0,
+    combo: 0,
+    tracked: false,
+    openSmooth: 0,
+    biteFlash: 0,
+    lastTrackingAt: 0,
+  };
+}
 
 function resetFoods() {
-  foods = [
-    food("watermelon", 0.08, 0.18, 0.0, 0.018),
-    food("mango", 0.92, 0.20, 0.9, 0.018),
-    food("strawberry", 0.10, 0.80, 1.8, 0.019),
-    food("blueberry", 0.88, 0.78, 2.7, 0.019),
-    food("golden", 0.50, 0.08, 4.0, 0.020),
-    food("kiwi", 0.08, 0.50, 5.2, 0.020),
-    food("watermelon", 0.92, 0.52, 6.1, 0.020),
-    food("mango", 0.50, 0.92, 7.2, 0.019),
-    food("strawberry", 0.16, 0.12, 8.7, 0.022),
-    food("blueberry", 0.84, 0.12, 9.6, 0.022),
-    food("kiwi", 0.14, 0.88, 11.4, 0.023),
-    food("golden", 0.88, 0.84, 13.0, 0.024),
-    food("watermelon", 0.50, 0.05, 15.2, 0.025),
-    food("mango", 0.06, 0.60, 16.6, 0.026),
-  ];
+  const kinds = ["watermelon", "mango", "strawberry", "blueberry", "kiwi"];
+  foods = Array.from({ length: 26 }, (_, index) => {
+    const kind = index === 8 || index === 19 ? "golden" : kinds[index % kinds.length];
+    const edge = index % 4;
+    const start = edge === 0 ? [0.04, 0.14 + Math.random() * 0.72]
+      : edge === 1 ? [0.96, 0.14 + Math.random() * 0.72]
+      : edge === 2 ? [0.16 + Math.random() * 0.68, 0.06]
+      : [0.16 + Math.random() * 0.68, 0.94];
+    return food(kind, start[0], start[1], index * 1.08, 0.018 + Math.min(index, 18) * 0.0006);
+  });
 }
 
 function food(kind, x, y, spawn, speed) {
-  return { kind, x, y, spawn, speed, done: false, atMouthFor: 0, rot: Math.random() * 0.7 - 0.35 };
+  const roam = Math.random() < 0.2;
+  return {
+    kind,
+    x,
+    y,
+    spawn,
+    speed,
+    done: false,
+    atMouthFor: 0,
+    mode: roam ? "roam" : "mouth",
+    targetPlayer: twoPlayerMode && Math.random() < 0.48 ? 1 : 0,
+    targetX: 0.12 + Math.random() * 0.76,
+    targetY: 0.16 + Math.random() * 0.68,
+    wobble: Math.random() * Math.PI * 2,
+    rot: Math.random() * 0.7 - 0.35,
+  };
 }
 
 async function startCamera() {
@@ -116,7 +148,7 @@ async function initFaceTracking() {
         delegate: "GPU",
       },
       runningMode: "VIDEO",
-      numFaces: 1,
+      numFaces: 2,
       outputFaceBlendshapes: false,
     });
     faceTrackingReady = true;
@@ -145,6 +177,9 @@ function show(panel) {
 
 function startRound() {
   show(els.gamePanel);
+  twoPlayerMode = Boolean(els.twoPlayerToggle && els.twoPlayerToggle.checked);
+  els.hud.classList.toggle("two-player", twoPlayerMode);
+  els.p2Stat.classList.toggle("hidden", !twoPlayerMode);
   resetFoods();
   pops = [];
   splats = [];
@@ -153,6 +188,7 @@ function startRound() {
   hold = 0;
   stamina = 1;
   mouthTired = false;
+  player2 = makePlayer2();
   ended = false;
   startedAt = performance.now();
   chunks = [];
@@ -164,6 +200,7 @@ function startRound() {
   mouth.x = mouth.targetX = 0.5;
   mouth.y = mouth.targetY = 0.57;
   mouth.openness = 0;
+  els.score2Text.textContent = "0";
   els.saveButton.disabled = true;
   startRecording();
   cancelAnimationFrame(raf);
@@ -218,9 +255,12 @@ function loop(now) {
   const left = Math.max(0, duration - elapsed);
   updateFaceTracking(now);
   updateStamina();
+  updatePlayer2Stamina();
   if (mouthOpen) hold += 1 / 60;
   else hold = 0;
   biteFlash = Math.max(0, biteFlash - 1 / 60);
+  player2.biteFlash = Math.max(0, player2.biteFlash - 1 / 60);
+  screenShake = Math.max(0, screenShake - 1 / 60);
 
   updateFoods(elapsed);
   updatePops();
@@ -238,48 +278,93 @@ function loop(now) {
 function updateFoods(elapsed) {
   for (const item of foods) {
     if (item.done || elapsed < item.spawn) continue;
-    const speed = item.atMouthFor > 0 ? item.speed * 0.34 : item.speed;
-    item.x += (mouth.x - item.x) * speed;
-    item.y += (mouth.y - item.y) * speed;
-    const d = Math.hypot(item.x - mouth.x, item.y - mouth.y);
-    if (mouthOpen && d < 0.13) {
-      eat(item);
+    const target = getFoodTarget(item);
+    const targetD = Math.hypot(item.x - target.x, item.y - target.y);
+    const speed = item.atMouthFor > 0 ? item.speed * 0.24 : item.speed;
+    item.x += (target.x - item.x) * speed;
+    item.y += (target.y - item.y) * speed;
+    item.wobble += 0.08;
+    if (item.mode === "roam") {
+      item.x += Math.cos(item.wobble) * 0.0018;
+      item.y += Math.sin(item.wobble * 1.25) * 0.0018;
+    }
+
+    const eater = getCatchingPlayer(item);
+    if (eater !== -1) {
+      eat(item, eater);
       item.done = true;
-    } else if (d < 0.065) {
+    } else if (targetD < (item.mode === "roam" ? 0.055 : 0.065)) {
       item.atMouthFor += 1 / 60;
     }
-    if (!item.done && item.atMouthFor > 1.15) {
-      if (item.kind !== "chili") {
-        combo = 0;
-        splat(item);
-        pops.push(pop("SPLAT!", item.x, item.y, "#fff"));
-      }
+    if (!item.done && item.atMouthFor > (item.mode === "roam" ? 0.55 : 1.1)) {
+      if (item.targetPlayer === 1) player2.combo = 0;
+      else combo = 0;
+      splat(item);
+      pops.push(pop("SPLAT!", item.x, item.y, "#fff", true));
       item.done = true;
     }
   }
 }
 
-function eat(item) {
+function getFoodTarget(item) {
+  if (item.mode === "roam") {
+    return { x: item.targetX, y: item.targetY };
+  }
+  if (twoPlayerMode && item.targetPlayer === 1 && player2.tracked) {
+    return player2.mouth;
+  }
+  return mouth;
+}
+
+function getCatchingPlayer(item) {
+  const d1 = Math.hypot(item.x - mouth.x, item.y - mouth.y);
+  if (mouthOpen && d1 < 0.13) return 0;
+  if (twoPlayerMode && player2.tracked) {
+    const d2 = Math.hypot(item.x - player2.mouth.x, item.y - player2.mouth.y);
+    if (player2.mouthOpen && d2 < 0.13) return 1;
+  }
+  return -1;
+}
+
+function eat(item, playerIndex = 0) {
   const fruit = FRUITS[item.kind] || FRUITS.watermelon;
-  combo += 1;
+  const activeCombo = playerIndex === 1 ? player2.combo + 1 : combo + 1;
   const base = fruit.points;
   const timeBonus = duration - (performance.now() - startedAt) / 1000 <= 3 ? 2 : 1;
-  const points = (base + Math.min(combo, 5) * 25) * timeBonus;
-  score += points;
-  best = Math.max(best, score);
+  const points = (base + Math.min(activeCombo, 5) * 25 + (item.mode === "roam" ? 40 : 0)) * timeBonus;
+  if (playerIndex === 1) {
+    player2.combo = activeCombo;
+    player2.score += points;
+    player2.biteFlash = 0.22;
+  } else {
+    combo = activeCombo;
+    score += points;
+    biteFlash = 0.22;
+  }
+  best = Math.max(best, score, player2.score);
   localStorage.setItem("photoMunchiesWebBest", String(best));
-  pops.push(pop(combo >= 3 ? `COMBO x${combo}` : `CHOMP +${points}`, mouth.x, mouth.y, "#ffcf5c", combo >= 3));
-  biteFlash = 0.22;
+  const activeMouth = playerIndex === 1 ? player2.mouth : mouth;
+  pops.push(pop(activeCombo >= 3 ? `P${playerIndex + 1} COMBO x${activeCombo}` : `P${playerIndex + 1} +${points}`, activeMouth.x, activeMouth.y, "#ffcf5c", activeCombo >= 3));
 }
 
 function splat(item) {
   const fruit = FRUITS[item.kind] || FRUITS.watermelon;
-  const drops = Array.from({ length: 18 }, () => ({
-    dx: (Math.random() - 0.5) * 0.18,
-    dy: (Math.random() - 0.5) * 0.18,
-    r: 4 + Math.random() * 18,
+  const drops = Array.from({ length: 46 }, () => ({
+    dx: (Math.random() - 0.5) * 0.46,
+    dy: (Math.random() - 0.5) * 0.42,
+    vx: (Math.random() - 0.5) * 0.012,
+    vy: -Math.random() * 0.010 + 0.002,
+    r: 8 + Math.random() * 34,
     angle: Math.random() * Math.PI,
-    seed: Math.random() > 0.48,
+    seed: Math.random() > 0.38,
+  }));
+  const seeds = Array.from({ length: 36 }, () => ({
+    dx: (Math.random() - 0.5) * 0.18,
+    dy: (Math.random() - 0.5) * 0.14,
+    vx: (Math.random() - 0.5) * 0.028,
+    vy: (Math.random() - 0.7) * 0.026,
+    angle: Math.random() * Math.PI,
+    spin: (Math.random() - 0.5) * 0.28,
   }));
   splats.push({
     x: item.x,
@@ -288,8 +373,10 @@ function splat(item) {
     seedColor: fruit.seed,
     age: 0,
     drops,
+    seeds,
   });
-  splats = splats.slice(-6);
+  screenShake = 0.18;
+  splats = splats.slice(-10);
 }
 
 function pop(text, x, y, color, big = false) {
@@ -303,7 +390,7 @@ function updatePops() {
 
 function updateSplats() {
   splats.forEach((item) => (item.age += 1 / 60));
-  splats = splats.filter((item) => item.age < 3.8);
+  splats = splats.filter((item) => item.age < 6.2);
 }
 
 function updateStamina() {
@@ -318,6 +405,19 @@ function updateStamina() {
   refreshEffectiveMouth();
 }
 
+function updatePlayer2Stamina() {
+  if (!twoPlayerMode) return;
+  if (player2.mouthWantsOpen && !player2.mouthTired) {
+    player2.stamina -= 0.012;
+  } else if (!player2.mouthWantsOpen) {
+    player2.stamina += player2.mouthTired ? 0.018 : 0.010;
+  }
+  player2.stamina = clamp(player2.stamina, 0, 1);
+  if (player2.stamina <= 0.02) player2.mouthTired = true;
+  if (!player2.mouthWantsOpen && player2.stamina >= 0.36) player2.mouthTired = false;
+  player2.mouthOpen = player2.mouthWantsOpen && !player2.mouthTired && player2.stamina > 0.04;
+}
+
 function refreshEffectiveMouth() {
   mouthOpen = mouthWantsOpen && !mouthTired && stamina > 0.04;
   els.mouthButton.classList.toggle("open", mouthOpen);
@@ -326,7 +426,8 @@ function refreshEffectiveMouth() {
 
 function updateHud(left) {
   els.scoreText.textContent = score;
-  els.comboText.textContent = `x${combo}`;
+  els.score2Text.textContent = player2.score;
+  els.comboText.textContent = twoPlayerMode ? `P1 x${combo} / P2 x${player2.combo}` : `x${combo}`;
   els.timeText.textContent = Math.ceil(left);
   els.energyText.textContent = Math.round(stamina * 100);
   els.energyText.parentElement.classList.toggle("energy-low", stamina < 0.28);
@@ -343,6 +444,10 @@ function updateHud(left) {
     els.statusText.textContent = "Move your face into the camera.";
     return;
   }
+  if (twoPlayerMode && !player2.tracked) {
+    els.statusText.textContent = "P1 ready. Move a second face into the camera for P2.";
+    return;
+  }
   if (mouthTired) {
     els.statusText.textContent = "Mouth tired. Close your mouth to recharge!";
   } else if (mouthOpen) {
@@ -354,15 +459,21 @@ function updateHud(left) {
 
 function draw(elapsed, left) {
   ctx.clearRect(0, 0, W, H);
+  ctx.save();
+  if (screenShake > 0) {
+    ctx.translate((Math.random() - 0.5) * screenShake * 48, (Math.random() - 0.5) * screenShake * 48);
+  }
   drawCameraFallback();
-  drawSplats();
   drawFaceTarget();
   drawMouth();
+  if (twoPlayerMode && player2.tracked) drawMouth(1);
   foods.forEach((item) => {
     if (!item.done && elapsed >= item.spawn) drawFood(item);
   });
+  drawSplats();
   drawPops();
   if (left <= 3) drawFinalRush(left);
+  ctx.restore();
 }
 
 function drawCameraFallback() {
@@ -395,17 +506,41 @@ function updateFaceTracking(now) {
   if (els.video.currentTime === lastVideoTime) return;
   lastVideoTime = els.video.currentTime;
   const result = faceLandmarker.detectForVideo(els.video, now);
-  const landmarks = result.faceLandmarks && result.faceLandmarks[0];
+  const allFaces = result.faceLandmarks || [];
+  const landmarks = allFaces[0];
   if (!landmarks) {
     if (now - lastTrackingAt > 250) {
       faceTracked = false;
       setMouth(false);
       setTrackingPill("Find face", "");
     }
+    player2.tracked = false;
     return;
   }
   lastTrackingAt = now;
   faceTracked = true;
+  const p1Mouth = readMouthFromLandmarks(landmarks, mouth, mouthOpenSmooth);
+  mouthOpenSmooth = p1Mouth.smooth;
+  mouth.openness = mouthOpenSmooth;
+  setMouth(mouthOpenSmooth > 0.36);
+
+  if (twoPlayerMode && allFaces[1]) {
+    player2.tracked = true;
+    player2.lastTrackingAt = now;
+    const p2Mouth = readMouthFromLandmarks(allFaces[1], player2.mouth, player2.openSmooth);
+    player2.openSmooth = p2Mouth.smooth;
+    player2.mouth.openness = player2.openSmooth;
+    player2.mouthWantsOpen = player2.openSmooth > 0.36;
+  } else {
+    player2.tracked = false;
+    player2.mouthWantsOpen = false;
+  }
+
+  const label = twoPlayerMode && player2.tracked ? "Two faces ready" : mouthTired ? "Recharge" : mouthOpen ? "Mouth open" : "Face tracked";
+  setTrackingPill(label, mouthOpen ? "open" : "ready");
+}
+
+function readMouthFromLandmarks(landmarks, targetMouth, previousSmooth) {
   const upperLip = mapLandmark(landmarks[13]);
   const lowerLip = mapLandmark(landmarks[14]);
   const leftCorner = mapLandmark(landmarks[61]);
@@ -417,14 +552,12 @@ function updateFaceTracking(now) {
   const verticalGap = Math.hypot(upperLip.x - lowerLip.x, upperLip.y - lowerLip.y);
   const mouthWidth = Math.max(0.001, Math.hypot(leftCorner.x - rightCorner.x, leftCorner.y - rightCorner.y));
   const openness = Math.min(1, Math.max(0, (verticalGap / mouthWidth - 0.12) / 0.32));
-  mouthOpenSmooth = mouthOpenSmooth * 0.64 + openness * 0.36;
-  mouth.targetX = clamp(center.x, 0.12, 0.88);
-  mouth.targetY = clamp(center.y + 0.015, 0.18, 0.82);
-  mouth.x += (mouth.targetX - mouth.x) * 0.38;
-  mouth.y += (mouth.targetY - mouth.y) * 0.38;
-  mouth.openness = mouthOpenSmooth;
-  setMouth(mouthOpenSmooth > 0.36);
-  setTrackingPill(mouthTired ? "Recharge" : mouthOpen ? "Mouth open" : "Face tracked", mouthOpen ? "open" : "ready");
+  const smooth = previousSmooth * 0.64 + openness * 0.36;
+  targetMouth.targetX = clamp(center.x, 0.12, 0.88);
+  targetMouth.targetY = clamp(center.y + 0.015, 0.18, 0.82);
+  targetMouth.x += (targetMouth.targetX - targetMouth.x) * 0.38;
+  targetMouth.y += (targetMouth.targetY - targetMouth.y) * 0.38;
+  return { smooth };
 }
 
 function mapLandmark(point) {
@@ -458,25 +591,36 @@ function drawFaceTarget() {
   }
 }
 
-function drawMouth() {
-  const x = mouth.x * W;
-  const y = mouth.y * H;
-  const openAmount = faceTrackingFailed ? (mouthOpen ? 1 : 0) : mouth.openness;
-  const width = 132 + openAmount * 96 + biteFlash * 120;
-  const height = 74 + openAmount * 235 + biteFlash * 120;
-  roundRect(x - width / 2, y - height / 2, width, height, mouthOpen ? 70 : 34, "#050505");
+function drawMouth(playerIndex = 0) {
+  const activeMouth = playerIndex === 1 ? player2.mouth : mouth;
+  const activeOpen = playerIndex === 1 ? player2.mouthOpen : mouthOpen;
+  const activeTired = playerIndex === 1 ? player2.mouthTired : mouthTired;
+  const activeStamina = playerIndex === 1 ? player2.stamina : stamina;
+  const activeFlash = playerIndex === 1 ? player2.biteFlash : biteFlash;
+  const x = activeMouth.x * W;
+  const y = activeMouth.y * H;
+  const openAmount = playerIndex === 1 ? activeMouth.openness : faceTrackingFailed ? (mouthOpen ? 1 : 0) : activeMouth.openness;
+  const width = 132 + openAmount * 96 + activeFlash * 120;
+  const height = 74 + openAmount * 235 + activeFlash * 120;
+  roundRect(x - width / 2, y - height / 2, width, height, activeOpen ? 70 : 34, "#050505");
   ctx.lineWidth = 7;
-  ctx.strokeStyle = "#fff";
+  ctx.strokeStyle = playerIndex === 1 ? "#8dd9ff" : "#fff";
   ctx.stroke();
-  drawTeeth(x, y - height / 2 + 22, width * 0.68, mouthOpen ? 38 : 28);
-  if (mouthOpen) drawTeeth(x, y + height / 2 - 60, width * 0.68, 38);
+  drawTeeth(x, y - height / 2 + 22, width * 0.68, activeOpen ? 38 : 28);
+  if (activeOpen) drawTeeth(x, y + height / 2 - 60, width * 0.68, 38);
   ctx.fillStyle = "#ff5f7d";
-  if (mouthOpen) {
+  if (activeOpen) {
     ctx.beginPath();
     ctx.ellipse(x, y + height * 0.18, width * 0.28, height * 0.13, 0, 0, Math.PI * 2);
     ctx.fill();
   }
-  drawMouthMeter(x, y + height / 2 + 26);
+  drawMouthMeter(x, y + height / 2 + 26, activeStamina, activeOpen, activeTired);
+  if (playerIndex === 1) {
+    ctx.fillStyle = "#8dd9ff";
+    ctx.font = "1000 24px system-ui";
+    ctx.textAlign = "center";
+    ctx.fillText("P2", x, y - height / 2 - 14);
+  }
 }
 
 function drawTeeth(cx, y, width, height) {
@@ -492,11 +636,11 @@ function drawTeeth(cx, y, width, height) {
   }
 }
 
-function drawMouthMeter(x, y) {
+function drawMouthMeter(x, y, activeStamina = stamina, activeOpen = mouthOpen, activeTired = mouthTired) {
   ctx.fillStyle = "rgba(255,255,255,0.38)";
   roundRect(x - 70, y, 140, 18, 9, ctx.fillStyle);
-  ctx.fillStyle = mouthTired ? "#ff5f7d" : mouthOpen ? "#4fcf96" : "#ffcf5c";
-  roundRect(x - 70, y, 140 * stamina, 18, 9, ctx.fillStyle);
+  ctx.fillStyle = activeTired ? "#ff5f7d" : activeOpen ? "#4fcf96" : "#ffcf5c";
+  roundRect(x - 70, y, 140 * activeStamina, 18, 9, ctx.fillStyle);
 }
 
 function drawFood(item) {
@@ -579,22 +723,32 @@ function drawSeeds(cx, cy, color, count, radius) {
 
 function drawSplats() {
   for (const item of splats) {
-    const fade = Math.max(0, 1 - item.age / 3.8);
+    const fade = Math.max(0, 1 - item.age / 6.2);
     ctx.save();
-    ctx.globalAlpha = 0.85 * fade;
+    ctx.globalAlpha = 0.96 * fade;
     ctx.translate(item.x * W, item.y * H);
     ctx.fillStyle = item.color;
     for (const drop of item.drops) {
+      const px = (drop.dx + drop.vx * item.age * 9) * W;
+      const py = (drop.dy + drop.vy * item.age * 9 + item.age * item.age * 0.006) * H;
       ctx.beginPath();
-      ctx.arc(drop.dx * W, drop.dy * H, drop.r, 0, Math.PI * 2);
+      ctx.ellipse(px, py, drop.r * (1 + item.age * 0.05), drop.r * (0.65 + Math.sin(item.age + drop.angle) * 0.18), drop.angle, 0, Math.PI * 2);
       ctx.fill();
       if (drop.seed) {
         ctx.fillStyle = item.seedColor;
         ctx.beginPath();
-        ctx.ellipse(drop.dx * W + 3, drop.dy * H - 2, 3, 7, drop.angle, 0, Math.PI * 2);
+        ctx.ellipse(px + 3, py - 2, 3, 7, drop.angle + item.age * 0.7, 0, Math.PI * 2);
         ctx.fill();
         ctx.fillStyle = item.color;
       }
+    }
+    ctx.fillStyle = item.seedColor;
+    for (const seed of item.seeds) {
+      const sx = (seed.dx + seed.vx * item.age * 12) * W;
+      const sy = (seed.dy + seed.vy * item.age * 12 + item.age * item.age * 0.009) * H;
+      ctx.beginPath();
+      ctx.ellipse(sx, sy, 4, 9, seed.angle + seed.spin * item.age * 20, 0, Math.PI * 2);
+      ctx.fill();
     }
     ctx.restore();
   }
@@ -644,8 +798,14 @@ function finishRound() {
   ended = true;
   cancelAnimationFrame(raf);
   stopRecording();
-  els.rankText.textContent = score >= 1400 ? "Munch Master" : score >= 900 ? "Hungry Hero" : "Tiny Chomper";
-  els.finalText.textContent = `Score ${score} · Best ${best}`;
+  const totalScore = twoPlayerMode ? Math.max(score, player2.score) : score;
+  els.rankText.textContent = totalScore >= 2200 ? "Munch Master" : totalScore >= 1300 ? "Hungry Hero" : "Tiny Chomper";
+  if (twoPlayerMode) {
+    const winner = score === player2.score ? "Tie game" : score > player2.score ? "P1 wins" : "P2 wins";
+    els.finalText.textContent = `${winner} · P1 ${score} · P2 ${player2.score} · Best ${best}`;
+  } else {
+    els.finalText.textContent = `Score ${score} · Best ${best}`;
+  }
   show(els.resultPanel);
 }
 

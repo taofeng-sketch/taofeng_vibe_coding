@@ -94,6 +94,25 @@ h2 {
   box-shadow: 0 7px 0 rgba(19, 27, 42, 0.22);
 }
 
+.mode-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border: 3px solid var(--ink);
+  border-radius: 16px;
+  background: #fff;
+  font-weight: 1000;
+}
+
+.mode-toggle input {
+  width: 22px;
+  height: 22px;
+  accent-color: var(--pink);
+}
+
 .primary {
   background: var(--yellow);
 }
@@ -117,8 +136,12 @@ h2 {
 
 .hud {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
+}
+
+.hud.two-player {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
 .hud > div {
