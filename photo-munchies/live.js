@@ -43,6 +43,8 @@ const MAX_SMEARS = 20;
 const BOMB_LOCK_SECONDS = 1.2;
 const STARTING_LIVES = 10;
 const FRUIT_KINDS = ["watermelon", "mango", "strawberry", "blueberry", "kiwi", "apple", "orange", "peach", "grape"];
+const LEFT_EYE_LANDMARKS = [33, 133, 159, 145, 153, 154, 155, 173, 246];
+const RIGHT_EYE_LANDMARKS = [362, 263, 386, 374, 380, 381, 382, 398, 466];
 const FRUITS = {
   watermelon: { label: "WATERMELON", color: "#4fcf96", flesh: "#ff5f7d", seed: "#131b2a", points: 120, radius: 40 },
   mango: { label: "MANGO", color: "#ffb02e", flesh: "#ffcf5c", seed: "#7a4b11", points: 130, radius: 38 },
@@ -1229,8 +1231,9 @@ function readMouthFromLandmarks(landmarks, targetMouth, previousSmooth) {
   const lowerLip = mapLandmark(landmarks[14]);
   const leftCorner = mapLandmark(landmarks[61]);
   const rightCorner = mapLandmark(landmarks[291]);
-  const leftEye = mapLandmark(landmarks[33]);
-  const rightEye = mapLandmark(landmarks[263]);
+  const eyeAnchors = readEyeAnchors(landmarks);
+  const leftEye = eyeAnchors.left;
+  const rightEye = eyeAnchors.right;
   const nose = mapLandmark(landmarks[1]);
   const center = {
     x: (upperLip.x + lowerLip.x + leftCorner.x + rightCorner.x) / 4,
@@ -1252,6 +1255,22 @@ function readMouthFromLandmarks(landmarks, targetMouth, previousSmooth) {
   targetMouth.rightEyeX += (clamp(rightEye.x, 0.08, 0.92) - targetMouth.rightEyeX) * 0.42;
   targetMouth.rightEyeY += (clamp(rightEye.y, 0.10, 0.72) - targetMouth.rightEyeY) * 0.42;
   return { smooth };
+}
+
+function readEyeAnchors(landmarks) {
+  const firstEye = averageLandmarks(landmarks, LEFT_EYE_LANDMARKS);
+  const secondEye = averageLandmarks(landmarks, RIGHT_EYE_LANDMARKS);
+  return firstEye.x <= secondEye.x
+    ? { left: firstEye, right: secondEye }
+    : { left: secondEye, right: firstEye };
+}
+
+function averageLandmarks(landmarks, indices) {
+  const points = indices.map((index) => mapLandmark(landmarks[index]));
+  return {
+    x: points.reduce((sum, point) => sum + point.x, 0) / points.length,
+    y: points.reduce((sum, point) => sum + point.y, 0) / points.length,
+  };
 }
 
 function mapLandmark(point) {
