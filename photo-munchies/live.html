@@ -3,23 +3,26 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-  <meta name="theme-color" content="#ffcf5c">
+  <meta name="theme-color" content="#15101f">
   <title>Live Fruit Munch</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Bangers&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="live.css">
 </head>
 <body>
   <main class="live-shell">
     <section id="startPanel" class="panel">
-      <p class="eyebrow">Photo Munchies Lab</p>
+      <p class="eyebrow">Neon Night Market</p>
       <h1>Live Fruit Munch</h1>
-      <p class="lede">Track your face, open your mouth, chase flying fruit, dodge messy splats, and save the replay.</p>
+      <p class="lede">Track your face, chase glowing fruit, dodge bombs, and let missed fruit explode all over the screen.</p>
       <label class="mode-toggle">
         <input id="twoPlayerToggle" type="checkbox">
         <span>Two player face-off</span>
       </label>
       <button id="startButton" class="primary">Start camera game</button>
       <a class="secondary-link" href="./">Back to photo game</a>
-      <p class="note">This web version uses MediaPipe face landmarks in your browser. No photo or camera frame is uploaded by this app.</p>
+      <p class="note">MediaPipe face landmarks run in your browser. Replays download locally; no camera frame is stored by this app.</p>
     </section>
 
     <section id="gamePanel" class="game-panel hidden">
@@ -61,6 +64,7 @@
     <section id="resultPanel" class="panel hidden">
       <p class="eyebrow">Round complete</p>
       <h2 id="rankText">Hungry Hero</h2>
+      <img id="resultShot" class="result-shot" alt="Messy replay still">
       <p id="finalText">Score 0</p>
       <div class="result-actions">
         <button id="saveButton" class="primary" disabled>Save replay</button>
