@@ -117,7 +117,7 @@ h2 {
 
 .hud {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 8px;
 }
 
@@ -140,8 +140,16 @@ h2 {
 
 .hud strong {
   display: block;
-  font-size: 27px;
+  font-size: clamp(20px, 6vw, 27px);
   font-weight: 1000;
+}
+
+.hud .energy-low strong {
+  color: var(--pink);
+}
+
+.hud .energy-good strong {
+  color: #187d53;
 }
 
 .stage {
@@ -184,6 +192,11 @@ h2 {
   color: var(--ink);
   transform: translateY(5px);
   box-shadow: 0 2px 0 rgba(19, 27, 42, 0.2);
+}
+
+.mouth-button.tired {
+  background: #ffd8df;
+  color: var(--ink);
 }
 
 .tracking-pill {

@@ -8,6 +8,7 @@ const els = {
   scoreText: document.getElementById("scoreText"),
   comboText: document.getElementById("comboText"),
   timeText: document.getElementById("timeText"),
+  energyText: document.getElementById("energyText"),
   mouthButton: document.getElementById("mouthButton"),
   restartButton: document.getElementById("restartButton"),
   statusText: document.getElementById("statusText"),
@@ -26,6 +27,14 @@ const W = els.canvas.width;
 const H = els.canvas.height;
 const mouth = { x: 0.5, y: 0.57, targetX: 0.5, targetY: 0.57, openness: 0 };
 const duration = 20;
+const FRUITS = {
+  watermelon: { label: "WATERMELON", color: "#4fcf96", flesh: "#ff5f7d", seed: "#131b2a", points: 120, radius: 40 },
+  mango: { label: "MANGO", color: "#ffb02e", flesh: "#ffcf5c", seed: "#7a4b11", points: 130, radius: 38 },
+  strawberry: { label: "STRAWBERRY", color: "#ff3f6b", flesh: "#ff7d94", seed: "#fff0ad", points: 110, radius: 36 },
+  blueberry: { label: "BLUEBERRY", color: "#5c68ff", flesh: "#b99bff", seed: "#fff", points: 100, radius: 34 },
+  kiwi: { label: "KIWI", color: "#8fd14f", flesh: "#c8ff80", seed: "#131b2a", points: 140, radius: 37 },
+  golden: { label: "GOLDEN MANGO", color: "#ffcf5c", flesh: "#fff0ad", seed: "#8b5a2b", points: 360, radius: 42 },
+};
 const trackingPill = document.createElement("div");
 trackingPill.className = "tracking-pill";
 trackingPill.textContent = "Loading face tracking...";
@@ -35,9 +44,13 @@ let stream = null;
 let recorder = null;
 let chunks = [];
 let replayUrl = "";
+let replayExtension = "webm";
 let raf = 0;
 let startedAt = 0;
 let mouthOpen = false;
+let mouthWantsOpen = false;
+let mouthTired = false;
+let stamina = 1;
 let manualMouthOpen = false;
 let hold = 0;
 let score = 0;
@@ -46,6 +59,7 @@ let best = Number(localStorage.getItem("photoMunchiesWebBest") || 0);
 let ended = false;
 let foods = [];
 let pops = [];
+let splats = [];
 let faceLandmarker = null;
 let faceTrackingReady = false;
 let faceTrackingFailed = false;
@@ -57,20 +71,20 @@ let biteFlash = 0;
 
 function resetFoods() {
   foods = [
-    food("regular", 0.08, 0.18, 0.0, 0.018),
-    food("regular", 0.92, 0.20, 0.9, 0.018),
-    food("regular", 0.10, 0.80, 1.8, 0.019),
-    food("regular", 0.88, 0.78, 2.7, 0.019),
+    food("watermelon", 0.08, 0.18, 0.0, 0.018),
+    food("mango", 0.92, 0.20, 0.9, 0.018),
+    food("strawberry", 0.10, 0.80, 1.8, 0.019),
+    food("blueberry", 0.88, 0.78, 2.7, 0.019),
     food("golden", 0.50, 0.08, 4.0, 0.020),
-    food("regular", 0.08, 0.50, 5.2, 0.020),
-    food("regular", 0.92, 0.52, 6.1, 0.020),
-    food("chili", 0.50, 0.92, 7.2, 0.019),
-    food("regular", 0.16, 0.12, 8.7, 0.022),
-    food("regular", 0.84, 0.12, 9.6, 0.022),
-    food("regular", 0.14, 0.88, 11.4, 0.023),
+    food("kiwi", 0.08, 0.50, 5.2, 0.020),
+    food("watermelon", 0.92, 0.52, 6.1, 0.020),
+    food("mango", 0.50, 0.92, 7.2, 0.019),
+    food("strawberry", 0.16, 0.12, 8.7, 0.022),
+    food("blueberry", 0.84, 0.12, 9.6, 0.022),
+    food("kiwi", 0.14, 0.88, 11.4, 0.023),
     food("golden", 0.88, 0.84, 13.0, 0.024),
-    food("regular", 0.50, 0.05, 15.2, 0.025),
-    food("regular", 0.06, 0.60, 16.6, 0.026),
+    food("watermelon", 0.50, 0.05, 15.2, 0.025),
+    food("mango", 0.06, 0.60, 16.6, 0.026),
   ];
 }
 
@@ -133,12 +147,16 @@ function startRound() {
   show(els.gamePanel);
   resetFoods();
   pops = [];
+  splats = [];
   score = 0;
   combo = 0;
   hold = 0;
+  stamina = 1;
+  mouthTired = false;
   ended = false;
   startedAt = performance.now();
   chunks = [];
+  if (replayUrl) URL.revokeObjectURL(replayUrl);
   replayUrl = "";
   faceTracked = false;
   lastVideoTime = -1;
@@ -159,21 +177,36 @@ function startRecording() {
   }
   try {
     const canvasStream = els.canvas.captureStream(30);
-    recorder = new MediaRecorder(canvasStream, { mimeType: "video/webm" });
+    const mimeType = pickRecordingMimeType();
+    replayExtension = mimeType.includes("mp4") ? "mp4" : "webm";
+    recorder = new MediaRecorder(canvasStream, mimeType ? { mimeType } : undefined);
     recorder.ondataavailable = (event) => {
       if (event.data.size) chunks.push(event.data);
     };
     recorder.onstop = () => {
-      const blob = new Blob(chunks, { type: recorder.mimeType || "video/webm" });
+      const blob = new Blob(chunks, { type: recorder.mimeType || mimeType || "video/webm" });
       replayUrl = URL.createObjectURL(blob);
       els.saveButton.disabled = false;
-      els.saveHint.textContent = "Tap Save replay to download the web recording.";
+      els.saveHint.textContent = `Tap Save replay to download the local ${replayExtension.toUpperCase()} recording.`;
     };
     recorder.start();
   } catch (error) {
     recorder = null;
     els.saveHint.textContent = "Replay recording could not start here.";
   }
+}
+
+function pickRecordingMimeType() {
+  const options = [
+    "video/mp4;codecs=avc1.42E01E",
+    "video/mp4;codecs=h264",
+    "video/mp4",
+    "video/webm;codecs=vp9",
+    "video/webm;codecs=vp8",
+    "video/webm",
+  ];
+  if (!window.MediaRecorder || !MediaRecorder.isTypeSupported) return "";
+  return options.find((type) => MediaRecorder.isTypeSupported(type)) || "";
 }
 
 function stopRecording() {
@@ -184,12 +217,14 @@ function loop(now) {
   const elapsed = (now - startedAt) / 1000;
   const left = Math.max(0, duration - elapsed);
   updateFaceTracking(now);
+  updateStamina();
   if (mouthOpen) hold += 1 / 60;
   else hold = 0;
   biteFlash = Math.max(0, biteFlash - 1 / 60);
 
   updateFoods(elapsed);
   updatePops();
+  updateSplats();
   draw(elapsed, left);
   updateHud(left);
 
@@ -216,7 +251,8 @@ function updateFoods(elapsed) {
     if (!item.done && item.atMouthFor > 1.15) {
       if (item.kind !== "chili") {
         combo = 0;
-        pops.push(pop("MISS", item.x, item.y, "#fff"));
+        splat(item);
+        pops.push(pop("SPLAT!", item.x, item.y, "#fff"));
       }
       item.done = true;
     }
@@ -224,15 +260,9 @@ function updateFoods(elapsed) {
 }
 
 function eat(item) {
-  if (item.kind === "chili") {
-    combo = 0;
-    score = Math.max(0, score - 150);
-    pops.push(pop("YUCK!", mouth.x, mouth.y, "#b99bff", true));
-    biteFlash = 0.22;
-    return;
-  }
+  const fruit = FRUITS[item.kind] || FRUITS.watermelon;
   combo += 1;
-  const base = item.kind === "golden" ? 500 : 100;
+  const base = fruit.points;
   const timeBonus = duration - (performance.now() - startedAt) / 1000 <= 3 ? 2 : 1;
   const points = (base + Math.min(combo, 5) * 25) * timeBonus;
   score += points;
@@ -240,6 +270,26 @@ function eat(item) {
   localStorage.setItem("photoMunchiesWebBest", String(best));
   pops.push(pop(combo >= 3 ? `COMBO x${combo}` : `CHOMP +${points}`, mouth.x, mouth.y, "#ffcf5c", combo >= 3));
   biteFlash = 0.22;
+}
+
+function splat(item) {
+  const fruit = FRUITS[item.kind] || FRUITS.watermelon;
+  const drops = Array.from({ length: 18 }, () => ({
+    dx: (Math.random() - 0.5) * 0.18,
+    dy: (Math.random() - 0.5) * 0.18,
+    r: 4 + Math.random() * 18,
+    angle: Math.random() * Math.PI,
+    seed: Math.random() > 0.48,
+  }));
+  splats.push({
+    x: item.x,
+    y: item.y,
+    color: fruit.flesh,
+    seedColor: fruit.seed,
+    age: 0,
+    drops,
+  });
+  splats = splats.slice(-6);
 }
 
 function pop(text, x, y, color, big = false) {
@@ -251,12 +301,38 @@ function updatePops() {
   pops = pops.filter((item) => item.age < 0.8);
 }
 
+function updateSplats() {
+  splats.forEach((item) => (item.age += 1 / 60));
+  splats = splats.filter((item) => item.age < 3.8);
+}
+
+function updateStamina() {
+  if (mouthWantsOpen && !mouthTired) {
+    stamina -= 0.012;
+  } else if (!mouthWantsOpen) {
+    stamina += mouthTired ? 0.018 : 0.010;
+  }
+  stamina = clamp(stamina, 0, 1);
+  if (stamina <= 0.02) mouthTired = true;
+  if (!mouthWantsOpen && stamina >= 0.36) mouthTired = false;
+  refreshEffectiveMouth();
+}
+
+function refreshEffectiveMouth() {
+  mouthOpen = mouthWantsOpen && !mouthTired && stamina > 0.04;
+  els.mouthButton.classList.toggle("open", mouthOpen);
+  els.mouthButton.classList.toggle("tired", mouthTired);
+}
+
 function updateHud(left) {
   els.scoreText.textContent = score;
   els.comboText.textContent = `x${combo}`;
   els.timeText.textContent = Math.ceil(left);
+  els.energyText.textContent = Math.round(stamina * 100);
+  els.energyText.parentElement.classList.toggle("energy-low", stamina < 0.28);
+  els.energyText.parentElement.classList.toggle("energy-good", stamina > 0.72);
   if (faceTrackingFailed) {
-    els.statusText.textContent = mouthOpen ? "Fallback mouth open. CHOMP!" : "Fallback mode: hold when food reaches the mouth.";
+    els.statusText.textContent = mouthTired ? "Too tired. Close to recharge!" : mouthOpen ? "Fallback mouth open. CHOMP!" : "Fallback mode: hold when fruit reaches the mouth.";
     return;
   }
   if (!faceTrackingReady) {
@@ -267,14 +343,19 @@ function updateHud(left) {
     els.statusText.textContent = "Move your face into the camera.";
     return;
   }
-  els.statusText.textContent = mouthOpen
-    ? "Mouth open. CHOMP the food!"
-    : "Close... wait... open when food reaches your mouth.";
+  if (mouthTired) {
+    els.statusText.textContent = "Mouth tired. Close your mouth to recharge!";
+  } else if (mouthOpen) {
+    els.statusText.textContent = "Mouth open. Catch the fruit!";
+  } else {
+    els.statusText.textContent = "Close to recharge. Open when fruit reaches your mouth.";
+  }
 }
 
 function draw(elapsed, left) {
   ctx.clearRect(0, 0, W, H);
   drawCameraFallback();
+  drawSplats();
   drawFaceTarget();
   drawMouth();
   foods.forEach((item) => {
@@ -343,7 +424,7 @@ function updateFaceTracking(now) {
   mouth.y += (mouth.targetY - mouth.y) * 0.38;
   mouth.openness = mouthOpenSmooth;
   setMouth(mouthOpenSmooth > 0.36);
-  setTrackingPill(mouthOpen ? "Mouth open" : "Face tracked", mouthOpen ? "open" : "ready");
+  setTrackingPill(mouthTired ? "Recharge" : mouthOpen ? "Mouth open" : "Face tracked", mouthOpen ? "open" : "ready");
 }
 
 function mapLandmark(point) {
@@ -414,11 +495,12 @@ function drawTeeth(cx, y, width, height) {
 function drawMouthMeter(x, y) {
   ctx.fillStyle = "rgba(255,255,255,0.38)";
   roundRect(x - 70, y, 140, 18, 9, ctx.fillStyle);
-  ctx.fillStyle = mouthOpen ? "#4fcf96" : "#ffcf5c";
-  roundRect(x - 70, y, 140 * Math.min(1, faceTrackingFailed ? hold / 0.2 : mouth.openness), 18, 9, ctx.fillStyle);
+  ctx.fillStyle = mouthTired ? "#ff5f7d" : mouthOpen ? "#4fcf96" : "#ffcf5c";
+  roundRect(x - 70, y, 140 * stamina, 18, 9, ctx.fillStyle);
 }
 
 function drawFood(item) {
+  const fruit = FRUITS[item.kind] || FRUITS.watermelon;
   const x = item.x * W;
   const y = item.y * H;
   ctx.save();
@@ -426,19 +508,96 @@ function drawFood(item) {
   ctx.rotate(item.rot);
   ctx.lineWidth = 5;
   ctx.strokeStyle = "#131b2a";
-  ctx.fillStyle = "#8b5a2b";
-  roundRect(-54, -5, 108, 10, 5, "#8b5a2b");
-  const colors = item.kind === "golden" ? ["#ffcf5c", "#fff0ad"] : item.kind === "chili" ? ["#ff5f7d", "#b99bff"] : ["#ff8b6b", "#ffcf5c"];
-  for (let i = 0; i < 4; i += 1) {
-    roundRect(-42 + i * 26, -22 + (i % 2) * 4, 30, 44, 10, colors[i % 2]);
-    ctx.stroke();
-  }
-  if (item.kind === "chili") {
-    ctx.fillStyle = "#fff";
-    ctx.font = "900 30px system-ui";
-    ctx.fillText("!", 38, -24);
-  }
+  drawFruitShape(item.kind, fruit);
   ctx.restore();
+}
+
+function drawFruitShape(kind, fruit) {
+  if (kind === "watermelon") {
+    ctx.fillStyle = fruit.color;
+    ctx.beginPath();
+    ctx.arc(0, 0, 42, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = fruit.flesh;
+    ctx.beginPath();
+    ctx.arc(0, 2, 32, 0, Math.PI * 2);
+    ctx.fill();
+    drawSeeds(0, 0, fruit.seed, 8, 24);
+  } else if (kind === "mango" || kind === "golden") {
+    ctx.fillStyle = fruit.flesh;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 32, 44, -0.35, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "rgba(255,255,255,0.35)";
+    ctx.beginPath();
+    ctx.ellipse(-9, -11, 8, 15, -0.35, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (kind === "strawberry") {
+    ctx.fillStyle = fruit.color;
+    ctx.beginPath();
+    ctx.moveTo(0, 42);
+    ctx.bezierCurveTo(-44, 4, -28, -38, 0, -22);
+    ctx.bezierCurveTo(28, -38, 44, 4, 0, 42);
+    ctx.fill();
+    ctx.stroke();
+    drawSeeds(0, 5, fruit.seed, 10, 25);
+  } else if (kind === "blueberry") {
+    ctx.fillStyle = fruit.color;
+    ctx.beginPath();
+    ctx.arc(0, 0, 36, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "#2b357d";
+    ctx.beginPath();
+    ctx.arc(5, -8, 12, 0, Math.PI * 2);
+    ctx.fill();
+  } else {
+    ctx.fillStyle = fruit.flesh;
+    ctx.beginPath();
+    ctx.arc(0, 0, 39, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "#f5ffe0";
+    ctx.beginPath();
+    ctx.arc(0, 0, 25, 0, Math.PI * 2);
+    ctx.fill();
+    drawSeeds(0, 0, fruit.seed, 12, 21);
+  }
+}
+
+function drawSeeds(cx, cy, color, count, radius) {
+  ctx.fillStyle = color;
+  for (let i = 0; i < count; i += 1) {
+    const a = (i / count) * Math.PI * 2;
+    ctx.beginPath();
+    ctx.ellipse(cx + Math.cos(a) * radius * 0.55, cy + Math.sin(a) * radius * 0.38, 3, 6, a, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+function drawSplats() {
+  for (const item of splats) {
+    const fade = Math.max(0, 1 - item.age / 3.8);
+    ctx.save();
+    ctx.globalAlpha = 0.85 * fade;
+    ctx.translate(item.x * W, item.y * H);
+    ctx.fillStyle = item.color;
+    for (const drop of item.drops) {
+      ctx.beginPath();
+      ctx.arc(drop.dx * W, drop.dy * H, drop.r, 0, Math.PI * 2);
+      ctx.fill();
+      if (drop.seed) {
+        ctx.fillStyle = item.seedColor;
+        ctx.beginPath();
+        ctx.ellipse(drop.dx * W + 3, drop.dy * H - 2, 3, 7, drop.angle, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = item.color;
+      }
+    }
+    ctx.restore();
+  }
 }
 
 function drawPops() {
@@ -491,8 +650,8 @@ function finishRound() {
 }
 
 function setMouth(open) {
-  mouthOpen = open;
-  els.mouthButton.classList.toggle("open", open);
+  mouthWantsOpen = open;
+  refreshEffectiveMouth();
 }
 
 els.startButton.addEventListener("click", async () => {
@@ -508,7 +667,7 @@ els.saveButton.addEventListener("click", () => {
   if (!replayUrl) return;
   const link = document.createElement("a");
   link.href = replayUrl;
-  link.download = "photo-munchies-replay.webm";
+  link.download = `photo-munchies-replay.${replayExtension}`;
   link.click();
 });
 

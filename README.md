@@ -18,7 +18,7 @@ I call it "vibe coding" because the starting point is often a feeling: a joke, a
 | **WorldCupSimulation · Pulse26** | 2026 World Cup interactive fan site | Published web app, automated QA/data refresh | [Play](https://taofeng-sketch.github.io/taofeng_vibe_coding/WorldCupSimulation/) · [Folder](./WorldCupSimulation) |
 | **Squid Technologies: Performance Review Climb** | Satirical browser deckbuilder game | Published playable game | [Play](https://taofeng-sketch.github.io/taofeng_vibe_coding/squid-climb/) · [Folder](./squid-climb) |
 | **Dinosaur Adventure / 恐龙大冒险** | Kid-inspired browser platformer | Published playable prototype | [Play](https://taofeng-sketch.github.io/taofeng_vibe_coding/dinosaur-adventure/) · [Folder](./dinosaur-adventure) |
-| **Photo Munchies** | Kids selfie/photo minigame | Published web prototype with live face/mouth tracking; native iOS lives in the private incubator workspace | [Play](https://taofeng-sketch.github.io/taofeng_vibe_coding/photo-munchies/) · [Live Kebab](https://taofeng-sketch.github.io/taofeng_vibe_coding/photo-munchies/live.html) · [Folder](./photo-munchies) |
+| **Photo Munchies** | Kids selfie/photo minigame | Published web prototype with live face/mouth tracking; native iOS lives in the private incubator workspace | [Play](https://taofeng-sketch.github.io/taofeng_vibe_coding/photo-munchies/) · [Live Fruit](https://taofeng-sketch.github.io/taofeng_vibe_coding/photo-munchies/live.html) · [Folder](./photo-munchies) |
 
 ---
 
@@ -163,18 +163,18 @@ Then open `http://localhost:4173`. See [dinosaur-adventure/README.md](./dinosaur
 
 **▶ [Open the photo minigame prototype](https://taofeng-sketch.github.io/taofeng_vibe_coding/photo-munchies/)**
 
-**▶ [Open Live Kebab Munch](https://taofeng-sketch.github.io/taofeng_vibe_coding/photo-munchies/live.html)**
+**▶ [Open Live Fruit Munch](https://taofeng-sketch.github.io/taofeng_vibe_coding/photo-munchies/live.html)**
 
-A kid-friendly photo/selfie game inspired by the Pictonico pattern: a child's photo becomes the toy. The web version has two paths: an older photo-upload minigame flow and a newer **Live Kebab Munch** camera prototype where food flies toward a giant cartoon mouth.
+A kid-friendly photo/selfie game inspired by the Pictonico pattern: a child's photo becomes the toy. The web version has two paths: an older photo-upload minigame flow and a newer **Live Fruit Munch** camera prototype where fruit flies toward a giant cartoon mouth.
 
-The strongest current direction is Live Kebab Munch: a short round, score pressure, combo, golden kebabs, bad-food penalty, and a replayable silly camera moment. The web live version uses MediaPipe face landmarks to track the mouth in the camera feed and score when the player opens their mouth near incoming food. The native iOS version, kept in the private incubator workspace, uses Apple Vision and ReplayKit recording.
+The strongest current direction is Live Fruit Munch: a short round, score pressure, combo, mouth-energy management, juicy fruit splats, and a replayable silly camera moment. The web live version uses MediaPipe face landmarks to track the mouth in the camera feed and score when the player opens their mouth near incoming fruit. The native iOS version, kept in the private incubator workspace, uses Apple Vision and ReplayKit recording.
 
 **Implemented in this public web folder**
 
 - Mobile-first photo picker / camera file input.
 - Manual crop and three small Canvas minigames.
 - Gentle and Challenge modes.
-- Live Kebab Munch web page with camera feed, MediaPipe face/mouth tracking, score, combo, best score, food waves, golden kebab, chili penalty, fallback hold-mouth button, and best-effort replay recording.
+- Live Fruit Munch web page with camera feed, MediaPipe face/mouth tracking, score, combo, best score, fruit waves, missed-fruit splats, mouth stamina, fallback hold-mouth button, and local replay recording.
 - Local-only processing; no backend and no photo upload.
 
 **Tech**
@@ -228,6 +228,12 @@ python3 -m http.server 4173
 ```
 
 Native iOS projects should be opened from their `.xcodeproj` files and run on a simulator or signed physical iPhone.
+
+---
+
+## Monetization
+
+Ad monetization notes live in [MONETIZATION.md](./MONETIZATION.md). Short version: use AdSense for earning money from web games, not Google Ads/AdWords; add a custom domain and privacy page before applying; keep ads outside active gameplay.
 
 ---
 
