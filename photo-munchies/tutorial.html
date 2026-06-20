@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#15101f">
+  <title>疯狂大嘴怪玩法教程</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Bangers&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: dark;
+      --ink: #0a0612;
+      --paper: #fff6ff;
+      --muted: #cbb8ec;
+      --yellow: #c6ff36;
+      --pink: #ff2d8e;
+      --blue: #28e6ff;
+      --orange: #ff9d2e;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      min-height: 100dvh;
+      margin: 0;
+      padding: max(18px, env(safe-area-inset-top)) 14px max(18px, env(safe-area-inset-bottom));
+      background:
+        radial-gradient(circle at 18% 10%, rgba(255, 45, 142, 0.24), transparent 24%),
+        radial-gradient(circle at 86% 18%, rgba(40, 230, 255, 0.18), transparent 26%),
+        #15101f;
+      color: var(--paper);
+      font-family: "Baloo 2", ui-rounded, "Avenir Next", system-ui, sans-serif;
+    }
+
+    main {
+      width: min(560px, 100%);
+      margin: 0 auto;
+    }
+
+    h1 {
+      margin: 8px 0 8px;
+      color: var(--pink);
+      font-family: "Bangers", "Baloo 2", ui-rounded, sans-serif;
+      font-size: clamp(48px, 13vw, 72px);
+      line-height: 0.92;
+      text-align: center;
+      text-shadow: 3px 3px 0 var(--ink), 0 0 18px rgba(255, 45, 142, 0.62);
+    }
+
+    .lede {
+      margin: 0 auto 18px;
+      color: var(--muted);
+      font-size: 18px;
+      font-weight: 900;
+      line-height: 1.35;
+      text-align: center;
+    }
+
+    .grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .card {
+      display: grid;
+      grid-template-columns: 112px minmax(0, 1fr);
+      gap: 12px;
+      align-items: center;
+      padding: 14px;
+      border: 4px solid var(--ink);
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(36, 26, 54, 0.98), rgba(19, 13, 31, 0.98));
+      box-shadow: 0 6px 0 rgba(0, 0, 0, 0.45);
+    }
+
+    svg {
+      width: 100%;
+      aspect-ratio: 1;
+      display: block;
+      overflow: visible;
+    }
+
+    h2 {
+      margin: 0 0 4px;
+      color: var(--yellow);
+      font-size: 22px;
+      line-height: 1;
+    }
+
+    p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 15px;
+      font-weight: 850;
+      line-height: 1.28;
+    }
+
+    .play {
+      display: block;
+      min-height: 62px;
+      margin: 16px 0 0;
+      padding: 16px 18px;
+      border: 4px solid var(--ink);
+      border-radius: 18px;
+      background: linear-gradient(180deg, var(--yellow), #92e900);
+      color: #08030f;
+      font-size: 23px;
+      font-weight: 1000;
+      text-align: center;
+      text-decoration: none;
+      box-shadow: 0 7px 0 rgba(0, 0, 0, 0.46), 0 0 22px rgba(255, 45, 142, 0.28);
+    }
+
+    @media (max-width: 420px) {
+      .card {
+        grid-template-columns: 92px minmax(0, 1fr);
+        padding: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>疯狂大嘴怪</h1>
+    <p class="lede">玩法很简单：张嘴接水果，闭嘴回体力，别乱吃炸弹，最后 3 秒会进入疯狂模式。</p>
+
+    <section class="grid" aria-label="Game tutorial">
+      <article class="card">
+        <svg viewBox="0 0 120 120" role="img" aria-label="Catch fruit">
+          <circle cx="60" cy="60" r="54" fill="#fff6ff"/>
+          <circle cx="42" cy="40" r="8" fill="#0a0612"/>
+          <circle cx="78" cy="40" r="8" fill="#0a0612"/>
+          <rect x="35" y="62" width="50" height="36" rx="18" fill="#08030f"/>
+          <circle cx="34" cy="25" r="14" fill="#ff5f7d"/>
+          <circle cx="91" cy="24" r="13" fill="#ff9d2e"/>
+          <path d="M26 86 C42 104 78 104 94 86" fill="none" stroke="#c6ff36" stroke-width="7" stroke-linecap="round"/>
+        </svg>
+        <div>
+          <h2>1. 张嘴接水果</h2>
+          <p>水果飞到嘴附近时张嘴，接住就得分。连续接住会有 combo。</p>
+        </div>
+      </article>
+
+      <article class="card">
+        <svg viewBox="0 0 120 120" role="img" aria-label="Recharge energy">
+          <rect x="22" y="78" width="76" height="16" rx="8" fill="#33244d" stroke="#0a0612" stroke-width="5"/>
+          <rect x="26" y="82" width="48" height="8" rx="4" fill="#c6ff36"/>
+          <circle cx="60" cy="44" r="34" fill="#fff6ff" stroke="#0a0612" stroke-width="5"/>
+          <rect x="40" y="50" width="40" height="12" rx="6" fill="#08030f"/>
+          <text x="60" y="111" text-anchor="middle" fill="#28e6ff" font-size="18" font-weight="900">REST</text>
+        </svg>
+        <div>
+          <h2>2. 闭嘴回体力</h2>
+          <p>一直张嘴会累。闭嘴让能量条恢复，再找准时机张嘴。</p>
+        </div>
+      </article>
+
+      <article class="card">
+        <svg viewBox="0 0 120 120" role="img" aria-label="Avoid bombs">
+          <circle cx="60" cy="58" r="31" fill="#100c18" stroke="#ff2d8e" stroke-width="7"/>
+          <path d="M78 34 C92 16 101 25 99 37" fill="none" stroke="#c6ff36" stroke-width="6" stroke-linecap="round"/>
+          <path d="M98 28 L111 38 L94 43 Z" fill="#ff9d2e"/>
+          <text x="60" y="69" text-anchor="middle" fill="#fff6ff" font-size="34" font-weight="1000">3</text>
+          <circle cx="60" cy="58" r="45" fill="none" stroke="#28e6ff" stroke-width="5" stroke-dasharray="10 8"/>
+        </svg>
+        <div>
+          <h2>3. 炸弹别吃</h2>
+          <p>炸弹会掉到固定位置倒计时。不吃它会安全消失，吃到才会爆炸扣命。</p>
+        </div>
+      </article>
+
+      <article class="card">
+        <svg viewBox="0 0 120 120" role="img" aria-label="Double time">
+          <path d="M60 8 L72 42 L108 30 L82 58 L110 84 L72 76 L60 112 L48 76 L10 84 L38 58 L12 30 L48 42 Z" fill="#c6ff36" stroke="#0a0612" stroke-width="5"/>
+          <text x="60" y="55" text-anchor="middle" fill="#ff2d8e" font-size="22" font-weight="1000">DOUBLE</text>
+          <text x="60" y="78" text-anchor="middle" fill="#0a0612" font-size="22" font-weight="1000">TIME</text>
+        </svg>
+        <div>
+          <h2>4. 最后疯狂模式</h2>
+          <p>最后 3 秒水果和炸弹会一起加速，分数翻倍，画面会变得很乱。</p>
+        </div>
+      </article>
+    </section>
+
+    <a class="play" href="live.html">Play Game</a>
+  </main>
+</body>
+</html>

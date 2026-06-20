@@ -384,17 +384,18 @@ function chooseQueuedKind(spawn, index) {
 }
 
 function choosePlayTarget(spawn, kind, placedTargets, targetPlayer = 0, chaotic = false) {
-  const minDistance = chaotic ? 0.10 : spawn < 20 ? 0.19 : 0.14;
+  const minDistance = chaotic ? 0.10 : kind === "bomb" ? 0.24 : spawn < 20 ? 0.19 : 0.14;
   const timeWindow = chaotic ? 0.45 : spawn < 20 ? 1.45 : 1.0;
   const centerX = twoPlayerMode ? (targetPlayer === 1 ? 0.62 : 0.38) : 0.5;
-  const spreadX = chaotic ? 0.48 : 0.38;
-  const spreadY = chaotic ? 0.46 : 0.34;
-  let fallback = { x: centerX, y: 0.56 };
+  const spreadX = kind === "bomb" ? 0.32 : chaotic ? 0.48 : 0.38;
+  const spreadY = kind === "bomb" ? 0.20 : chaotic ? 0.46 : 0.34;
+  const baseY = kind === "bomb" ? 0.42 : 0.55;
+  let fallback = { x: centerX, y: baseY };
 
   for (let tries = 0; tries < 18; tries += 1) {
     const target = {
       x: clamp(centerX + (Math.random() - 0.5) * spreadX, 0.24, 0.76),
-      y: clamp(0.55 + (Math.random() - 0.5) * spreadY, 0.30, 0.76),
+      y: clamp(baseY + (Math.random() - 0.5) * spreadY, 0.30, 0.76),
     };
     fallback = target;
     const close = placedTargets.some((other) => (
@@ -409,6 +410,15 @@ function choosePlayTarget(spawn, kind, placedTargets, targetPlayer = 0, chaotic 
 
   placedTargets.push({ ...fallback, spawn, kind });
   return fallback;
+}
+
+function prepareBombDrop(item) {
+  item.mode = "roam";
+  item.x = clamp(item.targetX + (Math.random() - 0.5) * 0.16, 0.22, 0.78);
+  item.y = -0.08;
+  item.pathStartX = item.x;
+  item.pathStartY = item.y;
+  item.flightTime = Math.max(0.82, item.flightTime * 0.72);
 }
 
 function resetFoods() {
@@ -426,6 +436,7 @@ function resetFoods() {
     const target = choosePlayTarget(spawn, kind, placedTargets, item.targetPlayer, false);
     item.targetX = target.x;
     item.targetY = target.y;
+    if (item.kind === "bomb") prepareBombDrop(item);
     return item;
   });
 }
@@ -480,6 +491,7 @@ function spawnFinalRushWave(elapsed) {
     const target = choosePlayTarget(item.spawn, kind, placedTargets, item.targetPlayer, true);
     item.targetX = target.x;
     item.targetY = target.y;
+    if (item.kind === "bomb") prepareBombDrop(item);
     item.targetLocked = false;
     item.hoverLife = kind === "bomb" ? 1.85 : 0.52 + Math.random() * 0.32;
     item.flightTime = 0.58 + Math.random() * 0.22;
@@ -710,8 +722,10 @@ function updateFoods(elapsed) {
       item.y = quadraticAt(item.pathStartY, item.pathControlY, item.targetY, t) + Math.cos(item.wobble) * 0.006 * (1 - t);
       if (t >= 1) item.arrived = true;
     } else {
-      item.x += Math.cos(item.wobble) * 0.0018;
-      item.y += Math.sin(item.wobble * 1.25) * 0.0018;
+      if (item.kind !== "bomb") {
+        item.x += Math.cos(item.wobble) * 0.0018;
+        item.y += Math.sin(item.wobble * 1.25) * 0.0018;
+      }
     }
 
     const eater = getCatchingPlayer(item);
@@ -750,8 +764,13 @@ function lockFoodTarget(item) {
   if (item.targetLocked) return;
   item.pathStartX = item.x;
   item.pathStartY = item.y;
-  item.pathControlX = clamp((item.pathStartX + item.targetX) / 2 + (Math.random() - 0.5) * 0.18, 0.18, 0.82);
-  item.pathControlY = clamp(Math.min(item.pathStartY, item.targetY) - 0.18 - Math.random() * 0.16, 0.08, 0.78);
+  if (item.kind === "bomb") {
+    item.pathControlX = clamp((item.pathStartX + item.targetX) / 2, 0.18, 0.82);
+    item.pathControlY = clamp((item.pathStartY + item.targetY) / 2 - 0.04, 0.02, 0.72);
+  } else {
+    item.pathControlX = clamp((item.pathStartX + item.targetX) / 2 + (Math.random() - 0.5) * 0.18, 0.18, 0.82);
+    item.pathControlY = clamp(Math.min(item.pathStartY, item.targetY) - 0.18 - Math.random() * 0.16, 0.08, 0.78);
+  }
   item.targetLocked = true;
 }
 
@@ -1149,8 +1168,8 @@ function seedDebugSplats() {
   if (DEBUG_BOMB_MISS) {
     foods = [{
       kind: "bomb",
-      x: clamp(mouth.faceX - 0.28, 0.12, 0.88),
-      y: clamp(mouth.faceY - 0.08, 0.16, 0.78),
+      x: 0.34,
+      y: 0.42,
       spawn: 0,
       speed: 0.01,
       size: 1.2,
@@ -1161,8 +1180,8 @@ function seedDebugSplats() {
       hoverLife: 3.15,
       mode: "roam",
       targetPlayer: 0,
-      targetX: clamp(mouth.faceX - 0.28, 0.12, 0.88),
-      targetY: clamp(mouth.faceY - 0.08, 0.16, 0.78),
+      targetX: 0.34,
+      targetY: 0.42,
       targetLocked: true,
       wobble: 0,
       rot: -0.2,
@@ -1908,7 +1927,7 @@ function finishRound(gameOver = false, playerIndex = 0) {
     els.resultShot.removeAttribute("src");
   }
   const totalScore = twoPlayerMode ? Math.max(score, player2.score) : score;
-  els.rankText.textContent = gameOver ? "GAME OVER" : totalScore >= 2200 ? "Munch Master" : totalScore >= 1300 ? "Hungry Hero" : "Tiny Chomper";
+  els.rankText.textContent = gameOver ? "GAME OVER" : totalScore >= 2200 ? "大嘴王者" : totalScore >= 1300 ? "水果高手" : "小小大嘴怪";
   if (gameOver) {
     const playerText = twoPlayerMode ? `P${playerIndex + 1} ran out of hearts` : "You ran out of hearts";
     els.finalText.textContent = `${playerText} · Score ${score} · Best ${best}`;
@@ -1952,7 +1971,7 @@ els.saveButton.addEventListener("click", () => {
   if (!replayUrl) return;
   const link = document.createElement("a");
   link.href = replayUrl;
-  link.download = `photo-munchies-replay.${replayExtension}`;
+  link.download = `crazy-big-mouth-replay.${replayExtension}`;
   link.click();
 });
 
