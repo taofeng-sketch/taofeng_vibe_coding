@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#ffcf5c">
+  <meta name="description" content="Photo Munchies turns a phone picture into quick kid-friendly minigames.">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Photo Munchies">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <title>Photo Munchies</title>
+  <link rel="manifest" href="site.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css?v=1">
+</head>
+<body>
+  <main class="app-shell">
+    <section id="homeScreen" class="screen active" aria-labelledby="homeTitle">
+      <div class="guide-row">
+        <div class="guide" aria-hidden="true">
+          <span class="guide-head"></span>
+          <span class="guide-body"></span>
+          <span class="guide-arm left"></span>
+          <span class="guide-arm right"></span>
+          <span class="guide-leg left"></span>
+          <span class="guide-leg right"></span>
+        </div>
+        <div class="speech">
+          <p class="eyebrow">Photo game lab</p>
+          <h1 id="homeTitle">Photo Munchies</h1>
+          <p>Choose a picture, turn it into a silly game, then beat three tiny challenges.</p>
+        </div>
+      </div>
+
+      <div class="preview-card">
+        <div id="homePreview" class="photo-placeholder">
+          <span>No photo yet</span>
+        </div>
+        <div class="mode-picker" aria-label="Choose difficulty">
+          <button class="mode-button active" type="button" data-difficulty="gentle">
+            <strong>Gentle</strong>
+            <span>More time</span>
+          </button>
+          <button class="mode-button" type="button" data-difficulty="challenge">
+            <strong>Challenge</strong>
+            <span>Faster</span>
+          </button>
+        </div>
+        <input id="photoInput" class="visually-hidden" type="file" accept="image/*">
+        <button id="choosePhotoButton" class="button primary" type="button">Choose or take photo</button>
+        <button id="startSetupButton" class="button success" type="button" disabled>Start</button>
+      </div>
+    </section>
+
+    <section id="cropScreen" class="screen" aria-labelledby="cropTitle">
+      <header class="topbar">
+        <button id="cropBackButton" class="icon-button" type="button" aria-label="Back">Back</button>
+        <div>
+          <p class="eyebrow">Step 2</p>
+          <h2 id="cropTitle">Fit the face marker</h2>
+        </div>
+      </header>
+
+      <div class="canvas-wrap crop-wrap">
+        <canvas id="cropCanvas" width="720" height="720">Photo cropper</canvas>
+      </div>
+
+      <div class="control-row">
+        <button id="zoomOutButton" class="button secondary" type="button">Zoom out</button>
+        <button id="resetCropButton" class="button secondary" type="button">Reset</button>
+        <button id="zoomInButton" class="button secondary" type="button">Zoom in</button>
+      </div>
+      <button id="confirmCropButton" class="button success full" type="button">Looks good</button>
+    </section>
+
+    <section id="readyScreen" class="screen center" aria-labelledby="readyTitle">
+      <div class="tiny-photo-frame">
+        <img id="readyPhoto" alt="Your chosen game photo">
+      </div>
+      <p class="eyebrow">Three games each round</p>
+      <h2 id="readyTitle">Ready...</h2>
+      <p id="modeSummary" class="mode-summary">Gentle mode: a little extra time for small hands.</p>
+      <button id="playButton" class="button primary giant" type="button">Play</button>
+    </section>
+
+    <section id="gameScreen" class="screen game-screen" aria-labelledby="gameTitle">
+      <header class="game-hud">
+        <button id="gameBackButton" class="icon-button compact" type="button" aria-label="Back">Back</button>
+        <div>
+          <p id="gameStep" class="eyebrow">Game 1 / 3</p>
+          <h2 id="gameTitle">Snack Attack</h2>
+        </div>
+        <div class="score-pill">
+          <span>Time</span>
+          <strong id="timerText">10</strong>
+        </div>
+      </header>
+
+      <p id="gameInstruction" class="instruction">Drag snacks into the mouth zone.</p>
+      <div class="canvas-wrap play-wrap">
+        <canvas id="gameCanvas" width="720" height="960">Photo minigame</canvas>
+      </div>
+    </section>
+
+    <section id="resultScreen" class="screen center" aria-labelledby="resultTitle">
+      <div id="resultBurst" class="burst success-burst" aria-hidden="true"></div>
+      <p class="eyebrow">Round complete</p>
+      <h2 id="resultTitle">Success!</h2>
+      <p id="resultText">You cleared all three games.</p>
+      <div class="result-actions">
+        <button id="nextRoundButton" class="button primary" type="button">Play again</button>
+        <button id="changePhotoButton" class="button secondary" type="button">Change photo</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="game.js?v=1"></script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+{
+  "name": "Photo Munchies",
+  "short_name": "Munchies",
+  "description": "Turn a phone photo into quick kid-friendly minigames.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fffaf0",
+  "theme_color": "#ffcf5c",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
+

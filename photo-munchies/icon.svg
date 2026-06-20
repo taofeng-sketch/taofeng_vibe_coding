@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Photo Munchies icon">
+  <rect width="512" height="512" rx="96" fill="#ffcf5c"/>
+  <circle cx="356" cy="148" r="58" fill="#ff5f7d"/>
+  <rect x="84" y="118" width="288" height="288" rx="44" fill="#fffaf0" stroke="#1c2533" stroke-width="22"/>
+  <circle cx="194" cy="232" r="22" fill="#1c2533"/>
+  <circle cx="292" cy="232" r="22" fill="#1c2533"/>
+  <path d="M178 314c36 42 94 42 130 0" fill="none" stroke="#1c2533" stroke-width="24" stroke-linecap="round"/>
+  <path d="M92 388l92-94 58 54 54-46 118 86" fill="none" stroke="#4fcf96" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+
