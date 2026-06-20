@@ -30,7 +30,9 @@ const FACE_MODEL_URL = "https://storage.googleapis.com/mediapipe-models/face_lan
 const ctx = els.canvas.getContext("2d");
 const W = els.canvas.width;
 const H = els.canvas.height;
-const DEBUG_FACE = new URLSearchParams(window.location.search).has("debugFace");
+const DEBUG_PARAMS = new URLSearchParams(window.location.search);
+const DEBUG_FACE = DEBUG_PARAMS.has("debugFace");
+const DEBUG_BOMB = DEBUG_PARAMS.has("debugBomb");
 const mouth = { x: 0.5, y: 0.57, targetX: 0.5, targetY: 0.57, faceX: 0.5, faceY: 0.46, openness: 0 };
 const duration = 32;
 const MAX_SMEARS = 20;
@@ -81,6 +83,7 @@ let mouthOpen = false;
 let mouthWantsOpen = false;
 let mouthTired = false;
 let stamina = 1;
+let lives = 3;
 let bombLock = 0;
 let player2 = makePlayer2();
 let twoPlayerMode = false;
@@ -111,6 +114,7 @@ function makePlayer2() {
     mouthWantsOpen: false,
     mouthTired: false,
     stamina: 1,
+    lives: 3,
     bombLock: 0,
     score: 0,
     combo: 0,
@@ -237,6 +241,7 @@ function startRound() {
   combo = 0;
   hold = 0;
   stamina = 1;
+  lives = 3;
   mouthTired = false;
   bombLock = 0;
   player2 = makePlayer2();
@@ -440,6 +445,7 @@ function eatBomb(item, playerIndex = 0) {
     player2.combo = 0;
     player2.score = Math.max(0, player2.score - 80);
     player2.stamina = 0;
+    player2.lives = Math.max(0, player2.lives - 1);
     player2.mouthTired = true;
     player2.bombLock = BOMB_LOCK_SECONDS;
     player2.biteFlash = 0.28;
@@ -447,6 +453,7 @@ function eatBomb(item, playerIndex = 0) {
     combo = 0;
     score = Math.max(0, score - 80);
     stamina = 0;
+    lives = Math.max(0, lives - 1);
     mouthTired = true;
     bombLock = BOMB_LOCK_SECONDS;
     biteFlash = 0.28;
@@ -454,7 +461,7 @@ function eatBomb(item, playerIndex = 0) {
   screenShake = 0.34;
   splat(item, "bomb", playerIndex);
   const activeMouth = playerIndex === 1 ? player2.mouth : mouth;
-  pops.push(pop("BANG!", activeMouth.x, activeMouth.y, "#ff2d8e", true));
+  pops.push(pop("BANG! -1", activeMouth.x, activeMouth.y, "#ff2d8e", true));
 }
 
 function splat(item, effect = "fruit", attachTo = null) {
@@ -603,14 +610,15 @@ function draw(elapsed, left) {
   drawCameraFallback();
   drawSplats("screen");
   drawFaceTarget();
+  drawSplats("face");
   drawMouth();
   if (twoPlayerMode && player2.tracked) drawMouth(1);
-  drawSplats("face");
-  drawPeekEyes(0);
-  if (twoPlayerMode && player2.tracked) drawPeekEyes(1);
   foods.forEach((item) => {
     if (!item.done && elapsed >= item.spawn) drawFood(item);
   });
+  drawPeekEyes(0);
+  if (twoPlayerMode && player2.tracked) drawPeekEyes(1);
+  drawLives();
   drawPops();
   if (left <= 3) drawFinalRush(left);
   if (DEBUG_FACE) els.canvas.dataset.debugState = JSON.stringify(debugState());
@@ -715,6 +723,16 @@ function seedDebugSplats() {
       size,
       splatScale: size * 1.12,
     }, "fruit", 0);
+  }
+  if (DEBUG_BOMB) {
+    splat({
+      kind: "bomb",
+      x: mouth.faceX + 0.08,
+      y: mouth.faceY + 0.06,
+      size: 1.2,
+      splatScale: 1.35,
+    }, "bomb", 0);
+    lives = Math.max(0, lives - 1);
   }
 }
 
@@ -1012,10 +1030,22 @@ function drawSplats(layer = "all") {
     } else if (item.effect === "bomb") {
       ctx.save();
       ctx.globalCompositeOperation = "source-over";
-      ctx.fillStyle = "rgba(10,6,18,0.72)";
+      ctx.fillStyle = "rgba(7,5,10,0.86)";
       ctx.beginPath();
-      ctx.ellipse(0, 0, W * 0.18 * item.scale, H * 0.12 * item.scale, item.rot, 0, Math.PI * 2);
+      ctx.ellipse(0, 0, W * 0.22 * item.scale, H * 0.15 * item.scale, item.rot, 0, Math.PI * 2);
       ctx.fill();
+      ctx.globalCompositeOperation = "destination-out";
+      ctx.fillStyle = "rgba(0,0,0,0.68)";
+      ctx.beginPath();
+      ctx.ellipse(0, 0, W * 0.12 * item.scale, H * 0.075 * item.scale, item.rot, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalCompositeOperation = "source-over";
+      ctx.strokeStyle = "rgba(255,246,255,0.55)";
+      ctx.lineWidth = 7;
+      ctx.setLineDash([12, 13]);
+      ctx.beginPath();
+      ctx.ellipse(0, 0, W * 0.14 * item.scale, H * 0.09 * item.scale, item.rot, 0, Math.PI * 2);
+      ctx.stroke();
       ctx.restore();
     }
     ctx.fillStyle = item.color;
@@ -1077,11 +1107,14 @@ function debugState() {
   });
   return {
     debugFace: DEBUG_FACE,
+    debugBomb: DEBUG_BOMB,
     faceX: Number(mouth.faceX.toFixed(4)),
     faceY: Number(mouth.faceY.toFixed(4)),
     mouthX: Number(mouth.x.toFixed(4)),
     mouthY: Number(mouth.y.toFixed(4)),
+    lives,
     attachedCount: splats.filter((item) => item.attachTo === 0).length,
+    bombCount: splats.filter((item) => item.effect === "bomb").length,
     screenCount: splats.filter((item) => item.attachTo === null).length,
     attached,
   };
@@ -1097,44 +1130,101 @@ function drawPeekEyes(playerIndex = 0) {
   if (faceSplatCount(playerIndex) < 4) return;
   const activeMouth = playerIndex === 1 ? player2.mouth : mouth;
   const cx = activeMouth.faceX * W;
-  const cy = activeMouth.faceY * H - 18;
-  const blink = Math.sin(performance.now() / 165) > 0.62;
-  const spread = 46;
+  const cy = activeMouth.faceY * H - 30;
+  const blinkWave = Math.sin(performance.now() / 155);
+  const blink = blinkWave > 0.55;
+  const spread = 64;
+  const eyeW = 38;
+  const eyeH = blink ? 8 : 47;
   ctx.save();
   ctx.shadowColor = "#fff6ff";
-  ctx.shadowBlur = 18;
+  ctx.shadowBlur = 24;
   for (const side of [-1, 1]) {
     const x = cx + side * spread;
     ctx.fillStyle = "#fff6ff";
     ctx.strokeStyle = "#0a0612";
-    ctx.lineWidth = 7;
+    ctx.lineWidth = 8;
+    ctx.lineJoin = "round";
+    ctx.lineCap = "round";
     ctx.beginPath();
     if (blink) {
-      ctx.moveTo(x - 24, cy);
-      ctx.quadraticCurveTo(x, cy + 7, x + 24, cy);
+      ctx.moveTo(x - eyeW, cy);
+      ctx.quadraticCurveTo(x, cy + 12, x + eyeW, cy);
       ctx.stroke();
+      drawEyelashes(x, cy, side, true, eyeW, 20);
     } else {
-      ctx.ellipse(x, cy, 25, 31, side * 0.08, 0, Math.PI * 2);
+      ctx.ellipse(x, cy, eyeW, eyeH, side * 0.06, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
       ctx.fillStyle = "#0a0612";
       ctx.beginPath();
-      ctx.arc(x + side * 5, cy + 3, 10, 0, Math.PI * 2);
+      ctx.arc(x + side * 8, cy + 5, 15, 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = "#fff";
       ctx.beginPath();
-      ctx.arc(x + side * 9, cy - 4, 3.5, 0, Math.PI * 2);
+      ctx.arc(x + side * 14, cy - 7, 5, 0, Math.PI * 2);
       ctx.fill();
+      drawEyelashes(x, cy, side, false, eyeW, eyeH);
     }
   }
   ctx.fillStyle = "#c6ff36";
-  ctx.font = "900 24px 'Bangers', system-ui";
+  ctx.font = "900 29px 'Bangers', system-ui";
   ctx.textAlign = "center";
   ctx.strokeStyle = "#0a0612";
-  ctx.lineWidth = 5;
+  ctx.lineWidth = 6;
   const label = playerIndex === 1 ? "P2 PEEK!" : "PEEK!";
-  ctx.strokeText(label, cx, cy + 62);
-  ctx.fillText(label, cx, cy + 62);
+  ctx.strokeText(label, cx, cy + 78);
+  ctx.fillText(label, cx, cy + 78);
+  ctx.restore();
+}
+
+function drawEyelashes(cx, cy, side, blink, eyeW, eyeH) {
+  const t = performance.now() / 240;
+  const colors = ["#ff5f7d", "#c6ff36", "#9b6bff", "#ff9d2e"];
+  ctx.save();
+  ctx.lineCap = "round";
+  for (let i = 0; i < 5; i += 1) {
+    const p = i / 4;
+    const baseX = cx - eyeW * 0.66 + p * eyeW * 1.32;
+    const baseY = cy - (blink ? 1 : eyeH * (0.78 + Math.sin(t + i) * 0.02));
+    const lean = (p - 0.5) * 22 + side * 5 + Math.sin(t + i) * 4;
+    const tipX = baseX + lean;
+    const tipY = baseY - 32 - Math.sin(t * 1.6 + i) * 5;
+    ctx.strokeStyle = "#0a0612";
+    ctx.lineWidth = 7;
+    ctx.beginPath();
+    ctx.moveTo(baseX, baseY);
+    ctx.quadraticCurveTo((baseX + tipX) / 2, baseY - 20, tipX, tipY);
+    ctx.stroke();
+    ctx.strokeStyle = colors[i % colors.length];
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(tipX - 9, tipY + 5);
+    ctx.lineTo(tipX + 9, tipY - 3);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawLives() {
+  drawPlayerLives(lives, W - 126, 38, "#ff5f7d");
+  if (twoPlayerMode && player2.tracked) drawPlayerLives(player2.lives, W - 126, 82, "#8dd9ff");
+}
+
+function drawPlayerLives(activeLives, x, y, color) {
+  ctx.save();
+  for (let i = 0; i < 3; i += 1) {
+    const cx = x + i * 34;
+    ctx.fillStyle = i < activeLives ? color : "rgba(8,3,15,0.42)";
+    ctx.strokeStyle = "#0a0612";
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.moveTo(cx, y + 18);
+    ctx.bezierCurveTo(cx - 25, y + 2, cx - 12, y - 18, cx, y - 6);
+    ctx.bezierCurveTo(cx + 12, y - 18, cx + 25, y + 2, cx, y + 18);
+    ctx.fill();
+    ctx.stroke();
+  }
   ctx.restore();
 }
 

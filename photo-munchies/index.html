@@ -3,118 +3,104 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-  <meta name="theme-color" content="#ffcf5c">
-  <meta name="description" content="Photo Munchies turns a phone picture into quick kid-friendly minigames.">
+  <meta name="theme-color" content="#15101f">
+  <meta name="description" content="Photo Munchies is a live camera fruit-munching game for kids.">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Photo Munchies">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta http-equiv="refresh" content="0; url=live.html">
   <title>Photo Munchies</title>
   <link rel="manifest" href="site.webmanifest">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css?v=1">
+  <style>
+    :root {
+      color-scheme: dark;
+      --ink: #0a0612;
+      --paper: #fff6ff;
+      --pink: #ff2d8e;
+      --yellow: #c6ff36;
+      --blue: #28e6ff;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      min-height: 100%;
+      margin: 0;
+    }
+
+    body {
+      display: grid;
+      place-items: center;
+      padding: max(22px, env(safe-area-inset-top)) 18px max(22px, env(safe-area-inset-bottom));
+      background:
+        radial-gradient(circle at 22% 16%, rgba(255, 45, 142, 0.24), transparent 24%),
+        radial-gradient(circle at 82% 18%, rgba(40, 230, 255, 0.18), transparent 26%),
+        #15101f;
+      color: var(--paper);
+      font-family: ui-rounded, "Avenir Next", system-ui, sans-serif;
+      text-align: center;
+    }
+
+    main {
+      width: min(460px, 100%);
+    }
+
+    .burst {
+      width: 156px;
+      height: 156px;
+      margin: 0 auto 18px;
+      border: 5px solid var(--ink);
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 54% 46%, var(--yellow) 0 20%, transparent 21%),
+        conic-gradient(from 12deg, var(--pink), #9b6bff, var(--blue), var(--yellow), #ff9d2e, var(--pink));
+      box-shadow: 0 0 0 7px rgba(255, 246, 255, 0.1), 0 0 40px rgba(255, 45, 142, 0.42);
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      color: var(--pink);
+      font-size: clamp(46px, 13vw, 68px);
+      line-height: 0.9;
+      text-shadow: 3px 3px 0 var(--ink), 0 0 18px rgba(255, 45, 142, 0.62);
+    }
+
+    p {
+      margin: 0 0 22px;
+      color: #cbb8ec;
+      font-size: 18px;
+      font-weight: 800;
+      line-height: 1.35;
+    }
+
+    a {
+      display: block;
+      min-height: 62px;
+      border: 4px solid var(--ink);
+      border-radius: 18px;
+      padding: 16px 18px;
+      background: linear-gradient(180deg, var(--yellow), #92e900);
+      box-shadow: 0 7px 0 rgba(0, 0, 0, 0.46), 0 0 22px rgba(255, 45, 142, 0.28);
+      color: #08030f;
+      font-size: 22px;
+      font-weight: 1000;
+      text-decoration: none;
+    }
+  </style>
 </head>
 <body>
-  <main class="app-shell">
-    <section id="homeScreen" class="screen active" aria-labelledby="homeTitle">
-      <div class="guide-row">
-        <div class="guide" aria-hidden="true">
-          <span class="guide-head"></span>
-          <span class="guide-body"></span>
-          <span class="guide-arm left"></span>
-          <span class="guide-arm right"></span>
-          <span class="guide-leg left"></span>
-          <span class="guide-leg right"></span>
-        </div>
-        <div class="speech">
-          <p class="eyebrow">Photo game lab</p>
-          <h1 id="homeTitle">Photo Munchies</h1>
-          <p>Choose a picture, turn it into a silly game, then beat three tiny challenges.</p>
-        </div>
-      </div>
-
-      <div class="preview-card">
-        <div id="homePreview" class="photo-placeholder">
-          <span>No photo yet</span>
-        </div>
-        <div class="mode-picker" aria-label="Choose difficulty">
-          <button class="mode-button active" type="button" data-difficulty="gentle">
-            <strong>Gentle</strong>
-            <span>More time</span>
-          </button>
-          <button class="mode-button" type="button" data-difficulty="challenge">
-            <strong>Challenge</strong>
-            <span>Faster</span>
-          </button>
-        </div>
-        <input id="photoInput" class="visually-hidden" type="file" accept="image/*">
-        <a class="button live-link" href="live.html">Try Live Fruit Munch</a>
-        <button id="choosePhotoButton" class="button primary" type="button">Choose or take photo</button>
-        <button id="startSetupButton" class="button success" type="button" disabled>Start</button>
-      </div>
-    </section>
-
-    <section id="cropScreen" class="screen" aria-labelledby="cropTitle">
-      <header class="topbar">
-        <button id="cropBackButton" class="icon-button" type="button" aria-label="Back">Back</button>
-        <div>
-          <p class="eyebrow">Step 2</p>
-          <h2 id="cropTitle">Fit the face marker</h2>
-        </div>
-      </header>
-
-      <div class="canvas-wrap crop-wrap">
-        <canvas id="cropCanvas" width="720" height="720">Photo cropper</canvas>
-      </div>
-
-      <div class="control-row">
-        <button id="zoomOutButton" class="button secondary" type="button">Zoom out</button>
-        <button id="resetCropButton" class="button secondary" type="button">Reset</button>
-        <button id="zoomInButton" class="button secondary" type="button">Zoom in</button>
-      </div>
-      <button id="confirmCropButton" class="button success full" type="button">Looks good</button>
-    </section>
-
-    <section id="readyScreen" class="screen center" aria-labelledby="readyTitle">
-      <div class="tiny-photo-frame">
-        <img id="readyPhoto" alt="Your chosen game photo">
-      </div>
-      <p class="eyebrow">Three games each round</p>
-      <h2 id="readyTitle">Ready...</h2>
-      <p id="modeSummary" class="mode-summary">Gentle mode: a little extra time for small hands.</p>
-      <button id="playButton" class="button primary giant" type="button">Play</button>
-    </section>
-
-    <section id="gameScreen" class="screen game-screen" aria-labelledby="gameTitle">
-      <header class="game-hud">
-        <button id="gameBackButton" class="icon-button compact" type="button" aria-label="Back">Back</button>
-        <div>
-          <p id="gameStep" class="eyebrow">Game 1 / 3</p>
-          <h2 id="gameTitle">Snack Attack</h2>
-        </div>
-        <div class="score-pill">
-          <span>Time</span>
-          <strong id="timerText">10</strong>
-        </div>
-      </header>
-
-      <p id="gameInstruction" class="instruction">Drag snacks into the mouth zone.</p>
-      <div class="canvas-wrap play-wrap">
-        <canvas id="gameCanvas" width="720" height="960">Photo minigame</canvas>
-      </div>
-    </section>
-
-    <section id="resultScreen" class="screen center" aria-labelledby="resultTitle">
-      <div id="resultBurst" class="burst success-burst" aria-hidden="true"></div>
-      <p class="eyebrow">Round complete</p>
-      <h2 id="resultTitle">Success!</h2>
-      <p id="resultText">You cleared all three games.</p>
-      <div class="result-actions">
-        <button id="nextRoundButton" class="button primary" type="button">Play again</button>
-        <button id="changePhotoButton" class="button secondary" type="button">Change photo</button>
-      </div>
-    </section>
+  <main>
+    <div class="burst" aria-hidden="true"></div>
+    <h1>Photo Munchies</h1>
+    <p>Opening the live fruit-munching game...</p>
+    <a href="live.html">Start Live Fruit Munch</a>
   </main>
-
-  <script src="game.js?v=1"></script>
+  <script>
+    window.location.replace("live.html");
+  </script>
 </body>
 </html>
