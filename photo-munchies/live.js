@@ -36,6 +36,7 @@ const DEBUG_FACE = DEBUG_PARAMS.has("debugFace");
 const DEBUG_BOMB = DEBUG_PARAMS.has("debugBomb");
 const DEBUG_BOMB_MISS = DEBUG_PARAMS.has("debugBombMiss");
 const DEBUG_FATAL = DEBUG_PARAMS.has("debugFatal");
+const DEBUG_GIANT_EYES = DEBUG_PARAMS.has("debugGiantEyes");
 const DEBUG_SECONDS = Number(DEBUG_PARAMS.get("debugSeconds") || 0);
 const mouth = makeMouthState(0.5);
 const duration = DEBUG_SECONDS >= 4 && DEBUG_SECONDS <= 32 ? DEBUG_SECONDS : 32;
@@ -640,6 +641,10 @@ function startRound() {
     updateDebugFace(performance.now());
     seedDebugSplats();
   }
+  if (DEBUG_GIANT_EYES) {
+    seedDebugGiantEyes();
+    finalRushAnnounced = true;
+  }
   els.score2Text.textContent = "0";
   els.saveButton.disabled = true;
   startAudio();
@@ -1226,6 +1231,23 @@ function seedDebugSplats() {
   }
 }
 
+function seedDebugGiantEyes() {
+  debugSeeded = false;
+  seedDebugSplats();
+  for (let index = 0; index < 8; index += 1) {
+    const kind = FRUIT_KINDS[(index + 3) % FRUIT_KINDS.length];
+    const angle = (index / 8) * Math.PI * 2 + Math.random() * 0.25;
+    const size = 1.35 + Math.random() * 0.7;
+    splat({
+      kind,
+      x: mouth.faceX + Math.cos(angle) * (0.05 + Math.random() * 0.11),
+      y: mouth.faceY + Math.sin(angle) * (0.04 + Math.random() * 0.09),
+      size,
+      splatScale: size * 1.35,
+    }, "fruit", 0);
+  }
+}
+
 function readMouthFromLandmarks(landmarks, targetMouth, previousSmooth) {
   const upperLip = mapLandmark(landmarks[13]);
   const lowerLip = mapLandmark(landmarks[14]);
@@ -1655,7 +1677,7 @@ function debugState() {
     leftEyeY: Number(mouth.leftEyeY.toFixed(4)),
     rightEyeX: Number(mouth.rightEyeX.toFixed(4)),
     rightEyeY: Number(mouth.rightEyeY.toFixed(4)),
-    eyeMess: Number(clamp((faceSplatCount(0) - 2) / 7, 0, 1).toFixed(4)),
+    eyeMess: Number(eyeSpectacleLevel(0).toFixed(4)),
     mouthX: Number(mouth.x.toFixed(4)),
     mouthY: Number(mouth.y.toFixed(4)),
     lives,
@@ -1685,11 +1707,17 @@ function faceSplatCount(playerIndex = 0) {
   return splats.filter((item) => item.attachTo === playerIndex && item.effect !== "bomb").length;
 }
 
+function eyeSpectacleLevel(playerIndex = 0) {
+  const baseMess = clamp((faceSplatCount(playerIndex) - 2) / 6, 0, 1);
+  const finalRushBoost = finalRushAnnounced ? 0.42 : 0;
+  return clamp(baseMess + finalRushBoost, 0, 1.35);
+}
+
 function drawPeekEyes(playerIndex = 0) {
   const isTracked = playerIndex === 1 ? player2.tracked : (faceTracked || DEBUG_FACE);
   if (!isTracked) return;
   const activeMouth = playerIndex === 1 ? player2.mouth : mouth;
-  const mess = clamp((faceSplatCount(playerIndex) - 2) / 7, 0, 1);
+  const mess = eyeSpectacleLevel(playerIndex);
   const blinkWave = Math.sin(performance.now() / (mess > 0.55 ? 150 : 230));
   const blink = blinkWave > (mess > 0.55 ? 0.58 : 0.78);
   const left = {
@@ -1700,13 +1728,17 @@ function drawPeekEyes(playerIndex = 0) {
     x: activeMouth.rightEyeX * W,
     y: activeMouth.rightEyeY * H,
   };
+  const centerX = (left.x + right.x) / 2;
   const distance = Math.max(96, Math.hypot(right.x - left.x, right.y - left.y));
-  const eyeW = clamp(distance * (0.17 + mess * 0.18), 28, 76);
+  const mega = clamp((mess - 0.72) / 0.63, 0, 1);
+  left.x -= distance * 0.06 * mega;
+  right.x += distance * 0.06 * mega;
+  const eyeW = clamp(distance * (0.17 + mess * 0.25), 28, 112);
   const cleanEyeH = clamp(distance * 0.095, 15, 25);
-  const bigEyeH = clamp(distance * 0.34, 48, 88);
+  const bigEyeH = clamp(distance * (0.34 + mega * 0.22), 48, 128);
   ctx.save();
   ctx.shadowColor = "#fff6ff";
-  ctx.shadowBlur = 14 + mess * 18;
+  ctx.shadowBlur = 14 + mess * 24;
   [
     { ...left, side: -1 },
     { ...right, side: 1 },
@@ -1738,9 +1770,9 @@ function drawPeekEyes(playerIndex = 0) {
       ctx.stroke();
       if (mess >= 0.45) {
         ctx.strokeStyle = "rgba(255,246,255,0.78)";
-        ctx.lineWidth = 3;
+        ctx.lineWidth = 3 + mega * 4;
         ctx.beginPath();
-        ctx.ellipse(x, cy, eyeW + 7, eyeH + 7, side * 0.035, 0, Math.PI * 2);
+        ctx.ellipse(x, cy, eyeW + 7 + mega * 10, eyeH + 7 + mega * 10, side * 0.035, 0, Math.PI * 2);
         ctx.stroke();
       }
       ctx.fillStyle = `rgba(255,45,142,${0.22 * (1 - mess)})`;
@@ -1749,17 +1781,17 @@ function drawPeekEyes(playerIndex = 0) {
       ctx.fill();
       ctx.fillStyle = "#0a0612";
       ctx.beginPath();
-      ctx.arc(x + side * (6 + mess * 6), cy + mess * 5, clamp(9 + mess * 10, 9, 20), 0, Math.PI * 2);
+      ctx.arc(x + side * (6 + mess * 8), cy + mess * 5, clamp(9 + mess * 13, 9, 28), 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = "#fff";
       ctx.beginPath();
-      ctx.arc(x + side * (10 + mess * 7), cy - eyeH * 0.26, 4 + mess * 3, 0, Math.PI * 2);
+      ctx.arc(x + side * (10 + mess * 9), cy - eyeH * 0.26, 4 + mess * 4.5, 0, Math.PI * 2);
       ctx.fill();
       drawEyelashes(x, cy, side, false, eyeW, eyeH, mess);
     }
   });
   if (mess > 0.42) {
-    const cx = (left.x + right.x) / 2;
+    const cx = centerX;
     const cy = (left.y + right.y) / 2 + bigEyeH + 22;
     ctx.fillStyle = "#c6ff36";
     ctx.font = "900 29px 'Bangers', system-ui";
@@ -2064,6 +2096,7 @@ els.startButton.addEventListener("click", async () => {
   await initFaceTracking();
   startRound();
 });
+
 els.playAgainButton.addEventListener("click", () => {
   startAudio();
   startRound();

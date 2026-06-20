@@ -62,15 +62,21 @@ It prints the iPhone URL and creates a local QR launch page. On the iPhone, join
 
 ## Native iOS App
 
-There is also a native SwiftUI version in [`ios/`](./ios/):
+There is also an iPhone app wrapper in [`ios/`](./ios/). It runs the current Munch Monster game inside a SwiftUI `WKWebView`: Simulator uses the bundled local debug game, and real iPhone uses the published HTTPS game for reliable camera permission handling.
+
+```bash
+./ios/run_simulator.sh
+```
+
+Open in Xcode for real-device testing:
 
 ```bash
 open ios/PhotoMunchies/PhotoMunchies.xcodeproj
 ```
 
-See [`ios/README.md`](./ios/README.md) for simulator and real-device instructions.
+See [`ios/README.md`](./ios/README.md) for simulator and real-device instructions. After changing the web game, `./ios/run_simulator.sh` automatically syncs the latest web files into the app bundle via [`scripts/sync_ios_webgame.sh`](./scripts/sync_ios_webgame.sh).
 
-Native scope includes front-camera selfie capture, Vision face detection, Live Kebab Munch v2 scoring/combo/hold-mouth challenge, haptic/audio feedback, and ReplayKit recording so the finished round can be saved from Apple's preview screen. The current Web prototype has moved ahead as Munch Monster 疯狂大嘴怪 with MediaPipe mouth tracking, messy fruit splats, mouth energy, fixed bomb drops, local replay download, and optional two-player mode.
+The older native SwiftUI prototype remains in the project for reference, but the app entry now launches the current Web game wrapper.
 
 ## Verification
 
