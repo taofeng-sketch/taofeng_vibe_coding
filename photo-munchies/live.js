@@ -33,6 +33,7 @@ const H = els.canvas.height;
 const DEBUG_PARAMS = new URLSearchParams(window.location.search);
 const DEBUG_FACE = DEBUG_PARAMS.has("debugFace");
 const DEBUG_BOMB = DEBUG_PARAMS.has("debugBomb");
+const DEBUG_BOMB_MISS = DEBUG_PARAMS.has("debugBombMiss");
 const DEBUG_FATAL = DEBUG_PARAMS.has("debugFatal");
 const mouth = { x: 0.5, y: 0.57, targetX: 0.5, targetY: 0.57, faceX: 0.5, faceY: 0.46, openness: 0 };
 const duration = 32;
@@ -68,6 +69,8 @@ const SMASH = Object.fromEntries(Object.entries(SMASH_FILES).map(([kind, src]) =
   image.src = src;
   return [kind, image];
 }));
+const BOMB_EXPLOSION = new Image();
+BOMB_EXPLOSION.src = "art/bomb_explosion.png";
 const trackingPill = document.createElement("div");
 trackingPill.className = "tracking-pill";
 trackingPill.textContent = "Loading face tracking...";
@@ -148,6 +151,7 @@ function resetFoods() {
 function food(kind, x, y, spawn, speed, progress = 0) {
   const roam = Math.random() < 0.42;
   const size = kind === "golden" ? 1.18 + Math.random() * 0.32 : kind === "bomb" ? 0.9 + Math.random() * 0.48 : 0.62 + Math.random() * 0.92;
+  const baseHoverLife = (1.0 - progress * 0.30) * (size > 1.15 ? 1.12 : 0.94 + Math.random() * 0.18);
   return {
     kind,
     x,
@@ -159,7 +163,7 @@ function food(kind, x, y, spawn, speed, progress = 0) {
     done: false,
     arrived: false,
     hoverAge: 0,
-    hoverLife: (1.0 - progress * 0.30) * (size > 1.15 ? 1.12 : 0.94 + Math.random() * 0.18),
+    hoverLife: kind === "bomb" ? 3.15 : baseHoverLife,
     mode: roam ? "roam" : "face",
     targetPlayer: twoPlayerMode && Math.random() < 0.48 ? 1 : 0,
     targetX: 0.06 + Math.random() * 0.88,
@@ -356,7 +360,8 @@ function updateFoods(elapsed) {
     lockFoodTarget(item);
     const target = getFoodTarget(item);
     const targetD = Math.hypot(item.x - target.x, item.y - target.y);
-    const speed = item.arrived ? item.speed * 0.08 : item.speed;
+    const rushMultiplier = duration - elapsed <= 3 ? 2 : 1;
+    const speed = item.arrived ? item.speed * 0.08 : item.speed * rushMultiplier;
     item.x += (target.x - item.x) * speed;
     item.y += (target.y - item.y) * speed;
     item.wobble += 0.08;
@@ -374,6 +379,11 @@ function updateFoods(elapsed) {
       item.hoverAge += 1 / 60;
     }
     if (!item.done && item.arrived && item.hoverAge > item.hoverLife) {
+      if (item.kind === "bomb") {
+        pops.push(pop("SAFE!", item.x, item.y, "#28e6ff", false, "arcade"));
+        item.done = true;
+        continue;
+      }
       if (item.targetPlayer === 1) player2.combo = 0;
       else combo = 0;
       const attachTo = item.mode === "face" ? item.targetPlayer : nearestFaceAttachment(item);
@@ -779,6 +789,28 @@ function seedDebugSplats() {
     pops.push(pop(DEBUG_FATAL ? "GAME OVER" : "-1 LIFE!", 0.5, 0.30, "#ff2d8e", true, "arcade"));
     pops.push(pop("ENERGY RESET", 0.5, 0.43, "#c6ff36", false, "arcade"));
   }
+  if (DEBUG_BOMB_MISS) {
+    foods = [{
+      kind: "bomb",
+      x: clamp(mouth.faceX - 0.28, 0.12, 0.88),
+      y: clamp(mouth.faceY - 0.08, 0.16, 0.78),
+      spawn: 0,
+      speed: 0.01,
+      size: 1.2,
+      splatScale: 1.35,
+      done: false,
+      arrived: true,
+      hoverAge: 0,
+      hoverLife: 3.15,
+      mode: "roam",
+      targetPlayer: 0,
+      targetX: clamp(mouth.faceX - 0.28, 0.12, 0.88),
+      targetY: clamp(mouth.faceY - 0.08, 0.16, 0.78),
+      targetLocked: true,
+      wobble: 0,
+      rot: -0.2,
+    }];
+  }
 }
 
 function readMouthFromLandmarks(landmarks, targetMouth, previousSmooth) {
@@ -1038,6 +1070,19 @@ function drawFoodTimer(item, fruit) {
   ctx.beginPath();
   ctx.arc(0, 0, fruit.radius + 24, 0, Math.PI * 2);
   ctx.stroke();
+  if (item.kind === "bomb") {
+    const number = Math.max(1, Math.ceil(remaining * 3));
+    ctx.font = "1000 54px 'Bangers', system-ui";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = "#fff6ff";
+    ctx.strokeStyle = "#0a0612";
+    ctx.lineWidth = 9;
+    ctx.shadowColor = "#ff2d8e";
+    ctx.shadowBlur = 16;
+    ctx.strokeText(String(number), 0, 6);
+    ctx.fillText(String(number), 0, 6);
+  }
   ctx.restore();
 }
 
@@ -1061,16 +1106,17 @@ function drawSplats(layer = "all") {
     ctx.save();
     ctx.globalAlpha = item.effect === "bomb" ? 0.96 * fade : 1 * fade;
     ctx.translate(position.x * W, position.y * H);
-    const smash = item.effect === "bomb" ? null : SMASH[item.kind] || SMASH.orange;
+    const smash = item.effect === "bomb" ? BOMB_EXPLOSION : SMASH[item.kind] || SMASH.orange;
     if (smash && smash.complete && smash.naturalWidth) {
       ctx.save();
       ctx.rotate(item.rot);
       ctx.globalCompositeOperation = "source-over";
-      ctx.filter = "saturate(1.65) contrast(1.14)";
+      ctx.filter = item.effect === "bomb" ? "saturate(1.4) contrast(1.08)" : "saturate(1.65) contrast(1.14)";
       ctx.shadowColor = item.color;
-      ctx.shadowBlur = item.attachTo === null ? 18 : 10;
-      const size = Math.min(W, H) * (0.45 + item.scale * 0.34);
-      ctx.drawImage(smash, 0, 0, smash.naturalWidth, Math.floor(smash.naturalHeight * 0.86), -size / 2, -size / 2, size, size);
+      ctx.shadowBlur = item.effect === "bomb" ? 16 : item.attachTo === null ? 18 : 10;
+      const size = Math.min(W, H) * (item.effect === "bomb" ? 0.68 + item.scale * 0.26 : 0.45 + item.scale * 0.34);
+      const sourceHeight = item.effect === "bomb" ? smash.naturalHeight : Math.floor(smash.naturalHeight * 0.86);
+      ctx.drawImage(smash, 0, 0, smash.naturalWidth, sourceHeight, -size / 2, -size / 2, size, size);
       ctx.restore();
     } else if (item.effect === "bomb") {
       ctx.save();
@@ -1153,6 +1199,7 @@ function debugState() {
   return {
     debugFace: DEBUG_FACE,
     debugBomb: DEBUG_BOMB,
+    debugBombMiss: DEBUG_BOMB_MISS,
     debugFatal: DEBUG_FATAL,
     faceX: Number(mouth.faceX.toFixed(4)),
     faceY: Number(mouth.faceY.toFixed(4)),
@@ -1164,6 +1211,7 @@ function debugState() {
     gameOverPlayer,
     attachedCount: splats.filter((item) => item.attachTo === 0).length,
     bombCount: splats.filter((item) => item.effect === "bomb").length,
+    activeBombs: foods.filter((item) => item.kind === "bomb" && !item.done).length,
     screenCount: splats.filter((item) => item.attachTo === null).length,
     attached,
   };
