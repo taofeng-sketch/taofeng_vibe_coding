@@ -1,4 +1,4 @@
-# 疯狂大嘴怪
+# Munch Monster 疯狂大嘴怪
 
 An iPhone-friendly photo minigame prototype for kids.
 
@@ -19,7 +19,7 @@ Published web prototype:
 4. Close your mouth to recharge energy; do not hold it open forever.
 5. Chase the roaming fruit by moving your head, avoid messy splats, and save a replay if the browser supports recording.
 
-The Web live version now uses MediaPipe Face Landmarker for browser mouth tracking. It also has Kimi fruit-smash art in [`art/`](./art/), an image-model-generated bomb explosion sprite, bomb hazards that only explode when eaten, 3-2-1 bomb countdowns that disappear safely if ignored, 10 hearts, energy reset, arcade-style pop text, and an 80s-style Game Over overlay that fades out before the final share card appears. The final result still uses a cleaned messy-play screenshot with a highlighted score badge, so Game Over, Double Time, hearts, and timer HUD do not pollute the share card. It also includes face-attached saturated fruit splats, fixed arcing fruit paths that do not chase head jitter, fixed bomb drop spots that do not follow the face, centered target zones away from screen edges, early fruit/bomb spacing, progressive bomb pacing with no bombs queued in the first 10 seconds, a dedicated final-rush burst that spawns 18 fast fruit/bomb objects during Double Score time, a front-layer mouth, oversized blinking peek-out eyes with lashes, countdown hover rings, a fallback hold-mouth button if tracking fails, local replay recording, a tutorial page, and louder procedural WebAudio music/SFX for fruit chomps, fruit splats, countdown ticks, bomb blasts, safe bombs, final rush, win, and Game Over. The native iPhone app remains the better path for Apple Vision + ReplayKit experimentation.
+The Web live version now uses MediaPipe Face Landmarker for browser mouth tracking. It also has Kimi fruit-smash art in [`art/`](./art/), an image-model-generated bomb explosion sprite, bomb hazards that only explode when eaten, 3-2-1 bomb countdowns that disappear safely if ignored, 10 hearts, energy reset, arcade-style pop text, and an 80s-style Game Over overlay that fades out before the final share card appears. The final result still uses a cleaned messy-play screenshot with a highlighted score badge, so Game Over, Double Time, hearts, and timer HUD do not pollute the share card. It also includes face-attached saturated fruit splats, fixed arcing fruit paths that do not chase head jitter, fixed bomb drop spots that do not follow the face, centered target zones away from screen edges, early fruit/bomb spacing, progressive bomb pacing with no bombs queued in the first 10 seconds, 1-2 guaranteed midgame bombs between 10 and 20 seconds, a dedicated final-rush burst that spawns 18 fast fruit/bomb objects during Double Score time, mobile one-screen layout checks for iPhone SE/390px/430px viewports, a front-layer mouth, oversized blinking peek-out eyes with lashes, countdown hover rings, a fallback hold-mouth button if tracking fails, local replay recording, a bilingual tutorial page, and louder procedural WebAudio music/SFX for fruit chomps, fruit splats, countdown ticks, bomb blasts, safe bombs, final rush, win, and Game Over. The native iPhone app remains the better path for Apple Vision + ReplayKit experimentation.
 
 ## Local Run
 
@@ -70,7 +70,7 @@ open ios/PhotoMunchies/PhotoMunchies.xcodeproj
 
 See [`ios/README.md`](./ios/README.md) for simulator and real-device instructions.
 
-Native scope includes front-camera selfie capture, Vision face detection, Live Kebab Munch v2 scoring/combo/hold-mouth challenge, haptic/audio feedback, and ReplayKit recording so the finished round can be saved from Apple's preview screen. The current Web prototype has moved ahead as 疯狂大嘴怪 with MediaPipe mouth tracking, messy fruit splats, mouth energy, fixed bomb drops, local replay download, and optional two-player mode.
+Native scope includes front-camera selfie capture, Vision face detection, Live Kebab Munch v2 scoring/combo/hold-mouth challenge, haptic/audio feedback, and ReplayKit recording so the finished round can be saved from Apple's preview screen. The current Web prototype has moved ahead as Munch Monster 疯狂大嘴怪 with MediaPipe mouth tracking, messy fruit splats, mouth energy, fixed bomb drops, local replay download, and optional two-player mode.
 
 ## Verification
 

@@ -372,12 +372,13 @@ function playWinSound() {
 
 function bombChanceForSpawn(spawn) {
   if (spawn < 10) return 0;
-  if (spawn < 20) return 0.035 + ((spawn - 10) / 10) * 0.035;
+  if (spawn < 20) return 0;
   const lateWindow = Math.max(1, duration - 23);
   return 0.08 + Math.min(1, (spawn - 20) / lateWindow) * 0.08;
 }
 
-function chooseQueuedKind(spawn, index) {
+function chooseQueuedKind(spawn, index, forceBomb = false) {
+  if (forceBomb) return "bomb";
   const goldenChance = index > 4 && Math.random() < 0.08;
   if (Math.random() < bombChanceForSpawn(spawn)) return "bomb";
   return goldenChance ? "golden" : FRUIT_KINDS[Math.floor(Math.random() * FRUIT_KINDS.length)];
@@ -423,10 +424,11 @@ function prepareBombDrop(item) {
 
 function resetFoods() {
   const placedTargets = [];
+  const midBombIndexes = new Set([17, 24]);
   foods = Array.from({ length: 34 }, (_, index) => {
     const progress = index / 33;
     const spawn = index * 0.76 + Math.random() * 0.62;
-    const kind = chooseQueuedKind(spawn, index);
+    const kind = chooseQueuedKind(spawn, index, midBombIndexes.has(index));
     const edge = Math.floor(Math.random() * 4);
     const start = edge === 0 ? [0.04, 0.14 + Math.random() * 0.72]
       : edge === 1 ? [0.96, 0.14 + Math.random() * 0.72]
@@ -565,6 +567,7 @@ function setTrackingPill(text, state) {
 function show(panel) {
   [els.startPanel, els.gamePanel, els.resultPanel].forEach((el) => el.classList.add("hidden"));
   panel.classList.remove("hidden");
+  document.body.classList.toggle("game-active", panel === els.gamePanel);
 }
 
 function startRound() {
@@ -1605,6 +1608,7 @@ function debugState() {
     activeBombs: foods.filter((item) => item.kind === "bomb" && !item.done).length,
     spawnedBombs: foods.filter((item) => item.kind === "bomb" && !item.done && item.spawn <= elapsed).length,
     earlyBombs: foods.filter((item) => item.kind === "bomb" && item.spawn < 10).length,
+    midBombs: foods.filter((item) => item.kind === "bomb" && item.spawn >= 10 && item.spawn < 20).length,
     activeFoods: foods.filter((item) => !item.done).length,
     finalRushAnnounced,
     finalRushSpawned,

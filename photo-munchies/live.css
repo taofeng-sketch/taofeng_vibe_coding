@@ -21,7 +21,9 @@
 html,
 body {
   margin: 0;
+  width: 100%;
   min-height: 100%;
+  overflow-x: hidden;
   overscroll-behavior: none;
   background:
     radial-gradient(circle at 22% 16%, rgba(255, 45, 142, 0.24), transparent 24%),
@@ -30,6 +32,11 @@ body {
     #15101f;
   color: var(--paper);
   font-family: "Baloo 2", ui-rounded, "Avenir Next", system-ui, sans-serif;
+}
+
+body.game-active {
+  height: 100dvh;
+  overflow: hidden;
 }
 
 body::before {
@@ -52,6 +59,13 @@ a {
   padding: max(18px, env(safe-area-inset-top)) 14px max(18px, env(safe-area-inset-bottom));
   display: grid;
   place-items: center;
+}
+
+body.game-active .live-shell {
+  height: 100dvh;
+  min-height: 100dvh;
+  overflow: hidden;
+  padding: max(8px, env(safe-area-inset-top)) 10px max(8px, env(safe-area-inset-bottom));
 }
 
 .hidden {
@@ -187,6 +201,15 @@ h2 {
   gap: 10px;
 }
 
+body.game-active .game-panel {
+  width: min(100%, calc((100dvh - 188px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) * 0.6667), 560px);
+  height: 100%;
+  max-height: calc(100dvh - max(8px, env(safe-area-inset-top)) - max(8px, env(safe-area-inset-bottom)));
+  grid-template-rows: auto minmax(0, auto) auto auto;
+  align-content: center;
+  gap: clamp(5px, 0.9dvh, 10px);
+}
+
 .hud {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -206,6 +229,15 @@ h2 {
   box-shadow: 0 5px 0 rgba(0, 0, 0, 0.44), inset 0 0 18px rgba(255, 45, 142, 0.08);
 }
 
+body.game-active .hud {
+  gap: clamp(4px, 1.2vw, 8px);
+}
+
+body.game-active .hud > div {
+  padding: clamp(6px, 1.2dvh, 10px) 6px;
+  border-radius: 14px;
+}
+
 .hud span {
   display: block;
   color: var(--muted);
@@ -214,11 +246,20 @@ h2 {
   text-transform: uppercase;
 }
 
+body.game-active .hud span {
+  font-size: clamp(9px, 2.7vw, 12px);
+}
+
 .hud strong {
   display: block;
   color: var(--paper);
   font-size: clamp(20px, 6vw, 27px);
   font-weight: 1000;
+}
+
+body.game-active .hud strong {
+  font-size: clamp(18px, 5.6vw, 26px);
+  line-height: 1.05;
 }
 
 .hud .energy-low strong {
@@ -240,6 +281,11 @@ h2 {
   box-shadow: 0 9px 0 rgba(0, 0, 0, 0.5), 0 0 28px rgba(40, 230, 255, 0.20);
 }
 
+body.game-active .stage {
+  align-self: center;
+  max-height: 100%;
+}
+
 #cameraVideo,
 #gameCanvas {
   position: absolute;
@@ -257,6 +303,10 @@ h2 {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto auto;
   gap: 10px;
+}
+
+body.game-active .controls {
+  gap: clamp(6px, 1.2vw, 10px);
 }
 
 .mouth-button {
@@ -318,6 +368,49 @@ h2 {
   width: auto;
   min-width: 112px;
   font-size: 18px;
+}
+
+body.game-active .primary,
+body.game-active .ghost,
+body.game-active .mouth-button {
+  min-height: clamp(48px, 7dvh, 60px);
+  border-radius: 16px;
+  font-size: clamp(16px, 4.2vw, 20px);
+}
+
+body.game-active .controls .ghost {
+  min-width: clamp(86px, 23vw, 112px);
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+body.game-active .status {
+  margin: 0;
+  font-size: clamp(11px, 3vw, 13px);
+  line-height: 1.25;
+}
+
+@media (max-height: 720px) {
+  body.game-active .game-panel {
+    width: min(100%, calc((100dvh - 162px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) * 0.6667), 520px);
+  }
+
+  body.game-active .tracking-pill {
+    top: 8px;
+    left: 8px;
+    padding: 6px 8px;
+    font-size: 11px;
+  }
+
+  body.game-active .status {
+    display: none;
+  }
+}
+
+@media (min-width: 760px) and (min-height: 820px) {
+  body.game-active .game-panel {
+    width: min(560px, calc((100dvh - 196px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) * 0.6667));
+  }
 }
 
 .result-actions {

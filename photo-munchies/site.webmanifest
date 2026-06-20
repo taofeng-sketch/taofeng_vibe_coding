@@ -1,6 +1,6 @@
 {
-  "name": "疯狂大嘴怪",
-  "short_name": "大嘴怪",
+  "name": "Munch Monster 疯狂大嘴怪",
+  "short_name": "Munch Monster",
   "description": "Open your mouth, catch fruit, and dodge bombs in a kid-friendly camera game.",
   "start_url": "./index.html",
   "display": "standalone",
