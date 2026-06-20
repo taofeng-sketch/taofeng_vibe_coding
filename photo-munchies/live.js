@@ -365,18 +365,30 @@ function playWinSound() {
   [523, 659, 784, 1046].forEach((freq, index) => playTone(freq, 0.16, "triangle", 0.06, sfxGain, now + index * 0.08, 0.004));
 }
 
+function bombChanceForSpawn(spawn) {
+  if (spawn < 10) return 0;
+  if (spawn < 20) return 0.035 + ((spawn - 10) / 10) * 0.035;
+  const lateWindow = Math.max(1, duration - 23);
+  return 0.08 + Math.min(1, (spawn - 20) / lateWindow) * 0.08;
+}
+
+function chooseQueuedKind(spawn, index) {
+  const goldenChance = index > 4 && Math.random() < 0.08;
+  if (Math.random() < bombChanceForSpawn(spawn)) return "bomb";
+  return goldenChance ? "golden" : FRUIT_KINDS[Math.floor(Math.random() * FRUIT_KINDS.length)];
+}
+
 function resetFoods() {
   foods = Array.from({ length: 34 }, (_, index) => {
     const progress = index / 33;
-    const bombChance = 0.07 + progress * 0.09;
-    const goldenChance = index > 4 && Math.random() < 0.08;
-    const kind = Math.random() < bombChance ? "bomb" : goldenChance ? "golden" : FRUIT_KINDS[Math.floor(Math.random() * FRUIT_KINDS.length)];
+    const spawn = index * 0.76 + Math.random() * 0.62;
+    const kind = chooseQueuedKind(spawn, index);
     const edge = Math.floor(Math.random() * 4);
     const start = edge === 0 ? [0.04, 0.14 + Math.random() * 0.72]
       : edge === 1 ? [0.96, 0.14 + Math.random() * 0.72]
       : edge === 2 ? [0.16 + Math.random() * 0.68, 0.06]
       : [0.16 + Math.random() * 0.68, 0.94];
-    return food(kind, start[0], start[1], index * 0.76 + Math.random() * 0.62, 0.018 + Math.min(index, 20) * 0.0009 + Math.random() * 0.007, progress);
+    return food(kind, start[0], start[1], spawn, 0.018 + Math.min(index, 20) * 0.0009 + Math.random() * 0.007, progress);
   });
 }
 
@@ -411,7 +423,7 @@ function spawnFinalRushWave(elapsed) {
   finalRushSpawned = true;
   const burst = Array.from({ length: 18 }, (_, index) => {
     const kindRoll = Math.random();
-    const kind = kindRoll < 0.32 ? "bomb" : kindRoll > 0.92 ? "golden" : FRUIT_KINDS[Math.floor(Math.random() * FRUIT_KINDS.length)];
+    const kind = index % 5 === 0 ? "bomb" : kindRoll > 0.88 ? "golden" : FRUIT_KINDS[Math.floor(Math.random() * FRUIT_KINDS.length)];
     const edge = index % 4;
     const start = edge === 0 ? [0.02, 0.10 + Math.random() * 0.80]
       : edge === 1 ? [0.98, 0.10 + Math.random() * 0.80]
@@ -1476,6 +1488,7 @@ function getSplatPosition(item) {
 }
 
 function debugState() {
+  const elapsed = startedAt ? (performance.now() - startedAt) / 1000 : 0;
   const attached = splats.filter((item) => item.attachTo === 0).slice(0, 6).map((item) => {
     const position = getSplatPosition(item);
     return {
@@ -1504,6 +1517,8 @@ function debugState() {
     attachedCount: splats.filter((item) => item.attachTo === 0).length,
     bombCount: splats.filter((item) => item.effect === "bomb").length,
     activeBombs: foods.filter((item) => item.kind === "bomb" && !item.done).length,
+    spawnedBombs: foods.filter((item) => item.kind === "bomb" && !item.done && item.spawn <= elapsed).length,
+    earlyBombs: foods.filter((item) => item.kind === "bomb" && item.spawn < 10).length,
     activeFoods: foods.filter((item) => !item.done).length,
     finalRushAnnounced,
     finalRushSpawned,
