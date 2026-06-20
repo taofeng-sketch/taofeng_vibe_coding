@@ -8,14 +8,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Bangers&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="live.css?v=20260620_bomb_rules">
+  <link rel="stylesheet" href="live.css?v=20260620_audio">
 </head>
 <body>
   <main class="live-shell">
     <section id="startPanel" class="panel">
       <p class="eyebrow">Neon Night Market</p>
       <h1>Live Fruit Munch</h1>
-      <p class="lede">Track your face, chase glowing fruit, dodge bombs, and let missed fruit explode all over the screen.</p>
+      <p class="lede">Track your face, chase glowing fruit, dodge countdown bombs, and save a messy replay card.</p>
       <label class="mode-toggle">
         <input id="twoPlayerToggle" type="checkbox">
         <span>Two player face-off</span>
@@ -56,6 +56,7 @@
 
       <div class="controls">
         <button id="mouthButton" class="mouth-button hidden">Fallback: hold open mouth</button>
+        <button id="audioButton" class="ghost audio-toggle" type="button">Sound On</button>
         <button id="restartButton" class="ghost">Restart</button>
       </div>
       <p id="statusText" class="status">Put your face in the camera. Open your mouth to catch fruit, then close to recharge.</p>
@@ -73,6 +74,6 @@
       <p id="saveHint" class="note">Replay saving depends on browser MediaRecorder support.</p>
     </section>
   </main>
-  <script type="module" src="live.js?v=20260620_bomb_rules"></script>
+  <script type="module" src="live.js?v=20260620_audio"></script>
 </body>
 </html>

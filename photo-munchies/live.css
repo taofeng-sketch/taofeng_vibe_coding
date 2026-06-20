@@ -239,7 +239,7 @@ h2 {
 
 .controls {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   gap: 10px;
 }
 
@@ -258,6 +258,15 @@ h2 {
 .mouth-button.tired {
   background: #ffd8df;
   color: var(--ink);
+}
+
+.audio-toggle {
+  min-width: 116px;
+}
+
+.audio-toggle.off {
+  background: #150f21;
+  color: var(--muted);
 }
 
 .tracking-pill {

@@ -14,6 +14,7 @@ const els = {
   timeText: document.getElementById("timeText"),
   energyText: document.getElementById("energyText"),
   mouthButton: document.getElementById("mouthButton"),
+  audioButton: document.getElementById("audioButton"),
   restartButton: document.getElementById("restartButton"),
   statusText: document.getElementById("statusText"),
   rankText: document.getElementById("rankText"),
@@ -39,6 +40,7 @@ const mouth = { x: 0.5, y: 0.57, targetX: 0.5, targetY: 0.57, faceX: 0.5, faceY:
 const duration = 32;
 const MAX_SMEARS = 20;
 const BOMB_LOCK_SECONDS = 1.2;
+const STARTING_LIVES = 10;
 const FRUITS = {
   watermelon: { label: "WATERMELON", color: "#4fcf96", flesh: "#ff5f7d", seed: "#131b2a", points: 120, radius: 40 },
   mango: { label: "MANGO", color: "#ffb02e", flesh: "#ffcf5c", seed: "#7a4b11", points: 130, radius: 38 },
@@ -88,7 +90,7 @@ let mouthWantsOpen = false;
 let mouthTired = false;
 let stamina = 1;
 let energyResetGrace = 0;
-let lives = 3;
+let lives = STARTING_LIVES;
 let bombLock = 0;
 let player2 = makePlayer2();
 let twoPlayerMode = false;
@@ -112,6 +114,30 @@ let biteFlash = 0;
 let screenShake = 0;
 let debugSeeded = false;
 let gameOverPlayer = null;
+let gameOverStartedAt = 0;
+let preGameOverShot = "";
+let audioCtx = null;
+let audioDestination = null;
+let masterGain = null;
+let musicGain = null;
+let sfxGain = null;
+let musicTimer = 0;
+let musicStep = 0;
+let audioEnabled = localStorage.getItem("photoMunchiesAudio") !== "off";
+let finalRushAnnounced = false;
+
+const FRUIT_SOUND = {
+  watermelon: { tone: 150, pop: 340, crunch: 0.16, squish: 0.42 },
+  mango: { tone: 220, pop: 480, crunch: 0.08, squish: 0.34 },
+  strawberry: { tone: 310, pop: 760, crunch: 0.06, squish: 0.28 },
+  blueberry: { tone: 430, pop: 980, crunch: 0.04, squish: 0.22 },
+  kiwi: { tone: 260, pop: 620, crunch: 0.13, squish: 0.26 },
+  apple: { tone: 190, pop: 560, crunch: 0.42, squish: 0.12 },
+  orange: { tone: 240, pop: 700, crunch: 0.10, squish: 0.32 },
+  peach: { tone: 175, pop: 430, crunch: 0.05, squish: 0.46 },
+  grape: { tone: 360, pop: 840, crunch: 0.05, squish: 0.25 },
+  golden: { tone: 520, pop: 1040, crunch: 0.12, squish: 0.38 },
+};
 
 function makePlayer2() {
   return {
@@ -121,7 +147,7 @@ function makePlayer2() {
     mouthTired: false,
     stamina: 1,
     energyResetGrace: 0,
-    lives: 3,
+    lives: STARTING_LIVES,
     bombLock: 0,
     score: 0,
     combo: 0,
@@ -130,6 +156,209 @@ function makePlayer2() {
     biteFlash: 0,
     lastTrackingAt: 0,
   };
+}
+
+function ensureAudio() {
+  if (audioCtx || !audioEnabled) return Boolean(audioCtx);
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextClass) {
+    els.audioButton.disabled = true;
+    els.audioButton.textContent = "No Sound";
+    return false;
+  }
+  audioCtx = new AudioContextClass();
+  audioDestination = audioCtx.createMediaStreamDestination ? audioCtx.createMediaStreamDestination() : null;
+  masterGain = audioCtx.createGain();
+  musicGain = audioCtx.createGain();
+  sfxGain = audioCtx.createGain();
+  masterGain.gain.value = 0.82;
+  musicGain.gain.value = 0.14;
+  sfxGain.gain.value = 0.52;
+  musicGain.connect(masterGain);
+  sfxGain.connect(masterGain);
+  masterGain.connect(audioCtx.destination);
+  if (audioDestination) masterGain.connect(audioDestination);
+  return true;
+}
+
+async function startAudio() {
+  if (!audioEnabled || !ensureAudio()) return;
+  if (audioCtx.state === "suspended") {
+    await audioCtx.resume().catch(() => {});
+  }
+  startMusic();
+}
+
+function stopMusic() {
+  if (musicTimer) {
+    clearInterval(musicTimer);
+    musicTimer = 0;
+  }
+}
+
+function startMusic() {
+  if (!audioCtx || musicTimer) return;
+  musicStep = 0;
+  musicTimer = window.setInterval(playMusicStep, 170);
+}
+
+function setAudioEnabled(enabled) {
+  audioEnabled = enabled;
+  localStorage.setItem("photoMunchiesAudio", enabled ? "on" : "off");
+  updateAudioButton();
+  if (!enabled) {
+    stopMusic();
+    if (masterGain) masterGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.03);
+    return;
+  }
+  if (masterGain && audioCtx) masterGain.gain.setTargetAtTime(0.82, audioCtx.currentTime, 0.03);
+  startAudio();
+}
+
+function updateAudioButton() {
+  if (!els.audioButton) return;
+  els.audioButton.textContent = audioEnabled ? "Sound On" : "Sound Off";
+  els.audioButton.classList.toggle("off", !audioEnabled);
+}
+
+function playMusicStep() {
+  if (!audioEnabled || !audioCtx || ended) return;
+  const now = audioCtx.currentTime;
+  const elapsed = startedAt ? (performance.now() - startedAt) / 1000 : 0;
+  const rush = duration - elapsed <= 3;
+  const step = musicStep % 16;
+  const root = rush ? 130.81 : 123.47;
+  const bassNotes = [root, root, root * 1.5, root, root * 1.25, root, root * 1.5, root * 1.12];
+  if (step % 2 === 0) playTone(bassNotes[(musicStep / 2) % bassNotes.length | 0], rush ? 0.12 : 0.16, "sawtooth", rush ? 0.035 : 0.026, musicGain, now, 0.008);
+  if (step % 4 === 0) playKick(now, rush ? 0.95 : 0.65);
+  if (step % 8 === 4) playSnare(now, rush ? 0.28 : 0.18);
+  if (step % 2 === 1) playHat(now, rush ? 0.13 : 0.08);
+  if (step % 4 === 2) playTone(root * [2, 2.25, 2.5, 3][(musicStep / 4) % 4 | 0], 0.08, "triangle", 0.014, musicGain, now, 0.002);
+  musicStep += rush ? 2 : 1;
+}
+
+function playTone(freq, durationSeconds, type, gainValue, destination = sfxGain, when = audioCtx?.currentTime || 0, attack = 0.004, detune = 0) {
+  if (!audioEnabled || !audioCtx || !destination) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, when);
+  osc.detune.setValueAtTime(detune, when);
+  gain.gain.setValueAtTime(0.0001, when);
+  gain.gain.exponentialRampToValueAtTime(Math.max(0.0002, gainValue), when + attack);
+  gain.gain.exponentialRampToValueAtTime(0.0001, when + durationSeconds);
+  osc.connect(gain);
+  gain.connect(destination);
+  osc.start(when);
+  osc.stop(when + durationSeconds + 0.03);
+}
+
+function playNoise(durationSeconds, gainValue, destination = sfxGain, when = audioCtx?.currentTime || 0, filterFreq = 1600, type = "bandpass") {
+  if (!audioEnabled || !audioCtx || !destination) return;
+  const length = Math.max(1, Math.floor(audioCtx.sampleRate * durationSeconds));
+  const buffer = audioCtx.createBuffer(1, length, audioCtx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < length; i += 1) data[i] = Math.random() * 2 - 1;
+  const source = audioCtx.createBufferSource();
+  const filter = audioCtx.createBiquadFilter();
+  const gain = audioCtx.createGain();
+  source.buffer = buffer;
+  filter.type = type;
+  filter.frequency.value = filterFreq;
+  filter.Q.value = 0.8;
+  gain.gain.setValueAtTime(gainValue, when);
+  gain.gain.exponentialRampToValueAtTime(0.0001, when + durationSeconds);
+  source.connect(filter);
+  filter.connect(gain);
+  gain.connect(destination);
+  source.start(when);
+}
+
+function playKick(when, amount = 0.7) {
+  if (!audioCtx) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = "sine";
+  osc.frequency.setValueAtTime(120, when);
+  osc.frequency.exponentialRampToValueAtTime(42, when + 0.11);
+  gain.gain.setValueAtTime(0.0001, when);
+  gain.gain.exponentialRampToValueAtTime(0.16 * amount, when + 0.008);
+  gain.gain.exponentialRampToValueAtTime(0.0001, when + 0.18);
+  osc.connect(gain);
+  gain.connect(musicGain);
+  osc.start(when);
+  osc.stop(when + 0.22);
+}
+
+function playSnare(when, amount = 0.2) {
+  playNoise(0.11, amount, musicGain, when, 1500, "highpass");
+  playTone(210, 0.08, "triangle", amount * 0.18, musicGain, when, 0.002);
+}
+
+function playHat(when, amount = 0.08) {
+  playNoise(0.035, amount, musicGain, when, 5200, "highpass");
+}
+
+function playFruitSound(kind, comboCount = 1) {
+  if (!audioEnabled || !ensureAudio()) return;
+  const spec = FRUIT_SOUND[kind] || FRUIT_SOUND.orange;
+  const now = audioCtx.currentTime;
+  playNoise(0.08 + spec.crunch * 0.10, 0.10 + spec.crunch * 0.25, sfxGain, now, 2400 + spec.pop, "highpass");
+  playTone(spec.tone, 0.10 + spec.squish * 0.16, "triangle", 0.10 + spec.squish * 0.08, sfxGain, now, 0.006);
+  playTone(spec.pop, 0.08, "sine", 0.05 + Math.min(comboCount, 5) * 0.008, sfxGain, now + 0.035, 0.002);
+  if (kind === "golden") {
+    playTone(880, 0.12, "triangle", 0.08, sfxGain, now + 0.06, 0.003);
+    playTone(1320, 0.14, "triangle", 0.055, sfxGain, now + 0.12, 0.003);
+  }
+}
+
+function playSmashSound(kind) {
+  if (!audioEnabled || !ensureAudio()) return;
+  const spec = FRUIT_SOUND[kind] || FRUIT_SOUND.orange;
+  const now = audioCtx.currentTime;
+  playNoise(0.18, 0.20 + spec.squish * 0.16, sfxGain, now, 900 + spec.pop * 0.7, "bandpass");
+  playTone(spec.tone * 0.55, 0.18, "sine", 0.09, sfxGain, now, 0.004);
+}
+
+function playBombCountdownSound(number) {
+  if (!audioEnabled || !ensureAudio()) return;
+  const now = audioCtx.currentTime;
+  playTone(260 + number * 90, 0.09, "square", 0.08, sfxGain, now, 0.002);
+  playNoise(0.045, 0.08, sfxGain, now, 3200, "bandpass");
+}
+
+function playBombExplosionSound() {
+  if (!audioEnabled || !ensureAudio()) return;
+  const now = audioCtx.currentTime;
+  playNoise(0.42, 0.46, sfxGain, now, 460, "lowpass");
+  playNoise(0.16, 0.32, sfxGain, now, 1800, "bandpass");
+  playTone(82, 0.34, "sine", 0.28, sfxGain, now, 0.002);
+  playTone(45, 0.42, "triangle", 0.18, sfxGain, now + 0.04, 0.002);
+}
+
+function playSafeSound() {
+  if (!audioEnabled || !ensureAudio()) return;
+  const now = audioCtx.currentTime;
+  playTone(520, 0.08, "triangle", 0.06, sfxGain, now, 0.003);
+  playTone(780, 0.12, "triangle", 0.05, sfxGain, now + 0.07, 0.003);
+}
+
+function playFinalRushSound() {
+  if (!audioEnabled || !ensureAudio()) return;
+  const now = audioCtx.currentTime;
+  [440, 660, 880, 1320].forEach((freq, index) => playTone(freq, 0.11, "square", 0.045, sfxGain, now + index * 0.055, 0.002));
+}
+
+function playGameOverSound() {
+  if (!audioEnabled || !ensureAudio()) return;
+  const now = audioCtx.currentTime;
+  [330, 247, 196, 123].forEach((freq, index) => playTone(freq, 0.28, "sawtooth", 0.08, sfxGain, now + index * 0.18, 0.006));
+}
+
+function playWinSound() {
+  if (!audioEnabled || !ensureAudio()) return;
+  const now = audioCtx.currentTime;
+  [523, 659, 784, 1046].forEach((freq, index) => playTone(freq, 0.16, "triangle", 0.06, sfxGain, now + index * 0.08, 0.004));
 }
 
 function resetFoods() {
@@ -171,6 +400,7 @@ function food(kind, x, y, spawn, speed, progress = 0) {
     targetLocked: false,
     wobble: Math.random() * Math.PI * 2,
     rot: Math.random() * 1.4 - 0.7,
+    lastCountdownNumber: 0,
   };
 }
 
@@ -250,11 +480,14 @@ function startRound() {
   hold = 0;
   stamina = 1;
   energyResetGrace = 0;
-  lives = 3;
+  lives = STARTING_LIVES;
   mouthTired = false;
   bombLock = 0;
   player2 = makePlayer2();
   gameOverPlayer = null;
+  gameOverStartedAt = 0;
+  preGameOverShot = "";
+  finalRushAnnounced = false;
   ended = false;
   startedAt = performance.now();
   chunks = [];
@@ -275,6 +508,7 @@ function startRound() {
   }
   els.score2Text.textContent = "0";
   els.saveButton.disabled = true;
+  startAudio();
   startRecording();
   cancelAnimationFrame(raf);
   raf = requestAnimationFrame(loop);
@@ -287,6 +521,9 @@ function startRecording() {
   }
   try {
     const canvasStream = els.canvas.captureStream(30);
+    if (audioDestination && audioDestination.stream) {
+      audioDestination.stream.getAudioTracks().forEach((track) => canvasStream.addTrack(track));
+    }
     const mimeType = pickRecordingMimeType();
     replayExtension = mimeType.includes("mp4") ? "mp4" : "webm";
     recorder = new MediaRecorder(canvasStream, mimeType ? { mimeType } : undefined);
@@ -342,9 +579,24 @@ function loop(now) {
   updateHud(left);
 
   if (gameOverPlayer !== null && !ended) {
-    drawGameOverOverlay(gameOverPlayer);
-    finishRound(true, gameOverPlayer);
+    if (!gameOverStartedAt) {
+      gameOverStartedAt = now;
+      preGameOverShot = safeCanvasShot();
+      playGameOverSound();
+    }
+    const gameOverAge = (now - gameOverStartedAt) / 1000;
+    drawGameOverOverlay(gameOverPlayer, gameOverAge);
+    if (gameOverAge >= 1.7) {
+      finishRound(true, gameOverPlayer);
+      return;
+    }
+    raf = requestAnimationFrame(loop);
     return;
+  }
+
+  if (left <= 3 && !finalRushAnnounced) {
+    finalRushAnnounced = true;
+    playFinalRushSound();
   }
 
   if (left <= 0 && !ended) {
@@ -377,10 +629,18 @@ function updateFoods(elapsed) {
     } else if (targetD < 0.052) {
       item.arrived = true;
       item.hoverAge += 1 / 60;
+      if (item.kind === "bomb") {
+        const countdownNumber = Math.max(1, Math.ceil((1 - item.hoverAge / item.hoverLife) * 3));
+        if (countdownNumber !== item.lastCountdownNumber) {
+          item.lastCountdownNumber = countdownNumber;
+          playBombCountdownSound(countdownNumber);
+        }
+      }
     }
     if (!item.done && item.arrived && item.hoverAge > item.hoverLife) {
       if (item.kind === "bomb") {
         pops.push(pop("SAFE!", item.x, item.y, "#28e6ff", false, "arcade"));
+        playSafeSound();
         item.done = true;
         continue;
       }
@@ -388,6 +648,7 @@ function updateFoods(elapsed) {
       else combo = 0;
       const attachTo = item.mode === "face" ? item.targetPlayer : nearestFaceAttachment(item);
       splat(item, item.kind === "bomb" ? "bomb" : "fruit", attachTo);
+      playSmashSound(item.kind);
       pops.push(pop("SPLAT!", item.x, item.y, "#fff", true));
       item.done = true;
     }
@@ -456,6 +717,7 @@ function eat(item, playerIndex = 0) {
     score += points;
     biteFlash = 0.22;
   }
+  playFruitSound(item.kind, activeCombo);
   best = Math.max(best, score, player2.score);
   localStorage.setItem("photoMunchiesWebBest", String(best));
   const activeMouth = playerIndex === 1 ? player2.mouth : mouth;
@@ -464,14 +726,13 @@ function eat(item, playerIndex = 0) {
 
 function eatBomb(item, playerIndex = 0) {
   const remainingLives = applyBombPenalty(playerIndex);
-  const activeMouth = playerIndex === 1 ? player2.mouth : mouth;
   screenShake = 0.48;
   splat(item, "bomb", playerIndex);
+  playBombExplosionSound();
   pops.push(pop("-1 LIFE!", 0.5, 0.30, "#ff2d8e", true, "arcade"));
   pops.push(pop("ENERGY RESET", 0.5, 0.43, "#c6ff36", false, "arcade"));
   if (remainingLives <= 0) {
     gameOverPlayer = playerIndex;
-    pops.push(pop("GAME OVER", activeMouth.x, activeMouth.y - 0.18, "#28e6ff", true, "arcade"));
   }
 }
 
@@ -786,7 +1047,7 @@ function seedDebugSplats() {
     }, "bomb", 0);
     const remainingLives = applyBombPenalty(0);
     if (remainingLives <= 0) gameOverPlayer = 0;
-    pops.push(pop(DEBUG_FATAL ? "GAME OVER" : "-1 LIFE!", 0.5, 0.30, "#ff2d8e", true, "arcade"));
+    pops.push(pop("-1 LIFE!", 0.5, 0.30, "#ff2d8e", true, "arcade"));
     pops.push(pop("ENERGY RESET", 0.5, 0.43, "#c6ff36", false, "arcade"));
   }
   if (DEBUG_BOMB_MISS) {
@@ -809,6 +1070,7 @@ function seedDebugSplats() {
       targetLocked: true,
       wobble: 0,
       rot: -0.2,
+      lastCountdownNumber: 0,
     }];
   }
 }
@@ -1304,21 +1566,22 @@ function drawEyelashes(cx, cy, side, blink, eyeW, eyeH) {
 }
 
 function drawLives() {
-  drawPlayerLives(lives, W - 126, 38, "#ff5f7d");
-  if (twoPlayerMode && player2.tracked) drawPlayerLives(player2.lives, W - 126, 82, "#8dd9ff");
+  drawPlayerLives(lives, W - 136, 30, "#ff5f7d");
+  if (twoPlayerMode && player2.tracked) drawPlayerLives(player2.lives, W - 136, 88, "#8dd9ff");
 }
 
 function drawPlayerLives(activeLives, x, y, color) {
   ctx.save();
-  for (let i = 0; i < 3; i += 1) {
-    const cx = x + i * 34;
+  for (let i = 0; i < STARTING_LIVES; i += 1) {
+    const cx = x + (i % 5) * 27;
+    const cy = y + Math.floor(i / 5) * 24;
     ctx.fillStyle = i < activeLives ? color : "rgba(8,3,15,0.42)";
     ctx.strokeStyle = "#0a0612";
-    ctx.lineWidth = 5;
+    ctx.lineWidth = 4;
     ctx.beginPath();
-    ctx.moveTo(cx, y + 18);
-    ctx.bezierCurveTo(cx - 25, y + 2, cx - 12, y - 18, cx, y - 6);
-    ctx.bezierCurveTo(cx + 12, y - 18, cx + 25, y + 2, cx, y + 18);
+    ctx.moveTo(cx, cy + 13);
+    ctx.bezierCurveTo(cx - 18, cy + 2, cx - 9, cy - 12, cx, cy - 4);
+    ctx.bezierCurveTo(cx + 9, cy - 12, cx + 18, cy + 2, cx, cy + 13);
     ctx.fill();
     ctx.stroke();
   }
@@ -1397,12 +1660,13 @@ function drawFinalRush(left) {
   ctx.fillText("DOUBLE SCORE!", W / 2, 98);
 }
 
-function drawGameOverOverlay(playerIndex = 0) {
+function drawGameOverOverlay(playerIndex = 0, age = 0) {
   ctx.save();
-  ctx.globalAlpha = 0.92;
+  const alpha = age < 0.75 ? 1 : clamp(1 - (age - 0.75) / 0.95, 0, 1);
+  ctx.globalAlpha = 0.92 * alpha;
   ctx.fillStyle = "#08030f";
   ctx.fillRect(0, 0, W, H);
-  ctx.globalAlpha = 1;
+  ctx.globalAlpha = alpha;
 
   ctx.strokeStyle = "rgba(40,230,255,0.22)";
   ctx.lineWidth = 3;
@@ -1449,6 +1713,14 @@ function drawGameOverOverlay(playerIndex = 0) {
   ctx.restore();
 }
 
+function safeCanvasShot() {
+  try {
+    return els.canvas.toDataURL("image/png");
+  } catch (error) {
+    return "";
+  }
+}
+
 function roundRect(x, y, w, h, r, fill) {
   ctx.beginPath();
   if (ctx.roundRect) {
@@ -1469,10 +1741,12 @@ function finishRound(gameOver = false, playerIndex = 0) {
   ended = true;
   cancelAnimationFrame(raf);
   stopRecording();
+  stopMusic();
   els.resultPanel.classList.toggle("game-over-panel", gameOver);
-  try {
-    els.resultShot.src = els.canvas.toDataURL("image/png");
-  } catch (error) {
+  const shot = gameOver && preGameOverShot ? preGameOverShot : safeCanvasShot();
+  if (shot) {
+    els.resultShot.src = shot;
+  } else {
     els.resultShot.removeAttribute("src");
   }
   const totalScore = twoPlayerMode ? Math.max(score, player2.score) : score;
@@ -1483,6 +1757,7 @@ function finishRound(gameOver = false, playerIndex = 0) {
     show(els.resultPanel);
     return;
   }
+  playWinSound();
   if (twoPlayerMode) {
     const winner = score === player2.score ? "Tie game" : score > player2.score ? "P1 wins" : "P2 wins";
     els.finalText.textContent = `${winner} · P1 ${score} · P2 ${player2.score} · Best ${best}`;
@@ -1500,12 +1775,21 @@ function setMouth(open) {
 els.startButton.addEventListener("click", async () => {
   show(els.gamePanel);
   els.statusText.textContent = "Starting camera and face tracker...";
+  await startAudio();
   await startCamera();
   await initFaceTracking();
   startRound();
 });
-els.playAgainButton.addEventListener("click", startRound);
-els.restartButton.addEventListener("click", startRound);
+els.playAgainButton.addEventListener("click", () => {
+  startAudio();
+  startRound();
+});
+els.restartButton.addEventListener("click", () => {
+  startAudio();
+  startRound();
+});
+els.audioButton.addEventListener("click", () => setAudioEnabled(!audioEnabled));
+updateAudioButton();
 els.saveButton.addEventListener("click", () => {
   if (!replayUrl) return;
   const link = document.createElement("a");
