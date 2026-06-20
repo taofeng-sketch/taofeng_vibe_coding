@@ -18,11 +18,18 @@ const els = {
   saveHint: document.getElementById("saveHint"),
 };
 
+const MEDIAPIPE_VERSION = "0.10.35";
+const MEDIAPIPE_BASE = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MEDIAPIPE_VERSION}`;
+const FACE_MODEL_URL = "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/latest/face_landmarker.task";
 const ctx = els.canvas.getContext("2d");
 const W = els.canvas.width;
 const H = els.canvas.height;
-const mouth = { x: 0.5, y: 0.57 };
+const mouth = { x: 0.5, y: 0.57, targetX: 0.5, targetY: 0.57, openness: 0 };
 const duration = 20;
+const trackingPill = document.createElement("div");
+trackingPill.className = "tracking-pill";
+trackingPill.textContent = "Loading face tracking...";
+document.querySelector(".stage").appendChild(trackingPill);
 
 let stream = null;
 let recorder = null;
@@ -31,6 +38,7 @@ let replayUrl = "";
 let raf = 0;
 let startedAt = 0;
 let mouthOpen = false;
+let manualMouthOpen = false;
 let hold = 0;
 let score = 0;
 let combo = 0;
@@ -38,26 +46,36 @@ let best = Number(localStorage.getItem("photoMunchiesWebBest") || 0);
 let ended = false;
 let foods = [];
 let pops = [];
+let faceLandmarker = null;
+let faceTrackingReady = false;
+let faceTrackingFailed = false;
+let faceTracked = false;
+let lastTrackingAt = 0;
+let lastVideoTime = -1;
+let mouthOpenSmooth = 0;
+let biteFlash = 0;
 
 function resetFoods() {
   foods = [
-    food("regular", 0.08, 0.18, 0.0, 0.010),
-    food("regular", 0.92, 0.20, 0.7, 0.010),
-    food("regular", 0.10, 0.80, 1.5, 0.011),
-    food("regular", 0.88, 0.78, 2.2, 0.011),
-    food("golden", 0.50, 0.08, 3.8, 0.013),
-    food("regular", 0.08, 0.50, 5.0, 0.012),
-    food("regular", 0.92, 0.52, 5.5, 0.012),
-    food("chili", 0.50, 0.92, 6.4, 0.011),
-    food("regular", 0.16, 0.12, 7.8, 0.014),
-    food("regular", 0.84, 0.12, 8.1, 0.014),
-    food("regular", 0.14, 0.88, 10.0, 0.015),
-    food("golden", 0.88, 0.84, 12.0, 0.016),
+    food("regular", 0.08, 0.18, 0.0, 0.018),
+    food("regular", 0.92, 0.20, 0.9, 0.018),
+    food("regular", 0.10, 0.80, 1.8, 0.019),
+    food("regular", 0.88, 0.78, 2.7, 0.019),
+    food("golden", 0.50, 0.08, 4.0, 0.020),
+    food("regular", 0.08, 0.50, 5.2, 0.020),
+    food("regular", 0.92, 0.52, 6.1, 0.020),
+    food("chili", 0.50, 0.92, 7.2, 0.019),
+    food("regular", 0.16, 0.12, 8.7, 0.022),
+    food("regular", 0.84, 0.12, 9.6, 0.022),
+    food("regular", 0.14, 0.88, 11.4, 0.023),
+    food("golden", 0.88, 0.84, 13.0, 0.024),
+    food("regular", 0.50, 0.05, 15.2, 0.025),
+    food("regular", 0.06, 0.60, 16.6, 0.026),
   ];
 }
 
 function food(kind, x, y, spawn, speed) {
-  return { kind, x, y, spawn, speed, done: false, rot: Math.random() * 0.7 - 0.35 };
+  return { kind, x, y, spawn, speed, done: false, atMouthFor: 0, rot: Math.random() * 0.7 - 0.35 };
 }
 
 async function startCamera() {
@@ -67,9 +85,43 @@ async function startCamera() {
       audio: false,
     });
     els.video.srcObject = stream;
+    await els.video.play();
   } catch (error) {
     els.statusText.textContent = "Camera blocked. You can still play the overlay demo.";
   }
+}
+
+async function initFaceTracking() {
+  if (faceLandmarker || faceTrackingFailed) return;
+  try {
+    const vision = await import(`${MEDIAPIPE_BASE}/vision_bundle.mjs`);
+    const filesetResolver = await vision.FilesetResolver.forVisionTasks(`${MEDIAPIPE_BASE}/wasm`);
+    faceLandmarker = await vision.FaceLandmarker.createFromOptions(filesetResolver, {
+      baseOptions: {
+        modelAssetPath: FACE_MODEL_URL,
+        delegate: "GPU",
+      },
+      runningMode: "VIDEO",
+      numFaces: 1,
+      outputFaceBlendshapes: false,
+    });
+    faceTrackingReady = true;
+    faceTrackingFailed = false;
+    els.mouthButton.classList.add("hidden");
+    setTrackingPill("Face tracking ready", "ready");
+  } catch (error) {
+    faceTrackingFailed = true;
+    faceTrackingReady = false;
+    els.mouthButton.classList.remove("hidden");
+    setTrackingPill("Fallback mouth button", "fallback");
+    els.statusText.textContent = "Face tracking did not load. Use the fallback mouth button.";
+  }
+}
+
+function setTrackingPill(text, state) {
+  trackingPill.textContent = text;
+  trackingPill.classList.remove("ready", "open", "fallback");
+  if (state) trackingPill.classList.add(state);
 }
 
 function show(panel) {
@@ -88,6 +140,12 @@ function startRound() {
   startedAt = performance.now();
   chunks = [];
   replayUrl = "";
+  faceTracked = false;
+  lastVideoTime = -1;
+  mouthOpenSmooth = 0;
+  mouth.x = mouth.targetX = 0.5;
+  mouth.y = mouth.targetY = 0.57;
+  mouth.openness = 0;
   els.saveButton.disabled = true;
   startRecording();
   cancelAnimationFrame(raf);
@@ -125,8 +183,10 @@ function stopRecording() {
 function loop(now) {
   const elapsed = (now - startedAt) / 1000;
   const left = Math.max(0, duration - elapsed);
+  updateFaceTracking(now);
   if (mouthOpen) hold += 1 / 60;
   else hold = 0;
+  biteFlash = Math.max(0, biteFlash - 1 / 60);
 
   updateFoods(elapsed);
   updatePops();
@@ -143,13 +203,17 @@ function loop(now) {
 function updateFoods(elapsed) {
   for (const item of foods) {
     if (item.done || elapsed < item.spawn) continue;
-    item.x += (mouth.x - item.x) * item.speed;
-    item.y += (mouth.y - item.y) * item.speed;
+    const speed = item.atMouthFor > 0 ? item.speed * 0.34 : item.speed;
+    item.x += (mouth.x - item.x) * speed;
+    item.y += (mouth.y - item.y) * speed;
     const d = Math.hypot(item.x - mouth.x, item.y - mouth.y);
-    if (mouthOpen && hold >= 0.24 && d < 0.11) {
+    if (mouthOpen && d < 0.13) {
       eat(item);
       item.done = true;
-    } else if (d < 0.035) {
+    } else if (d < 0.065) {
+      item.atMouthFor += 1 / 60;
+    }
+    if (!item.done && item.atMouthFor > 1.15) {
       if (item.kind !== "chili") {
         combo = 0;
         pops.push(pop("MISS", item.x, item.y, "#fff"));
@@ -164,15 +228,18 @@ function eat(item) {
     combo = 0;
     score = Math.max(0, score - 150);
     pops.push(pop("YUCK!", mouth.x, mouth.y, "#b99bff", true));
+    biteFlash = 0.22;
     return;
   }
   combo += 1;
   const base = item.kind === "golden" ? 500 : 100;
-  const points = base + Math.min(combo, 5) * 25;
+  const timeBonus = duration - (performance.now() - startedAt) / 1000 <= 3 ? 2 : 1;
+  const points = (base + Math.min(combo, 5) * 25) * timeBonus;
   score += points;
   best = Math.max(best, score);
   localStorage.setItem("photoMunchiesWebBest", String(best));
   pops.push(pop(combo >= 3 ? `COMBO x${combo}` : `CHOMP +${points}`, mouth.x, mouth.y, "#ffcf5c", combo >= 3));
+  biteFlash = 0.22;
 }
 
 function pop(text, x, y, color, big = false) {
@@ -188,14 +255,27 @@ function updateHud(left) {
   els.scoreText.textContent = score;
   els.comboText.textContent = `x${combo}`;
   els.timeText.textContent = Math.ceil(left);
+  if (faceTrackingFailed) {
+    els.statusText.textContent = mouthOpen ? "Fallback mouth open. CHOMP!" : "Fallback mode: hold when food reaches the mouth.";
+    return;
+  }
+  if (!faceTrackingReady) {
+    els.statusText.textContent = "Loading face tracker...";
+    return;
+  }
+  if (!faceTracked) {
+    els.statusText.textContent = "Move your face into the camera.";
+    return;
+  }
   els.statusText.textContent = mouthOpen
-    ? hold >= 0.24 ? "Mouth locked. CHOMP!" : "Keep holding..."
-    : "Hold when food reaches the giant mouth.";
+    ? "Mouth open. CHOMP the food!"
+    : "Close... wait... open when food reaches your mouth.";
 }
 
 function draw(elapsed, left) {
   ctx.clearRect(0, 0, W, H);
   drawCameraFallback();
+  drawFaceTarget();
   drawMouth();
   foods.forEach((item) => {
     if (!item.done && elapsed >= item.spawn) drawFood(item);
@@ -225,27 +305,100 @@ function drawCameraFallback() {
   ctx.fillRect(0, 0, W, H);
 }
 
+function updateFaceTracking(now) {
+  const canTrack = faceTrackingReady && faceLandmarker && els.video.readyState >= 2;
+  if (!canTrack) {
+    setMouth(faceTrackingFailed ? manualMouthOpen : false);
+    return;
+  }
+  if (els.video.currentTime === lastVideoTime) return;
+  lastVideoTime = els.video.currentTime;
+  const result = faceLandmarker.detectForVideo(els.video, now);
+  const landmarks = result.faceLandmarks && result.faceLandmarks[0];
+  if (!landmarks) {
+    if (now - lastTrackingAt > 250) {
+      faceTracked = false;
+      setMouth(false);
+      setTrackingPill("Find face", "");
+    }
+    return;
+  }
+  lastTrackingAt = now;
+  faceTracked = true;
+  const upperLip = mapLandmark(landmarks[13]);
+  const lowerLip = mapLandmark(landmarks[14]);
+  const leftCorner = mapLandmark(landmarks[61]);
+  const rightCorner = mapLandmark(landmarks[291]);
+  const center = {
+    x: (upperLip.x + lowerLip.x + leftCorner.x + rightCorner.x) / 4,
+    y: (upperLip.y + lowerLip.y + leftCorner.y + rightCorner.y) / 4,
+  };
+  const verticalGap = Math.hypot(upperLip.x - lowerLip.x, upperLip.y - lowerLip.y);
+  const mouthWidth = Math.max(0.001, Math.hypot(leftCorner.x - rightCorner.x, leftCorner.y - rightCorner.y));
+  const openness = Math.min(1, Math.max(0, (verticalGap / mouthWidth - 0.12) / 0.32));
+  mouthOpenSmooth = mouthOpenSmooth * 0.64 + openness * 0.36;
+  mouth.targetX = clamp(center.x, 0.12, 0.88);
+  mouth.targetY = clamp(center.y + 0.015, 0.18, 0.82);
+  mouth.x += (mouth.targetX - mouth.x) * 0.38;
+  mouth.y += (mouth.targetY - mouth.y) * 0.38;
+  mouth.openness = mouthOpenSmooth;
+  setMouth(mouthOpenSmooth > 0.36);
+  setTrackingPill(mouthOpen ? "Mouth open" : "Face tracked", mouthOpen ? "open" : "ready");
+}
+
+function mapLandmark(point) {
+  const fit = getVideoFit();
+  const rawX = fit.x + point.x * fit.w;
+  const rawY = fit.y + point.y * fit.h;
+  return {
+    x: clamp((W - rawX) / W, 0, 1),
+    y: clamp(rawY / H, 0, 1),
+  };
+}
+
+function getVideoFit() {
+  if (!els.video.videoWidth || !els.video.videoHeight) return { x: 0, y: 0, w: W, h: H };
+  const scale = Math.max(W / els.video.videoWidth, H / els.video.videoHeight);
+  const w = els.video.videoWidth * scale;
+  const h = els.video.videoHeight * scale;
+  return { x: (W - w) / 2, y: (H - h) / 2, w, h };
+}
+
+function drawFaceTarget() {
+  if (!faceTracked && !faceTrackingFailed) {
+    ctx.save();
+    ctx.strokeStyle = "rgba(255,255,255,0.72)";
+    ctx.lineWidth = 6;
+    ctx.setLineDash([18, 14]);
+    ctx.beginPath();
+    ctx.ellipse(W / 2, H * 0.44, W * 0.24, H * 0.18, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+
 function drawMouth() {
   const x = mouth.x * W;
   const y = mouth.y * H;
-  const width = mouthOpen ? 220 : 140;
-  const height = mouthOpen ? 300 : 82;
+  const openAmount = faceTrackingFailed ? (mouthOpen ? 1 : 0) : mouth.openness;
+  const width = 132 + openAmount * 96 + biteFlash * 120;
+  const height = 74 + openAmount * 235 + biteFlash * 120;
   roundRect(x - width / 2, y - height / 2, width, height, mouthOpen ? 70 : 34, "#050505");
   ctx.lineWidth = 7;
   ctx.strokeStyle = "#fff";
   ctx.stroke();
-  drawTeeth(x, y - height / 2 + 22, width * 0.68, mouthOpen ? 38 : 28, false);
-  if (mouthOpen) drawTeeth(x, y + height / 2 - 60, width * 0.68, 38, true);
+  drawTeeth(x, y - height / 2 + 22, width * 0.68, mouthOpen ? 38 : 28);
+  if (mouthOpen) drawTeeth(x, y + height / 2 - 60, width * 0.68, 38);
   ctx.fillStyle = "#ff5f7d";
   if (mouthOpen) {
     ctx.beginPath();
     ctx.ellipse(x, y + height * 0.18, width * 0.28, height * 0.13, 0, 0, Math.PI * 2);
     ctx.fill();
   }
-  drawHoldMeter(x, y + height / 2 + 26);
+  drawMouthMeter(x, y + height / 2 + 26);
 }
 
-function drawTeeth(cx, y, width, height, flipped) {
+function drawTeeth(cx, y, width, height) {
   const count = 5;
   const toothW = width / count - 5;
   ctx.fillStyle = "#fff";
@@ -258,11 +411,11 @@ function drawTeeth(cx, y, width, height, flipped) {
   }
 }
 
-function drawHoldMeter(x, y) {
+function drawMouthMeter(x, y) {
   ctx.fillStyle = "rgba(255,255,255,0.38)";
   roundRect(x - 70, y, 140, 18, 9, ctx.fillStyle);
-  ctx.fillStyle = hold >= 0.24 ? "#4fcf96" : "#ffcf5c";
-  roundRect(x - 70, y, 140 * Math.min(1, hold / 0.24), 18, 9, ctx.fillStyle);
+  ctx.fillStyle = mouthOpen ? "#4fcf96" : "#ffcf5c";
+  roundRect(x - 70, y, 140 * Math.min(1, faceTrackingFailed ? hold / 0.2 : mouth.openness), 18, 9, ctx.fillStyle);
 }
 
 function drawFood(item) {
@@ -314,7 +467,16 @@ function drawFinalRush(left) {
 
 function roundRect(x, y, w, h, r, fill) {
   ctx.beginPath();
-  ctx.roundRect(x, y, w, h, r);
+  if (ctx.roundRect) {
+    ctx.roundRect(x, y, w, h, r);
+  } else {
+    const rr = Math.min(r, w / 2, h / 2);
+    ctx.moveTo(x + rr, y);
+    ctx.arcTo(x + w, y, x + w, y + h, rr);
+    ctx.arcTo(x + w, y + h, x, y + h, rr);
+    ctx.arcTo(x, y + h, x, y, rr);
+    ctx.arcTo(x, y, x + w, y, rr);
+  }
   ctx.fillStyle = fill;
   ctx.fill();
 }
@@ -334,7 +496,10 @@ function setMouth(open) {
 }
 
 els.startButton.addEventListener("click", async () => {
+  show(els.gamePanel);
+  els.statusText.textContent = "Starting camera and face tracker...";
   await startCamera();
+  await initFaceTracking();
   startRound();
 });
 els.playAgainButton.addEventListener("click", startRound);
@@ -350,9 +515,17 @@ els.saveButton.addEventListener("click", () => {
 ["pointerdown", "touchstart"].forEach((eventName) => {
   els.mouthButton.addEventListener(eventName, (event) => {
     event.preventDefault();
+    manualMouthOpen = true;
     setMouth(true);
   });
 });
 ["pointerup", "pointercancel", "pointerleave", "touchend", "touchcancel"].forEach((eventName) => {
-  els.mouthButton.addEventListener(eventName, () => setMouth(false));
+  els.mouthButton.addEventListener(eventName, () => {
+    manualMouthOpen = false;
+    setMouth(false);
+  });
 });
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}

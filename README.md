@@ -18,7 +18,7 @@ I call it "vibe coding" because the starting point is often a feeling: a joke, a
 | **WorldCupSimulation · Pulse26** | 2026 World Cup interactive fan site | Published web app, automated QA/data refresh | [Play](https://taofeng-sketch.github.io/taofeng_vibe_coding/WorldCupSimulation/) · [Folder](./WorldCupSimulation) |
 | **Squid Technologies: Performance Review Climb** | Satirical browser deckbuilder game | Published playable game | [Play](https://taofeng-sketch.github.io/taofeng_vibe_coding/squid-climb/) · [Folder](./squid-climb) |
 | **Dinosaur Adventure / 恐龙大冒险** | Kid-inspired browser platformer | Published playable prototype | [Play](https://taofeng-sketch.github.io/taofeng_vibe_coding/dinosaur-adventure/) · [Folder](./dinosaur-adventure) |
-| **Photo Munchies** | Kids selfie/photo minigame | Published web prototype; native iOS lives in the private incubator workspace | [Play](https://taofeng-sketch.github.io/taofeng_vibe_coding/photo-munchies/) · [Live Kebab](https://taofeng-sketch.github.io/taofeng_vibe_coding/photo-munchies/live.html) · [Folder](./photo-munchies) |
+| **Photo Munchies** | Kids selfie/photo minigame | Published web prototype with live face/mouth tracking; native iOS lives in the private incubator workspace | [Play](https://taofeng-sketch.github.io/taofeng_vibe_coding/photo-munchies/) · [Live Kebab](https://taofeng-sketch.github.io/taofeng_vibe_coding/photo-munchies/live.html) · [Folder](./photo-munchies) |
 
 ---
 
@@ -167,19 +167,19 @@ Then open `http://localhost:4173`. See [dinosaur-adventure/README.md](./dinosaur
 
 A kid-friendly photo/selfie game inspired by the Pictonico pattern: a child's photo becomes the toy. The web version has two paths: an older photo-upload minigame flow and a newer **Live Kebab Munch** camera prototype where food flies toward a giant cartoon mouth.
 
-The strongest current direction is Live Kebab Munch: a short round, score pressure, combo, golden kebabs, bad-food penalty, and a replayable silly camera moment. The web live version is intentionally **AR-lite**: it uses the camera feed plus a press-and-hold mouth control. The native iOS version, kept in the private incubator workspace, adds Vision mouth detection and ReplayKit recording.
+The strongest current direction is Live Kebab Munch: a short round, score pressure, combo, golden kebabs, bad-food penalty, and a replayable silly camera moment. The web live version uses MediaPipe face landmarks to track the mouth in the camera feed and score when the player opens their mouth near incoming food. The native iOS version, kept in the private incubator workspace, uses Apple Vision and ReplayKit recording.
 
 **Implemented in this public web folder**
 
 - Mobile-first photo picker / camera file input.
 - Manual crop and three small Canvas minigames.
 - Gentle and Challenge modes.
-- Live Kebab Munch web page with camera feed, score, combo, best score, food waves, golden kebab, chili penalty, hold-mouth button, and best-effort replay recording.
+- Live Kebab Munch web page with camera feed, MediaPipe face/mouth tracking, score, combo, best score, food waves, golden kebab, chili penalty, fallback hold-mouth button, and best-effort replay recording.
 - Local-only processing; no backend and no photo upload.
 
 **Tech**
 
-- Native HTML/CSS/Canvas JavaScript, `getUserMedia`, best-effort `MediaRecorder`, GitHub Pages.
+- Native HTML/CSS/Canvas JavaScript, MediaPipe Face Landmarker, `getUserMedia`, best-effort `MediaRecorder`, GitHub Pages.
 
 **Run**
 

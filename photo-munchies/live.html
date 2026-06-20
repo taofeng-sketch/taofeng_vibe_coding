@@ -12,10 +12,10 @@
     <section id="startPanel" class="panel">
       <p class="eyebrow">Photo Munchies Lab</p>
       <h1>Live Kebab Munch</h1>
-      <p class="lede">Camera game prototype: flying kebabs, giant mouth, score, combo, and replay recording.</p>
+      <p class="lede">Camera game prototype: track your face, open your mouth, eat flying kebabs, score combos, and save the replay.</p>
       <button id="startButton" class="primary">Start camera game</button>
       <a class="secondary-link" href="./">Back to photo game</a>
-      <p class="note">Web version uses a press-and-hold mouth button. Native iPhone can use Vision mouth detection.</p>
+      <p class="note">This web version uses MediaPipe face landmarks in your browser. No photo or camera frame is uploaded by this app.</p>
     </section>
 
     <section id="gamePanel" class="game-panel hidden">
@@ -40,10 +40,10 @@
       </div>
 
       <div class="controls">
-        <button id="mouthButton" class="mouth-button">Hold open mouth</button>
+        <button id="mouthButton" class="mouth-button hidden">Fallback: hold open mouth</button>
         <button id="restartButton" class="ghost">Restart</button>
       </div>
-      <p id="statusText" class="status">Hold when food reaches the giant mouth.</p>
+      <p id="statusText" class="status">Put your face in the camera. Open your mouth when food reaches it.</p>
     </section>
 
     <section id="resultPanel" class="panel hidden">
@@ -57,6 +57,6 @@
       <p id="saveHint" class="note">Replay saving depends on browser MediaRecorder support.</p>
     </section>
   </main>
-  <script src="live.js"></script>
+  <script type="module" src="live.js"></script>
 </body>
 </html>

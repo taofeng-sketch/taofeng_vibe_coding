@@ -170,7 +170,7 @@ h2 {
 
 .controls {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 10px;
 }
 
@@ -184,6 +184,32 @@ h2 {
   color: var(--ink);
   transform: translateY(5px);
   box-shadow: 0 2px 0 rgba(19, 27, 42, 0.2);
+}
+
+.tracking-pill {
+  position: absolute;
+  left: 14px;
+  top: 14px;
+  z-index: 3;
+  padding: 8px 10px;
+  border: 3px solid var(--ink);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.86);
+  font-size: 12px;
+  font-weight: 1000;
+  box-shadow: 0 4px 0 rgba(19, 27, 42, 0.18);
+}
+
+.tracking-pill.ready {
+  background: #d7ffe8;
+}
+
+.tracking-pill.open {
+  background: #ffcf5c;
+}
+
+.tracking-pill.fallback {
+  background: #ffe0eb;
 }
 
 .controls .ghost {
