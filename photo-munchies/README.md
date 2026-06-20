@@ -18,7 +18,7 @@ Published web prototype:
 4. Close your mouth to recharge energy; do not hold it open forever.
 5. Chase the roaming fruit by moving your head, avoid messy splats, and save a replay if the browser supports recording.
 
-The Web live version now uses MediaPipe Face Landmarker for browser mouth tracking. It also has Kimi fruit-smash art in [`art/`](./art/), an image-model-generated bomb explosion sprite, bomb hazards that only explode when eaten, 3-2-1 bomb countdowns that disappear safely if ignored, 10 hearts, energy reset, arcade-style pop text, and an 80s-style Game Over overlay that fades out before the final share card appears. The final result still uses the pre-Game-Over messy play screenshot, so the share image stays playful instead of becoming a plain "GAME OVER" card. It also includes face-attached saturated fruit splats, chaotic mixed-size fruit paths, double-speed final rush movement, a front-layer mouth, oversized blinking peek-out eyes with lashes, countdown hover rings, a fallback hold-mouth button if tracking fails, local replay recording, and procedural WebAudio music/SFX for fruit chomps, fruit splats, countdown ticks, bomb blasts, safe bombs, final rush, win, and Game Over. The native iPhone app remains the better path for Apple Vision + ReplayKit experimentation.
+The Web live version now uses MediaPipe Face Landmarker for browser mouth tracking. It also has Kimi fruit-smash art in [`art/`](./art/), an image-model-generated bomb explosion sprite, bomb hazards that only explode when eaten, 3-2-1 bomb countdowns that disappear safely if ignored, 10 hearts, energy reset, arcade-style pop text, and an 80s-style Game Over overlay that fades out before the final share card appears. The final result still uses the pre-Game-Over messy play screenshot, so the share image stays playful instead of becoming a plain "GAME OVER" card. It also includes face-attached saturated fruit splats, chaotic mixed-size fruit paths, a dedicated final-rush burst that spawns 18 fast fruit/bomb objects during Double Score time, a front-layer mouth, oversized blinking peek-out eyes with lashes, countdown hover rings, a fallback hold-mouth button if tracking fails, local replay recording, and procedural WebAudio music/SFX for fruit chomps, fruit splats, countdown ticks, bomb blasts, safe bombs, final rush, win, and Game Over. The native iPhone app remains the better path for Apple Vision + ReplayKit experimentation.
 
 ## Local Run
 
@@ -55,7 +55,7 @@ It prints the iPhone URL and creates a local QR launch page. On the iPhone, join
 - Plain HTML, CSS, and JavaScript.
 - No install, no build, no backend.
 - Photos are processed locally in the browser using Canvas.
-- Sound is generated locally with WebAudio, then mixed into the replay stream when the browser supports it. A future pass can swap in model-generated audio files once a `MUAPI_KEY` is available.
+- Sound is generated locally with WebAudio, so anyone opening the website on their own phone gets the same built-in SFX/music without separate asset downloads. Chrome replay export has been verified with `ffprobe` to include video plus an audio stream; Safari/iPhone replay audio still needs a real-device save test because Safari WebDriver automation is disabled on this Mac.
 - Designed for iPhone Safari touch input, with mouse support for desktop testing.
 - Default mode is **Gentle**, with longer timers for the first kid playtest.
 

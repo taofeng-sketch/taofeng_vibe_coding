@@ -36,11 +36,13 @@ const DEBUG_FACE = DEBUG_PARAMS.has("debugFace");
 const DEBUG_BOMB = DEBUG_PARAMS.has("debugBomb");
 const DEBUG_BOMB_MISS = DEBUG_PARAMS.has("debugBombMiss");
 const DEBUG_FATAL = DEBUG_PARAMS.has("debugFatal");
+const DEBUG_SECONDS = Number(DEBUG_PARAMS.get("debugSeconds") || 0);
 const mouth = { x: 0.5, y: 0.57, targetX: 0.5, targetY: 0.57, faceX: 0.5, faceY: 0.46, openness: 0 };
-const duration = 32;
+const duration = DEBUG_SECONDS >= 4 && DEBUG_SECONDS <= 32 ? DEBUG_SECONDS : 32;
 const MAX_SMEARS = 20;
 const BOMB_LOCK_SECONDS = 1.2;
 const STARTING_LIVES = 10;
+const FRUIT_KINDS = ["watermelon", "mango", "strawberry", "blueberry", "kiwi", "apple", "orange", "peach", "grape"];
 const FRUITS = {
   watermelon: { label: "WATERMELON", color: "#4fcf96", flesh: "#ff5f7d", seed: "#131b2a", points: 120, radius: 40 },
   mango: { label: "MANGO", color: "#ffb02e", flesh: "#ffcf5c", seed: "#7a4b11", points: 130, radius: 38 },
@@ -125,6 +127,8 @@ let musicTimer = 0;
 let musicStep = 0;
 let audioEnabled = localStorage.getItem("photoMunchiesAudio") !== "off";
 let finalRushAnnounced = false;
+let finalRushSpawned = false;
+let finalRushSpawnCount = 0;
 
 const FRUIT_SOUND = {
   watermelon: { tone: 150, pop: 340, crunch: 0.16, squish: 0.42 },
@@ -362,12 +366,11 @@ function playWinSound() {
 }
 
 function resetFoods() {
-  const kinds = ["watermelon", "mango", "strawberry", "blueberry", "kiwi", "apple", "orange", "peach", "grape"];
   foods = Array.from({ length: 34 }, (_, index) => {
     const progress = index / 33;
     const bombChance = 0.07 + progress * 0.09;
     const goldenChance = index > 4 && Math.random() < 0.08;
-    const kind = Math.random() < bombChance ? "bomb" : goldenChance ? "golden" : kinds[Math.floor(Math.random() * kinds.length)];
+    const kind = Math.random() < bombChance ? "bomb" : goldenChance ? "golden" : FRUIT_KINDS[Math.floor(Math.random() * FRUIT_KINDS.length)];
     const edge = Math.floor(Math.random() * 4);
     const start = edge === 0 ? [0.04, 0.14 + Math.random() * 0.72]
       : edge === 1 ? [0.96, 0.14 + Math.random() * 0.72]
@@ -402,6 +405,29 @@ function food(kind, x, y, spawn, speed, progress = 0) {
     rot: Math.random() * 1.4 - 0.7,
     lastCountdownNumber: 0,
   };
+}
+
+function spawnFinalRushWave(elapsed) {
+  finalRushSpawned = true;
+  const burst = Array.from({ length: 18 }, (_, index) => {
+    const kindRoll = Math.random();
+    const kind = kindRoll < 0.32 ? "bomb" : kindRoll > 0.92 ? "golden" : FRUIT_KINDS[Math.floor(Math.random() * FRUIT_KINDS.length)];
+    const edge = index % 4;
+    const start = edge === 0 ? [0.02, 0.10 + Math.random() * 0.80]
+      : edge === 1 ? [0.98, 0.10 + Math.random() * 0.80]
+      : edge === 2 ? [0.08 + Math.random() * 0.84, 0.02]
+      : [0.08 + Math.random() * 0.84, 0.98];
+    const item = food(kind, start[0], start[1], elapsed + index * 0.055, 0.078 + Math.random() * 0.046, 1);
+    item.mode = Math.random() < 0.78 ? "face" : "roam";
+    item.targetLocked = false;
+    item.hoverLife = kind === "bomb" ? 1.85 : 0.52 + Math.random() * 0.32;
+    item.size *= 1.08 + Math.random() * 0.36;
+    item.splatScale *= 1.18 + Math.random() * 0.36;
+    return item;
+  });
+  foods.push(...burst);
+  finalRushSpawnCount = burst.length;
+  pops.push(pop("DOUBLE TIME!", 0.5, 0.22, "#c6ff36", true, "arcade"));
 }
 
 async function startCamera() {
@@ -488,6 +514,8 @@ function startRound() {
   gameOverStartedAt = 0;
   preGameOverShot = "";
   finalRushAnnounced = false;
+  finalRushSpawned = false;
+  finalRushSpawnCount = 0;
   ended = false;
   startedAt = performance.now();
   chunks = [];
@@ -596,6 +624,7 @@ function loop(now) {
 
   if (left <= 3 && !finalRushAnnounced) {
     finalRushAnnounced = true;
+    spawnFinalRushWave(elapsed);
     playFinalRushSound();
   }
 
@@ -1463,6 +1492,7 @@ function debugState() {
     debugBomb: DEBUG_BOMB,
     debugBombMiss: DEBUG_BOMB_MISS,
     debugFatal: DEBUG_FATAL,
+    duration,
     faceX: Number(mouth.faceX.toFixed(4)),
     faceY: Number(mouth.faceY.toFixed(4)),
     mouthX: Number(mouth.x.toFixed(4)),
@@ -1474,6 +1504,10 @@ function debugState() {
     attachedCount: splats.filter((item) => item.attachTo === 0).length,
     bombCount: splats.filter((item) => item.effect === "bomb").length,
     activeBombs: foods.filter((item) => item.kind === "bomb" && !item.done).length,
+    activeFoods: foods.filter((item) => !item.done).length,
+    finalRushAnnounced,
+    finalRushSpawned,
+    finalRushSpawnCount,
     screenCount: splats.filter((item) => item.attachTo === null).length,
     attached,
   };
