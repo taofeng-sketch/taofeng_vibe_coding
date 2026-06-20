@@ -167,14 +167,14 @@ Then open `http://localhost:4173`. See [dinosaur-adventure/README.md](./dinosaur
 
 A kid-friendly photo/selfie game inspired by the Pictonico pattern: a child's photo becomes the toy. The web version has two paths: an older photo-upload minigame flow and a newer **Live Fruit Munch** camera prototype where fruit flies toward a giant cartoon mouth.
 
-The strongest current direction is Live Fruit Munch: a short round, score pressure, combo, mouth-energy management, messy fruit splats, head-chasing fruit, optional two-player face-off, and a replayable silly camera moment. The web live version uses MediaPipe face landmarks to track one or two mouths in the camera feed and score when a player opens their mouth near incoming fruit. The native iOS version, kept in the private incubator workspace, uses Apple Vision and ReplayKit recording.
+The strongest current direction is Live Fruit Munch: a short round, score pressure, combo, mouth-energy management, messy fruit splats, head-chasing fruit, bomb hazards, optional two-player face-off, and a replayable silly camera moment. The web live version uses MediaPipe face landmarks to track one or two mouths in the camera feed and score when a player opens their mouth near incoming fruit. The native iOS version, kept in the private incubator workspace, uses Apple Vision and ReplayKit recording.
 
 **Implemented in this public web folder**
 
 - Mobile-first photo picker / camera file input.
 - Manual crop and three small Canvas minigames.
 - Gentle and Challenge modes.
-- Live Fruit Munch web page with camera feed, MediaPipe face/mouth tracking, score, combo, best score, longer fruit waves, 80/20 face-target vs roaming fruit, messy full-screen splats, flying seeds, mouth stamina, optional two-player mode, fallback hold-mouth button, and local replay recording.
+- Live Fruit Munch web page with camera feed, MediaPipe face/mouth tracking, score, combo, best score, longer fruit waves, 80/20 face-target vs roaming fruit, countdown hover rings, bomb hazards, Kimi fruit-smash art, sticky full-screen splats, flying seeds, mouth stamina, optional two-player mode, fallback hold-mouth button, and local replay recording.
 - Local-only processing; no backend and no photo upload.
 
 **Tech**
