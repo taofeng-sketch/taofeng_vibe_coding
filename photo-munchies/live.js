@@ -30,7 +30,7 @@ const FACE_MODEL_URL = "https://storage.googleapis.com/mediapipe-models/face_lan
 const ctx = els.canvas.getContext("2d");
 const W = els.canvas.width;
 const H = els.canvas.height;
-const mouth = { x: 0.5, y: 0.57, targetX: 0.5, targetY: 0.57, openness: 0 };
+const mouth = { x: 0.5, y: 0.57, targetX: 0.5, targetY: 0.57, faceX: 0.5, faceY: 0.46, openness: 0 };
 const duration = 32;
 const MAX_SMEARS = 20;
 const BOMB_LOCK_SECONDS = 1.2;
@@ -104,7 +104,7 @@ let screenShake = 0;
 
 function makePlayer2() {
   return {
-    mouth: { x: 0.64, y: 0.57, targetX: 0.64, targetY: 0.57, openness: 0 },
+    mouth: { x: 0.64, y: 0.57, targetX: 0.64, targetY: 0.57, faceX: 0.64, faceY: 0.46, openness: 0 },
     mouthOpen: false,
     mouthWantsOpen: false,
     mouthTired: false,
@@ -232,6 +232,8 @@ function startRound() {
   mouthOpenSmooth = 0;
   mouth.x = mouth.targetX = 0.5;
   mouth.y = mouth.targetY = 0.57;
+  mouth.faceX = 0.5;
+  mouth.faceY = 0.46;
   mouth.openness = 0;
   els.score2Text.textContent = "0";
   els.saveButton.disabled = true;
@@ -334,7 +336,7 @@ function updateFoods(elapsed) {
     if (!item.done && item.arrived && item.hoverAge > item.hoverLife) {
       if (item.targetPlayer === 1) player2.combo = 0;
       else combo = 0;
-      splat(item, item.kind === "bomb" ? "bomb" : "fruit");
+      splat(item, item.kind === "bomb" ? "bomb" : "fruit", item.mode === "face" ? item.targetPlayer : null);
       pops.push(pop("SPLAT!", item.x, item.y, "#fff", true));
       item.done = true;
     }
@@ -409,13 +411,14 @@ function eatBomb(item, playerIndex = 0) {
     biteFlash = 0.28;
   }
   screenShake = 0.34;
-  splat(item, "bomb");
+  splat(item, "bomb", playerIndex);
   const activeMouth = playerIndex === 1 ? player2.mouth : mouth;
   pops.push(pop("BANG!", activeMouth.x, activeMouth.y, "#ff2d8e", true));
 }
 
-function splat(item, effect = "fruit") {
+function splat(item, effect = "fruit", attachTo = null) {
   const fruit = FRUITS[item.kind] || FRUITS.watermelon;
+  const anchor = attachTo === 1 ? player2.mouth : attachTo === 0 ? mouth : null;
   const drops = Array.from({ length: effect === "bomb" ? 28 : 38 }, () => ({
     dx: (Math.random() - 0.5) * 0.46,
     dy: (Math.random() - 0.5) * 0.42,
@@ -436,6 +439,9 @@ function splat(item, effect = "fruit") {
   splats.push({
     x: item.x,
     y: item.y,
+    attachTo,
+    offsetX: anchor ? item.x - anchor.x : 0,
+    offsetY: anchor ? item.y - anchor.y : 0,
     kind: item.kind,
     effect,
     color: fruit.flesh,
@@ -547,13 +553,16 @@ function draw(elapsed, left) {
     ctx.translate((Math.random() - 0.5) * screenShake * 48, (Math.random() - 0.5) * screenShake * 48);
   }
   drawCameraFallback();
+  drawSplats("screen");
+  drawSplats("face");
   drawFaceTarget();
   drawMouth();
   if (twoPlayerMode && player2.tracked) drawMouth(1);
+  drawPeekEyes(0);
+  if (twoPlayerMode && player2.tracked) drawPeekEyes(1);
   foods.forEach((item) => {
     if (!item.done && elapsed >= item.spawn) drawFood(item);
   });
-  drawSplats();
   drawPops();
   if (left <= 3) drawFinalRush(left);
   ctx.restore();
@@ -628,10 +637,14 @@ function readMouthFromLandmarks(landmarks, targetMouth, previousSmooth) {
   const lowerLip = mapLandmark(landmarks[14]);
   const leftCorner = mapLandmark(landmarks[61]);
   const rightCorner = mapLandmark(landmarks[291]);
+  const leftEye = mapLandmark(landmarks[33]);
+  const rightEye = mapLandmark(landmarks[263]);
+  const nose = mapLandmark(landmarks[1]);
   const center = {
     x: (upperLip.x + lowerLip.x + leftCorner.x + rightCorner.x) / 4,
     y: (upperLip.y + lowerLip.y + leftCorner.y + rightCorner.y) / 4,
   };
+  const eyeMid = { x: (leftEye.x + rightEye.x) / 2, y: (leftEye.y + rightEye.y) / 2 };
   const verticalGap = Math.hypot(upperLip.x - lowerLip.x, upperLip.y - lowerLip.y);
   const mouthWidth = Math.max(0.001, Math.hypot(leftCorner.x - rightCorner.x, leftCorner.y - rightCorner.y));
   const openness = Math.min(1, Math.max(0, (verticalGap / mouthWidth - 0.12) / 0.32));
@@ -640,6 +653,8 @@ function readMouthFromLandmarks(landmarks, targetMouth, previousSmooth) {
   targetMouth.targetY = clamp(center.y + 0.015, 0.18, 0.82);
   targetMouth.x += (targetMouth.targetX - targetMouth.x) * 0.38;
   targetMouth.y += (targetMouth.targetY - targetMouth.y) * 0.38;
+  targetMouth.faceX += (clamp((eyeMid.x + nose.x + center.x) / 3, 0.14, 0.86) - targetMouth.faceX) * 0.34;
+  targetMouth.faceY += (clamp((eyeMid.y * 1.6 + nose.y + center.y * 0.5) / 3.1, 0.16, 0.76) - targetMouth.faceY) * 0.34;
   return { smooth };
 }
 
@@ -886,18 +901,24 @@ function drawSeeds(cx, cy, color, count, radius) {
   }
 }
 
-function drawSplats() {
+function drawSplats(layer = "all") {
   for (const item of splats) {
-    const fade = Math.max(0.5, 1 - item.age / 3.2);
+    const isFaceLayer = item.attachTo === 0 || item.attachTo === 1;
+    if (layer === "screen" && isFaceLayer) continue;
+    if (layer === "face" && !isFaceLayer) continue;
+    const position = getSplatPosition(item);
+    const fade = Math.max(0.76, 1 - item.age / 4.8);
     ctx.save();
-    ctx.globalAlpha = 0.96 * fade;
-    ctx.translate(item.x * W, item.y * H);
+    ctx.globalAlpha = item.effect === "bomb" ? 0.92 * fade : 1 * fade;
+    ctx.translate(position.x * W, position.y * H);
     const smash = item.effect === "bomb" ? null : SMASH[item.kind] || SMASH.orange;
     if (smash && smash.complete && smash.naturalWidth) {
       ctx.save();
       ctx.rotate(item.rot);
-      ctx.globalCompositeOperation = "screen";
-      const size = Math.min(W, H) * (0.48 + item.scale * 0.24);
+      ctx.globalCompositeOperation = "source-over";
+      ctx.shadowColor = item.color;
+      ctx.shadowBlur = 22;
+      const size = Math.min(W, H) * (0.54 + item.scale * 0.28);
       ctx.drawImage(smash, 0, 0, smash.naturalWidth, Math.floor(smash.naturalHeight * 0.86), -size / 2, -size / 2, size, size);
       ctx.restore();
     } else if (item.effect === "bomb") {
@@ -942,6 +963,65 @@ function drawSplats() {
     }
     ctx.restore();
   }
+}
+
+function getSplatPosition(item) {
+  if (item.attachTo === 0) {
+    return { x: clamp(mouth.x + item.offsetX, -0.2, 1.2), y: clamp(mouth.y + item.offsetY, -0.2, 1.2) };
+  }
+  if (item.attachTo === 1) {
+    return { x: clamp(player2.mouth.x + item.offsetX, -0.2, 1.2), y: clamp(player2.mouth.y + item.offsetY, -0.2, 1.2) };
+  }
+  return { x: item.x, y: item.y };
+}
+
+function faceSplatCount(playerIndex = 0) {
+  return splats.filter((item) => item.attachTo === playerIndex && item.effect !== "bomb").length;
+}
+
+function drawPeekEyes(playerIndex = 0) {
+  if (faceSplatCount(playerIndex) < 4) return;
+  const activeMouth = playerIndex === 1 ? player2.mouth : mouth;
+  const cx = activeMouth.faceX * W;
+  const cy = activeMouth.faceY * H - 18;
+  const blink = Math.sin(performance.now() / 165) > 0.62;
+  const spread = 46;
+  ctx.save();
+  ctx.shadowColor = "#fff6ff";
+  ctx.shadowBlur = 18;
+  for (const side of [-1, 1]) {
+    const x = cx + side * spread;
+    ctx.fillStyle = "#fff6ff";
+    ctx.strokeStyle = "#0a0612";
+    ctx.lineWidth = 7;
+    ctx.beginPath();
+    if (blink) {
+      ctx.moveTo(x - 24, cy);
+      ctx.quadraticCurveTo(x, cy + 7, x + 24, cy);
+      ctx.stroke();
+    } else {
+      ctx.ellipse(x, cy, 25, 31, side * 0.08, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = "#0a0612";
+      ctx.beginPath();
+      ctx.arc(x + side * 5, cy + 3, 10, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#fff";
+      ctx.beginPath();
+      ctx.arc(x + side * 9, cy - 4, 3.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  ctx.fillStyle = "#c6ff36";
+  ctx.font = "900 24px 'Bangers', system-ui";
+  ctx.textAlign = "center";
+  ctx.strokeStyle = "#0a0612";
+  ctx.lineWidth = 5;
+  const label = playerIndex === 1 ? "P2 PEEK!" : "PEEK!";
+  ctx.strokeText(label, cx, cy + 62);
+  ctx.fillText(label, cx, cy + 62);
+  ctx.restore();
 }
 
 function drawPops() {
