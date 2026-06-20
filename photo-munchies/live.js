@@ -176,7 +176,7 @@ function ensureAudio() {
   musicGain = audioCtx.createGain();
   sfxGain = audioCtx.createGain();
   masterGain.gain.value = 0.82;
-  musicGain.gain.value = 0.14;
+  musicGain.gain.value = 0.23;
   sfxGain.gain.value = 0.52;
   musicGain.connect(masterGain);
   sfxGain.connect(masterGain);
@@ -233,11 +233,16 @@ function playMusicStep() {
   const step = musicStep % 16;
   const root = rush ? 130.81 : 123.47;
   const bassNotes = [root, root, root * 1.5, root, root * 1.25, root, root * 1.5, root * 1.12];
-  if (step % 2 === 0) playTone(bassNotes[(musicStep / 2) % bassNotes.length | 0], rush ? 0.12 : 0.16, "sawtooth", rush ? 0.035 : 0.026, musicGain, now, 0.008);
+  const melodyNotes = [root * 3, root * 3.75, root * 4.5, root * 3.35, root * 5, root * 4.5, root * 3.75, root * 3];
+  if (step % 2 === 0) playTone(bassNotes[(musicStep / 2) % bassNotes.length | 0], rush ? 0.12 : 0.16, "sawtooth", rush ? 0.045 : 0.033, musicGain, now, 0.008);
   if (step % 4 === 0) playKick(now, rush ? 0.95 : 0.65);
   if (step % 8 === 4) playSnare(now, rush ? 0.28 : 0.18);
   if (step % 2 === 1) playHat(now, rush ? 0.13 : 0.08);
   if (step % 4 === 2) playTone(root * [2, 2.25, 2.5, 3][(musicStep / 4) % 4 | 0], 0.08, "triangle", 0.014, musicGain, now, 0.002);
+  if (step % 4 === 1 || (rush && step % 4 === 3)) {
+    playTone(melodyNotes[musicStep % melodyNotes.length], rush ? 0.10 : 0.13, "square", rush ? 0.024 : 0.019, musicGain, now, 0.003);
+    playTone(melodyNotes[(musicStep + 2) % melodyNotes.length] * 0.5, rush ? 0.08 : 0.10, "triangle", 0.010, musicGain, now + 0.035, 0.003);
+  }
   musicStep += rush ? 2 : 1;
 }
 
@@ -378,7 +383,36 @@ function chooseQueuedKind(spawn, index) {
   return goldenChance ? "golden" : FRUIT_KINDS[Math.floor(Math.random() * FRUIT_KINDS.length)];
 }
 
+function choosePlayTarget(spawn, kind, placedTargets, targetPlayer = 0, chaotic = false) {
+  const minDistance = chaotic ? 0.10 : spawn < 20 ? 0.19 : 0.14;
+  const timeWindow = chaotic ? 0.45 : spawn < 20 ? 1.45 : 1.0;
+  const centerX = twoPlayerMode ? (targetPlayer === 1 ? 0.62 : 0.38) : 0.5;
+  const spreadX = chaotic ? 0.48 : 0.38;
+  const spreadY = chaotic ? 0.46 : 0.34;
+  let fallback = { x: centerX, y: 0.56 };
+
+  for (let tries = 0; tries < 18; tries += 1) {
+    const target = {
+      x: clamp(centerX + (Math.random() - 0.5) * spreadX, 0.24, 0.76),
+      y: clamp(0.55 + (Math.random() - 0.5) * spreadY, 0.30, 0.76),
+    };
+    fallback = target;
+    const close = placedTargets.some((other) => (
+      Math.abs(other.spawn - spawn) < timeWindow
+      && Math.hypot(other.x - target.x, other.y - target.y) < minDistance
+    ));
+    if (!close) {
+      placedTargets.push({ ...target, spawn, kind });
+      return target;
+    }
+  }
+
+  placedTargets.push({ ...fallback, spawn, kind });
+  return fallback;
+}
+
 function resetFoods() {
+  const placedTargets = [];
   foods = Array.from({ length: 34 }, (_, index) => {
     const progress = index / 33;
     const spawn = index * 0.76 + Math.random() * 0.62;
@@ -388,7 +422,11 @@ function resetFoods() {
       : edge === 1 ? [0.96, 0.14 + Math.random() * 0.72]
       : edge === 2 ? [0.16 + Math.random() * 0.68, 0.06]
       : [0.16 + Math.random() * 0.68, 0.94];
-    return food(kind, start[0], start[1], spawn, 0.018 + Math.min(index, 20) * 0.0009 + Math.random() * 0.007, progress);
+    const item = food(kind, start[0], start[1], spawn, 0.018 + Math.min(index, 20) * 0.0009 + Math.random() * 0.007, progress);
+    const target = choosePlayTarget(spawn, kind, placedTargets, item.targetPlayer, false);
+    item.targetX = target.x;
+    item.targetY = target.y;
+    return item;
   });
 }
 
@@ -413,6 +451,11 @@ function food(kind, x, y, spawn, speed, progress = 0) {
     targetX: 0.06 + Math.random() * 0.88,
     targetY: 0.10 + Math.random() * 0.80,
     targetLocked: false,
+    pathStartX: x,
+    pathStartY: y,
+    pathControlX: 0.5,
+    pathControlY: 0.42,
+    flightTime: Math.max(0.72, 2.2 - progress * 0.64 - speed * 6 + Math.random() * 0.22),
     wobble: Math.random() * Math.PI * 2,
     rot: Math.random() * 1.4 - 0.7,
     lastCountdownNumber: 0,
@@ -421,6 +464,9 @@ function food(kind, x, y, spawn, speed, progress = 0) {
 
 function spawnFinalRushWave(elapsed) {
   finalRushSpawned = true;
+  const placedTargets = foods
+    .filter((item) => !item.done && item.spawn > elapsed - 0.5)
+    .map((item) => ({ x: item.targetX, y: item.targetY, spawn: item.spawn, kind: item.kind }));
   const burst = Array.from({ length: 18 }, (_, index) => {
     const kindRoll = Math.random();
     const kind = index % 5 === 0 ? "bomb" : kindRoll > 0.88 ? "golden" : FRUIT_KINDS[Math.floor(Math.random() * FRUIT_KINDS.length)];
@@ -431,8 +477,12 @@ function spawnFinalRushWave(elapsed) {
       : [0.08 + Math.random() * 0.84, 0.98];
     const item = food(kind, start[0], start[1], elapsed + index * 0.055, 0.078 + Math.random() * 0.046, 1);
     item.mode = Math.random() < 0.78 ? "face" : "roam";
+    const target = choosePlayTarget(item.spawn, kind, placedTargets, item.targetPlayer, true);
+    item.targetX = target.x;
+    item.targetY = target.y;
     item.targetLocked = false;
     item.hoverLife = kind === "bomb" ? 1.85 : 0.52 + Math.random() * 0.32;
+    item.flightTime = 0.58 + Math.random() * 0.22;
     item.size *= 1.08 + Math.random() * 0.36;
     item.splatScale *= 1.18 + Math.random() * 0.36;
     return item;
@@ -621,7 +671,7 @@ function loop(now) {
   if (gameOverPlayer !== null && !ended) {
     if (!gameOverStartedAt) {
       gameOverStartedAt = now;
-      preGameOverShot = safeCanvasShot();
+      preGameOverShot = captureResultShot(true);
       playGameOverSound();
     }
     const gameOverAge = (now - gameOverStartedAt) / 1000;
@@ -651,14 +701,15 @@ function updateFoods(elapsed) {
   for (const item of foods) {
     if (item.done || elapsed < item.spawn) continue;
     lockFoodTarget(item);
-    const target = getFoodTarget(item);
-    const targetD = Math.hypot(item.x - target.x, item.y - target.y);
-    const rushMultiplier = duration - elapsed <= 3 ? 2 : 1;
-    const speed = item.arrived ? item.speed * 0.08 : item.speed * rushMultiplier;
-    item.x += (target.x - item.x) * speed;
-    item.y += (target.y - item.y) * speed;
     item.wobble += 0.08;
-    if (item.arrived) {
+    if (!item.arrived) {
+      const rushMultiplier = duration - elapsed <= 3 ? 1.28 : 1;
+      const t = clamp(((elapsed - item.spawn) / item.flightTime) * rushMultiplier, 0, 1);
+      const wobble = Math.sin(item.wobble * 1.45) * 0.010 * (1 - t);
+      item.x = quadraticAt(item.pathStartX, item.pathControlX, item.targetX, t) + wobble;
+      item.y = quadraticAt(item.pathStartY, item.pathControlY, item.targetY, t) + Math.cos(item.wobble) * 0.006 * (1 - t);
+      if (t >= 1) item.arrived = true;
+    } else {
       item.x += Math.cos(item.wobble) * 0.0018;
       item.y += Math.sin(item.wobble * 1.25) * 0.0018;
     }
@@ -667,8 +718,7 @@ function updateFoods(elapsed) {
     if (eater !== -1) {
       eat(item, eater);
       item.done = true;
-    } else if (targetD < 0.052) {
-      item.arrived = true;
+    } else if (item.arrived) {
       item.hoverAge += 1 / 60;
       if (item.kind === "bomb") {
         const countdownNumber = Math.max(1, Math.ceil((1 - item.hoverAge / item.hoverLife) * 3));
@@ -698,20 +748,20 @@ function updateFoods(elapsed) {
 
 function lockFoodTarget(item) {
   if (item.targetLocked) return;
-  if (item.mode === "roam") {
-    item.targetLocked = true;
-    return;
-  }
-  const activeMouth = twoPlayerMode && item.targetPlayer === 1 && player2.tracked ? player2.mouth : mouth;
-  const anchorX = activeMouth.faceX || activeMouth.x;
-  const anchorY = activeMouth.faceY || activeMouth.y;
-  item.targetX = clamp(anchorX + (Math.random() - 0.5) * 0.64, 0.08, 0.92);
-  item.targetY = clamp(anchorY + 0.10 + (Math.random() - 0.5) * 0.52, 0.14, 0.86);
+  item.pathStartX = item.x;
+  item.pathStartY = item.y;
+  item.pathControlX = clamp((item.pathStartX + item.targetX) / 2 + (Math.random() - 0.5) * 0.18, 0.18, 0.82);
+  item.pathControlY = clamp(Math.min(item.pathStartY, item.targetY) - 0.18 - Math.random() * 0.16, 0.08, 0.78);
   item.targetLocked = true;
 }
 
 function getFoodTarget(item) {
   return { x: item.targetX, y: item.targetY };
+}
+
+function quadraticAt(start, control, end, t) {
+  const inv = 1 - t;
+  return inv * inv * start + 2 * inv * t * control + t * t * end;
 }
 
 function getCatchingPlayer(item) {
@@ -954,10 +1004,11 @@ function updateHud(left) {
   }
 }
 
-function draw(elapsed, left) {
+function draw(elapsed, left, options = {}) {
+  const shareMode = Boolean(options.shareMode);
   ctx.clearRect(0, 0, W, H);
   ctx.save();
-  if (screenShake > 0) {
+  if (screenShake > 0 && !shareMode) {
     ctx.translate((Math.random() - 0.5) * screenShake * 48, (Math.random() - 0.5) * screenShake * 48);
   }
   drawCameraFallback();
@@ -971,10 +1022,14 @@ function draw(elapsed, left) {
   });
   drawPeekEyes(0);
   if (twoPlayerMode && player2.tracked) drawPeekEyes(1);
-  drawLives();
-  drawPops();
-  if (left <= 3) drawFinalRush(left);
-  if (DEBUG_FACE) els.canvas.dataset.debugState = JSON.stringify(debugState());
+  if (shareMode) {
+    drawShareScore(options.totalScore ?? score, options.gameOver ?? false);
+  } else {
+    drawLives();
+    drawPops();
+    if (left <= 3) drawFinalRush(left);
+    if (DEBUG_FACE) els.canvas.dataset.debugState = JSON.stringify(debugState());
+  }
   ctx.restore();
 }
 
@@ -1489,6 +1544,18 @@ function getSplatPosition(item) {
 
 function debugState() {
   const elapsed = startedAt ? (performance.now() - startedAt) / 1000 : 0;
+  const earlyTargets = foods.filter((item) => item.spawn < 20);
+  let minEarlyTargetDistance = 1;
+  for (let i = 0; i < earlyTargets.length; i += 1) {
+    for (let j = i + 1; j < earlyTargets.length; j += 1) {
+      if (Math.abs(earlyTargets[i].spawn - earlyTargets[j].spawn) < 1.45) {
+        minEarlyTargetDistance = Math.min(
+          minEarlyTargetDistance,
+          Math.hypot(earlyTargets[i].targetX - earlyTargets[j].targetX, earlyTargets[i].targetY - earlyTargets[j].targetY),
+        );
+      }
+    }
+  }
   const attached = splats.filter((item) => item.attachTo === 0).slice(0, 6).map((item) => {
     const position = getSplatPosition(item);
     return {
@@ -1523,6 +1590,8 @@ function debugState() {
     finalRushAnnounced,
     finalRushSpawned,
     finalRushSpawnCount,
+    minEarlyTargetDistance: Number(minEarlyTargetDistance.toFixed(4)),
+    edgeTargetCount: foods.filter((item) => item.targetX < 0.22 || item.targetX > 0.78 || item.targetY < 0.28 || item.targetY > 0.78).length,
     screenCount: splats.filter((item) => item.attachTo === null).length,
     attached,
   };
@@ -1709,6 +1778,36 @@ function drawFinalRush(left) {
   ctx.fillText("DOUBLE SCORE!", W / 2, 98);
 }
 
+function drawShareScore(totalScore, gameOver = false) {
+  const label = gameOver ? "FINAL SCORE" : "SCORE";
+  const scoreText = String(Math.round(totalScore));
+  ctx.save();
+  ctx.translate(W / 2, H - 150);
+  ctx.rotate(-0.035);
+  ctx.shadowColor = "#ff2d8e";
+  ctx.shadowBlur = 28;
+  roundRect(-224, -76, 448, 130, 24, "rgba(8,3,15,0.88)");
+  ctx.lineWidth = 8;
+  ctx.strokeStyle = "#fff6ff";
+  ctx.stroke();
+  ctx.lineWidth = 4;
+  ctx.strokeStyle = "#c6ff36";
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.font = "1000 32px 'Bangers', system-ui";
+  ctx.fillStyle = "#28e6ff";
+  ctx.fillText(label, 0, -36);
+  ctx.font = "1000 78px 'Bangers', system-ui";
+  ctx.lineWidth = 12;
+  ctx.strokeStyle = "#0a0612";
+  ctx.strokeText(scoreText, 0, 22);
+  ctx.fillStyle = "#c6ff36";
+  ctx.fillText(scoreText, 0, 22);
+  ctx.restore();
+}
+
 function drawGameOverOverlay(playerIndex = 0, age = 0) {
   ctx.save();
   const alpha = age < 0.75 ? 1 : clamp(1 - (age - 0.75) / 0.95, 0, 1);
@@ -1770,6 +1869,16 @@ function safeCanvasShot() {
   }
 }
 
+function captureResultShot(gameOver = false) {
+  const elapsed = startedAt ? (performance.now() - startedAt) / 1000 : duration;
+  const left = Math.max(0, duration - elapsed);
+  const totalScore = twoPlayerMode ? Math.max(score, player2.score) : score;
+  draw(elapsed, left, { shareMode: true, totalScore, gameOver });
+  const shot = safeCanvasShot();
+  draw(elapsed, left);
+  return shot;
+}
+
 function roundRect(x, y, w, h, r, fill) {
   ctx.beginPath();
   if (ctx.roundRect) {
@@ -1792,7 +1901,7 @@ function finishRound(gameOver = false, playerIndex = 0) {
   stopRecording();
   stopMusic();
   els.resultPanel.classList.toggle("game-over-panel", gameOver);
-  const shot = gameOver && preGameOverShot ? preGameOverShot : safeCanvasShot();
+  const shot = gameOver && preGameOverShot ? preGameOverShot : captureResultShot(false);
   if (shot) {
     els.resultShot.src = shot;
   } else {
