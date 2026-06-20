@@ -68,6 +68,18 @@ a {
   text-align: center;
 }
 
+.panel.game-over-panel {
+  background:
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.04) 0 2px, transparent 2px 8px),
+    linear-gradient(180deg, rgba(23, 5, 33, 0.98), rgba(5, 2, 11, 0.99));
+  box-shadow: 0 0 0 2px rgba(198, 255, 54, 0.42), 10px 10px 0 rgba(0, 0, 0, 0.54), 0 0 42px rgba(255, 45, 142, 0.38);
+}
+
+.panel.game-over-panel h2 {
+  color: var(--blue);
+  text-shadow: 4px 4px 0 var(--pink), 0 0 20px rgba(40, 230, 255, 0.7);
+}
+
 .eyebrow {
   margin: 0 0 8px;
   color: var(--blue);

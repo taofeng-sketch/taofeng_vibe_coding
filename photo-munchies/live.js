@@ -33,6 +33,7 @@ const H = els.canvas.height;
 const DEBUG_PARAMS = new URLSearchParams(window.location.search);
 const DEBUG_FACE = DEBUG_PARAMS.has("debugFace");
 const DEBUG_BOMB = DEBUG_PARAMS.has("debugBomb");
+const DEBUG_FATAL = DEBUG_PARAMS.has("debugFatal");
 const mouth = { x: 0.5, y: 0.57, targetX: 0.5, targetY: 0.57, faceX: 0.5, faceY: 0.46, openness: 0 };
 const duration = 32;
 const MAX_SMEARS = 20;
@@ -83,6 +84,7 @@ let mouthOpen = false;
 let mouthWantsOpen = false;
 let mouthTired = false;
 let stamina = 1;
+let energyResetGrace = 0;
 let lives = 3;
 let bombLock = 0;
 let player2 = makePlayer2();
@@ -106,6 +108,7 @@ let mouthOpenSmooth = 0;
 let biteFlash = 0;
 let screenShake = 0;
 let debugSeeded = false;
+let gameOverPlayer = null;
 
 function makePlayer2() {
   return {
@@ -114,6 +117,7 @@ function makePlayer2() {
     mouthWantsOpen: false,
     mouthTired: false,
     stamina: 1,
+    energyResetGrace: 0,
     lives: 3,
     bombLock: 0,
     score: 0,
@@ -241,10 +245,12 @@ function startRound() {
   combo = 0;
   hold = 0;
   stamina = 1;
+  energyResetGrace = 0;
   lives = 3;
   mouthTired = false;
   bombLock = 0;
   player2 = makePlayer2();
+  gameOverPlayer = null;
   ended = false;
   startedAt = performance.now();
   chunks = [];
@@ -330,6 +336,12 @@ function loop(now) {
   updateSplats();
   draw(elapsed, left);
   updateHud(left);
+
+  if (gameOverPlayer !== null && !ended) {
+    drawGameOverOverlay(gameOverPlayer);
+    finishRound(true, gameOverPlayer);
+    return;
+  }
 
   if (left <= 0 && !ended) {
     finishRound();
@@ -441,27 +453,42 @@ function eat(item, playerIndex = 0) {
 }
 
 function eatBomb(item, playerIndex = 0) {
+  const remainingLives = applyBombPenalty(playerIndex);
+  const activeMouth = playerIndex === 1 ? player2.mouth : mouth;
+  screenShake = 0.48;
+  splat(item, "bomb", playerIndex);
+  pops.push(pop("-1 LIFE!", 0.5, 0.30, "#ff2d8e", true, "arcade"));
+  pops.push(pop("ENERGY RESET", 0.5, 0.43, "#c6ff36", false, "arcade"));
+  if (remainingLives <= 0) {
+    gameOverPlayer = playerIndex;
+    pops.push(pop("GAME OVER", activeMouth.x, activeMouth.y - 0.18, "#28e6ff", true, "arcade"));
+  }
+}
+
+function applyBombPenalty(playerIndex = 0) {
   if (playerIndex === 1) {
     player2.combo = 0;
     player2.score = Math.max(0, player2.score - 80);
-    player2.stamina = 0;
     player2.lives = Math.max(0, player2.lives - 1);
-    player2.mouthTired = true;
-    player2.bombLock = BOMB_LOCK_SECONDS;
+    player2.stamina = 1;
+    player2.energyResetGrace = 1.8;
+    player2.mouthTired = false;
+    player2.mouthWantsOpen = false;
+    player2.bombLock = 0;
     player2.biteFlash = 0.28;
-  } else {
-    combo = 0;
-    score = Math.max(0, score - 80);
-    stamina = 0;
-    lives = Math.max(0, lives - 1);
-    mouthTired = true;
-    bombLock = BOMB_LOCK_SECONDS;
-    biteFlash = 0.28;
+    return player2.lives;
   }
-  screenShake = 0.34;
-  splat(item, "bomb", playerIndex);
-  const activeMouth = playerIndex === 1 ? player2.mouth : mouth;
-  pops.push(pop("BANG! -1", activeMouth.x, activeMouth.y, "#ff2d8e", true));
+
+  combo = 0;
+  score = Math.max(0, score - 80);
+  lives = Math.max(0, lives - 1);
+  stamina = 1;
+  energyResetGrace = 1.8;
+  mouthTired = false;
+  mouthWantsOpen = false;
+  bombLock = 0;
+  biteFlash = 0.28;
+  return lives;
 }
 
 function splat(item, effect = "fruit", attachTo = null) {
@@ -511,13 +538,13 @@ function splat(item, effect = "fruit", attachTo = null) {
   splats = splats.slice(-MAX_SMEARS);
 }
 
-function pop(text, x, y, color, big = false) {
-  return { text, x, y, color, age: 0, big };
+function pop(text, x, y, color, big = false, variant = "normal") {
+  return { text, x, y, color, age: 0, big, variant, duration: variant === "arcade" ? 2 : 0.8 };
 }
 
 function updatePops() {
   pops.forEach((item) => (item.age += 1 / 60));
-  pops = pops.filter((item) => item.age < 0.8);
+  pops = pops.filter((item) => item.age < item.duration);
 }
 
 function updateSplats() {
@@ -526,6 +553,13 @@ function updateSplats() {
 }
 
 function updateStamina() {
+  energyResetGrace = Math.max(0, energyResetGrace - 1 / 60);
+  if (energyResetGrace > 0) {
+    stamina = 1;
+    mouthTired = false;
+    refreshEffectiveMouth();
+    return;
+  }
   bombLock = Math.max(0, bombLock - 1 / 60);
   if (bombLock > 0) {
     stamina = 0;
@@ -543,6 +577,13 @@ function updateStamina() {
 
 function updatePlayer2Stamina() {
   if (!twoPlayerMode) return;
+  player2.energyResetGrace = Math.max(0, player2.energyResetGrace - 1 / 60);
+  if (player2.energyResetGrace > 0) {
+    player2.stamina = 1;
+    player2.mouthTired = false;
+    player2.mouthOpen = player2.mouthWantsOpen && player2.stamina > 0.04;
+    return;
+  }
   player2.bombLock = Math.max(0, player2.bombLock - 1 / 60);
   if (player2.bombLock > 0) {
     player2.stamina = 0;
@@ -725,6 +766,7 @@ function seedDebugSplats() {
     }, "fruit", 0);
   }
   if (DEBUG_BOMB) {
+    if (DEBUG_FATAL) lives = 1;
     splat({
       kind: "bomb",
       x: mouth.faceX + 0.08,
@@ -732,7 +774,10 @@ function seedDebugSplats() {
       size: 1.2,
       splatScale: 1.35,
     }, "bomb", 0);
-    lives = Math.max(0, lives - 1);
+    const remainingLives = applyBombPenalty(0);
+    if (remainingLives <= 0) gameOverPlayer = 0;
+    pops.push(pop(DEBUG_FATAL ? "GAME OVER" : "-1 LIFE!", 0.5, 0.30, "#ff2d8e", true, "arcade"));
+    pops.push(pop("ENERGY RESET", 0.5, 0.43, "#c6ff36", false, "arcade"));
   }
 }
 
@@ -1108,11 +1153,15 @@ function debugState() {
   return {
     debugFace: DEBUG_FACE,
     debugBomb: DEBUG_BOMB,
+    debugFatal: DEBUG_FATAL,
     faceX: Number(mouth.faceX.toFixed(4)),
     faceY: Number(mouth.faceY.toFixed(4)),
     mouthX: Number(mouth.x.toFixed(4)),
     mouthY: Number(mouth.y.toFixed(4)),
     lives,
+    stamina: Number(stamina.toFixed(4)),
+    energyResetGrace: Number(energyResetGrace.toFixed(4)),
+    gameOverPlayer,
     attachedCount: splats.filter((item) => item.attachTo === 0).length,
     bombCount: splats.filter((item) => item.effect === "bomb").length,
     screenCount: splats.filter((item) => item.attachTo === null).length,
@@ -1230,17 +1279,65 @@ function drawPlayerLives(activeLives, x, y, color) {
 
 function drawPops() {
   for (const item of pops) {
-    ctx.globalAlpha = Math.max(0, 1 - item.age * 1.5);
-    ctx.fillStyle = item.color;
-    ctx.font = `1000 ${item.big ? 52 : 36}px system-ui`;
-    ctx.textAlign = "center";
-    ctx.strokeStyle = "#131b2a";
-    ctx.lineWidth = 7;
-    const y = item.y * H - item.age * 70;
-    ctx.strokeText(item.text, item.x * W, y);
-    ctx.fillText(item.text, item.x * W, y);
+    if (item.variant === "arcade") {
+      drawArcadePop(item);
+    } else {
+      ctx.globalAlpha = Math.max(0, 1 - item.age * 1.5);
+      ctx.fillStyle = item.color;
+      ctx.font = `1000 ${item.big ? 52 : 36}px system-ui`;
+      ctx.textAlign = "center";
+      ctx.strokeStyle = "#131b2a";
+      ctx.lineWidth = 7;
+      const y = item.y * H - item.age * 70;
+      ctx.strokeText(item.text, item.x * W, y);
+      ctx.fillText(item.text, item.x * W, y);
+    }
   }
   ctx.globalAlpha = 1;
+}
+
+function drawArcadePop(item) {
+  const t = clamp(item.age / item.duration, 0, 1);
+  const popIn = t < 0.18 ? 0.72 + t / 0.18 * 0.42 : 1.08 - Math.min(0.18, (t - 0.18) * 0.24);
+  const alpha = t < 0.72 ? 1 : clamp(1 - (t - 0.72) / 0.28, 0, 1);
+  const wobble = Math.sin(item.age * 26) * 0.035;
+  const x = item.x * W;
+  const y = item.y * H - item.age * 44;
+  const fontSize = item.big ? 76 : 42;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.translate(x, y);
+  ctx.rotate(wobble);
+  ctx.scale(popIn, popIn);
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.font = `1000 ${fontSize}px 'Bangers', system-ui`;
+  const badgeW = Math.min(W * 0.88, ctx.measureText(item.text).width + fontSize * 0.76);
+  const badgeH = fontSize * 0.78;
+  ctx.shadowBlur = 18;
+  ctx.shadowColor = item.color;
+  roundRect(-badgeW / 2, -badgeH / 2, badgeW, badgeH, 14, "rgba(8,3,15,0.82)");
+  ctx.strokeStyle = "#fff6ff";
+  ctx.lineWidth = 6;
+  ctx.stroke();
+  ctx.strokeStyle = item.color;
+  ctx.lineWidth = 3;
+  ctx.stroke();
+  ctx.shadowColor = "#28e6ff";
+  ctx.shadowBlur = 10;
+  ctx.lineJoin = "round";
+  ctx.strokeStyle = "#fff6ff";
+  ctx.lineWidth = item.big ? 20 : 14;
+  ctx.strokeText(item.text, 0, 0);
+  ctx.strokeStyle = "#0a0612";
+  ctx.lineWidth = item.big ? 9 : 6;
+  ctx.strokeText(item.text, 0, 0);
+  ctx.fillStyle = item.color;
+  ctx.fillText(item.text, 0, 0);
+  ctx.fillStyle = "rgba(255,255,255,0.62)";
+  ctx.font = `1000 ${Math.round(fontSize * 0.34)}px 'Bangers', system-ui`;
+  ctx.fillText("POW!", fontSize * 1.02, -fontSize * 0.48);
+  ctx.restore();
 }
 
 function drawFinalRush(left) {
@@ -1250,6 +1347,58 @@ function drawFinalRush(left) {
   ctx.font = "1000 42px system-ui";
   ctx.textAlign = "center";
   ctx.fillText("DOUBLE SCORE!", W / 2, 98);
+}
+
+function drawGameOverOverlay(playerIndex = 0) {
+  ctx.save();
+  ctx.globalAlpha = 0.92;
+  ctx.fillStyle = "#08030f";
+  ctx.fillRect(0, 0, W, H);
+  ctx.globalAlpha = 1;
+
+  ctx.strokeStyle = "rgba(40,230,255,0.22)";
+  ctx.lineWidth = 3;
+  for (let y = 0; y < H; y += 42) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(W, y);
+    ctx.stroke();
+  }
+  for (let x = -W; x < W * 2; x += 58) {
+    ctx.beginPath();
+    ctx.moveTo(x, H);
+    ctx.lineTo(W / 2 + (x - W / 2) * 0.18, H * 0.35);
+    ctx.stroke();
+  }
+
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.font = "1000 112px 'Bangers', system-ui";
+  ctx.shadowBlur = 28;
+  ctx.shadowColor = "#ff2d8e";
+  ctx.strokeStyle = "#fff6ff";
+  ctx.lineWidth = 24;
+  ctx.strokeText("GAME", W / 2, H * 0.38);
+  ctx.strokeText("OVER", W / 2, H * 0.50);
+  ctx.strokeStyle = "#0a0612";
+  ctx.lineWidth = 10;
+  ctx.strokeText("GAME", W / 2, H * 0.38);
+  ctx.strokeText("OVER", W / 2, H * 0.50);
+  ctx.fillStyle = "#ff2d8e";
+  ctx.fillText("GAME", W / 2 - 6, H * 0.38);
+  ctx.fillStyle = "#28e6ff";
+  ctx.fillText("OVER", W / 2 + 6, H * 0.50);
+
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = "#c6ff36";
+  ctx.font = "1000 32px 'Bangers', system-ui";
+  const playerText = twoPlayerMode ? `P${playerIndex + 1} OUT - TAP PLAY AGAIN` : "TAP PLAY AGAIN";
+  ctx.fillText(playerText, W / 2, H * 0.64);
+  ctx.fillStyle = "rgba(255,246,255,0.2)";
+  for (let y = 0; y < H; y += 8) {
+    ctx.fillRect(0, y, W, 2);
+  }
+  ctx.restore();
 }
 
 function roundRect(x, y, w, h, r, fill) {
@@ -1268,17 +1417,24 @@ function roundRect(x, y, w, h, r, fill) {
   ctx.fill();
 }
 
-function finishRound() {
+function finishRound(gameOver = false, playerIndex = 0) {
   ended = true;
   cancelAnimationFrame(raf);
   stopRecording();
+  els.resultPanel.classList.toggle("game-over-panel", gameOver);
   try {
     els.resultShot.src = els.canvas.toDataURL("image/png");
   } catch (error) {
     els.resultShot.removeAttribute("src");
   }
   const totalScore = twoPlayerMode ? Math.max(score, player2.score) : score;
-  els.rankText.textContent = totalScore >= 2200 ? "Munch Master" : totalScore >= 1300 ? "Hungry Hero" : "Tiny Chomper";
+  els.rankText.textContent = gameOver ? "GAME OVER" : totalScore >= 2200 ? "Munch Master" : totalScore >= 1300 ? "Hungry Hero" : "Tiny Chomper";
+  if (gameOver) {
+    const playerText = twoPlayerMode ? `P${playerIndex + 1} ran out of hearts` : "You ran out of hearts";
+    els.finalText.textContent = `${playerText} · Score ${score} · Best ${best}`;
+    show(els.resultPanel);
+    return;
+  }
   if (twoPlayerMode) {
     const winner = score === player2.score ? "Tie game" : score > player2.score ? "P1 wins" : "P2 wins";
     els.finalText.textContent = `${winner} · P1 ${score} · P2 ${player2.score} · Best ${best}`;
