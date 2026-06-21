@@ -58,6 +58,7 @@ a {
   min-height: 100dvh;
   padding: max(18px, env(safe-area-inset-top)) 14px max(18px, env(safe-area-inset-bottom));
   display: grid;
+  gap: 12px;
   place-items: center;
 }
 
@@ -66,6 +67,25 @@ body.game-active .live-shell {
   min-height: 100dvh;
   overflow: hidden;
   padding: max(8px, env(safe-area-inset-top)) 10px max(8px, env(safe-area-inset-bottom));
+}
+
+.ad-sheet {
+  width: min(560px, 100%);
+  min-height: 72px;
+  display: grid;
+  place-items: center;
+  border: 3px dashed rgba(255, 246, 255, 0.26);
+  border-radius: 16px;
+  background: rgba(10, 6, 18, 0.48);
+  color: rgba(255, 246, 255, 0.52);
+  font-size: 12px;
+  font-weight: 1000;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+body.game-active .ad-sheet {
+  display: none;
 }
 
 .hidden {
@@ -391,6 +411,10 @@ body.game-active .status {
 }
 
 @media (max-height: 720px) {
+  .ad-sheet {
+    min-height: 52px;
+  }
+
   body.game-active .game-panel {
     width: min(100%, calc((100dvh - 162px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) * 0.6667), 520px);
   }

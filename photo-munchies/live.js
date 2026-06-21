@@ -1209,8 +1209,8 @@ function seedDebugSplats() {
   if (DEBUG_BOMB_MISS) {
     foods = [{
       kind: "bomb",
-      x: 0.34,
-      y: 0.42,
+      x: 0.78,
+      y: 0.26,
       spawn: 0,
       speed: 0.01,
       size: 1.2,
@@ -1221,8 +1221,8 @@ function seedDebugSplats() {
       hoverLife: 3.15,
       mode: "roam",
       targetPlayer: 0,
-      targetX: 0.34,
-      targetY: 0.42,
+      targetX: 0.78,
+      targetY: 0.26,
       targetLocked: true,
       wobble: 0,
       rot: -0.2,
