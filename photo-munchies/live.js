@@ -2,10 +2,14 @@ const els = {
   startPanel: document.getElementById("startPanel"),
   gamePanel: document.getElementById("gamePanel"),
   resultPanel: document.getElementById("resultPanel"),
+  leaderboardPanel: document.getElementById("leaderboardPanel"),
   startButton: document.getElementById("startButton"),
   video: document.getElementById("cameraVideo"),
   canvas: document.getElementById("gameCanvas"),
   hud: document.querySelector(".hud"),
+  playerNameInput: document.getElementById("playerNameInput"),
+  randomNameButton: document.getElementById("randomNameButton"),
+  startLeaderboardButton: document.getElementById("startLeaderboardButton"),
   twoPlayerToggle: document.getElementById("twoPlayerToggle"),
   scoreText: document.getElementById("scoreText"),
   score2Text: document.getElementById("score2Text"),
@@ -21,7 +25,13 @@ const els = {
   resultShot: document.getElementById("resultShot"),
   finalText: document.getElementById("finalText"),
   saveButton: document.getElementById("saveButton"),
+  viewLeaderboardButton: document.getElementById("viewLeaderboardButton"),
   playAgainButton: document.getElementById("playAgainButton"),
+  leaderboardList: document.getElementById("leaderboardList"),
+  leaderboardStats: document.getElementById("leaderboardStats"),
+  leaderboardStatus: document.getElementById("leaderboardStatus"),
+  leaderboardPlayButton: document.getElementById("leaderboardPlayButton"),
+  leaderboardBackButton: document.getElementById("leaderboardBackButton"),
   saveHint: document.getElementById("saveHint"),
 };
 
@@ -38,6 +48,12 @@ const DEBUG_BOMB_MISS = DEBUG_PARAMS.has("debugBombMiss");
 const DEBUG_FATAL = DEBUG_PARAMS.has("debugFatal");
 const DEBUG_GIANT_EYES = DEBUG_PARAMS.has("debugGiantEyes");
 const DEBUG_SECONDS = Number(DEBUG_PARAMS.get("debugSeconds") || 0);
+const LEADERBOARD_KEY = "munchMonsterLeaderboard";
+const LEADERBOARD_COUNT_KEY = "munchMonsterPlayCount";
+const PLAYER_NAME_KEY = "munchMonsterPlayerName";
+const LEADERBOARD_LIMIT = 50;
+const REMOTE_LEADERBOARD_LIMIT = 20;
+const LEADERBOARD_ENDPOINT = (window.MUNCH_MONSTER_LEADERBOARD_ENDPOINT || localStorage.getItem("munchMonsterLeaderboardEndpoint") || "").trim();
 const mouth = makeMouthState(0.5);
 const duration = DEBUG_SECONDS >= 4 && DEBUG_SECONDS <= 32 ? DEBUG_SECONDS : 32;
 const MAX_SMEARS = 20;
@@ -591,7 +607,7 @@ function setTrackingPill(text, state) {
 }
 
 function show(panel) {
-  [els.startPanel, els.gamePanel, els.resultPanel].forEach((el) => el.classList.add("hidden"));
+  [els.startPanel, els.gamePanel, els.resultPanel, els.leaderboardPanel].forEach((el) => el.classList.add("hidden"));
   panel.classList.remove("hidden");
   document.body.classList.toggle("game-active", panel === els.gamePanel);
 }
@@ -693,6 +709,168 @@ function pickRecordingMimeType() {
   ];
   if (!window.MediaRecorder || !MediaRecorder.isTypeSupported) return "";
   return options.find((type) => MediaRecorder.isTypeSupported(type)) || "";
+}
+
+function randomPlayerName() {
+  const adjectives = ["Wiggly", "Mega", "Juicy", "Tiny", "Turbo", "Silly", "Mighty", "Sneaky", "Glowy", "Bouncy"];
+  const nouns = ["Mango", "Melon", "Peach", "Kiwi", "Berry", "Chomper", "Monster", "Grape", "Snack", "Sprout"];
+  return `${adjectives[Math.floor(Math.random() * adjectives.length)]} ${nouns[Math.floor(Math.random() * nouns.length)]}`;
+}
+
+function cleanPlayerName(value) {
+  const cleaned = String(value || "")
+    .replace(/[^\p{L}\p{N}\s._-]/gu, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 18);
+  return cleaned || randomPlayerName();
+}
+
+function syncPlayerName() {
+  const name = cleanPlayerName(els.playerNameInput.value);
+  els.playerNameInput.value = name;
+  localStorage.setItem(PLAYER_NAME_KEY, name);
+  return name;
+}
+
+function loadLeaderboard() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(LEADERBOARD_KEY) || "[]");
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    return [];
+  }
+}
+
+function saveLeaderboard(records) {
+  const sorted = [...records]
+    .filter((record) => record && Number.isFinite(record.score))
+    .sort((a, b) => b.score - a.score || String(a.playedAt).localeCompare(String(b.playedAt)))
+    .slice(0, LEADERBOARD_LIMIT);
+  localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(sorted));
+  return sorted;
+}
+
+function saveLocalScore(totalScore, gameOver = false) {
+  const name = syncPlayerName();
+  const playedAt = new Date().toISOString();
+  const record = {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    name,
+    score: Math.max(0, Math.round(totalScore)),
+    playedAt,
+    mode: twoPlayerMode ? "two-player" : "solo",
+    duration,
+    gameOver,
+  };
+  const playCount = Number(localStorage.getItem(LEADERBOARD_COUNT_KEY) || 0) + 1;
+  localStorage.setItem(LEADERBOARD_COUNT_KEY, String(playCount));
+  const records = saveLeaderboard([...loadLeaderboard(), record]);
+  const localRank = records.findIndex((item) => item.id === record.id) + 1;
+  record.localRank = localRank || records.length;
+  submitRemoteScore(record, playCount);
+  renderLeaderboard(record.id);
+  return record;
+}
+
+async function submitRemoteScore(record, localPlayCount) {
+  if (!LEADERBOARD_ENDPOINT) return;
+  try {
+    const response = await fetch(LEADERBOARD_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        game: "munch-monster",
+        version: "20260621_leaderboard",
+        name: record.name,
+        score: record.score,
+        playedAt: record.playedAt,
+        mode: record.mode,
+        duration: record.duration,
+        gameOver: record.gameOver,
+        localPlayCount,
+      }),
+    });
+    if (!response.ok) throw new Error(`Leaderboard POST ${response.status}`);
+    els.leaderboardStatus.textContent = "Score synced to the global board.";
+  } catch (error) {
+    els.leaderboardStatus.textContent = "Score saved locally. Global sync is not available right now.";
+  }
+}
+
+async function fetchRemoteLeaderboard() {
+  if (!LEADERBOARD_ENDPOINT) return null;
+  try {
+    const url = new URL(LEADERBOARD_ENDPOINT);
+    url.searchParams.set("limit", String(REMOTE_LEADERBOARD_LIMIT));
+    const response = await fetch(url.toString(), { headers: { "Accept": "application/json" } });
+    if (!response.ok) throw new Error(`Leaderboard GET ${response.status}`);
+    return await response.json();
+  } catch (error) {
+    return null;
+  }
+}
+
+function formatPlayedAt(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "just now";
+  return date.toLocaleDateString([], { month: "short", day: "numeric" });
+}
+
+function renderLeaderboard(highlightId = "") {
+  const records = loadLeaderboard();
+  const playCount = Number(localStorage.getItem(LEADERBOARD_COUNT_KEY) || records.length || 0);
+  els.leaderboardStats.textContent = `${playCount} local ${playCount === 1 ? "round" : "rounds"} played on this device.`;
+  els.leaderboardList.innerHTML = "";
+  const top = records.slice(0, 10);
+  if (!top.length) {
+    const empty = document.createElement("li");
+    empty.innerHTML = '<span class="rank">--</span><span class="name">No scores yet<span class="meta">Play one round to claim the board.</span></span><span class="score">0</span>';
+    els.leaderboardList.appendChild(empty);
+  } else {
+    top.forEach((record, index) => {
+      const item = document.createElement("li");
+      if (record.id === highlightId) item.className = "current-score";
+      item.innerHTML = `
+        <span class="rank">#${index + 1}</span>
+        <span class="name">${escapeHtml(record.name)}<span class="meta">${record.mode || "solo"} · ${formatPlayedAt(record.playedAt)}</span></span>
+        <span class="score">${record.score}</span>
+      `;
+      els.leaderboardList.appendChild(item);
+    });
+  }
+  els.leaderboardStatus.textContent = LEADERBOARD_ENDPOINT
+    ? "Global leaderboard endpoint is configured. Pulling remote scores..."
+    : "Local board only. Connect a leaderboard endpoint for global tracking.";
+}
+
+async function showLeaderboard() {
+  renderLeaderboard();
+  show(els.leaderboardPanel);
+  const remote = await fetchRemoteLeaderboard();
+  if (!remote || !Array.isArray(remote.scores)) return;
+  els.leaderboardStats.textContent = `${remote.totalPlays || remote.scores.length} global rounds tracked.`;
+  els.leaderboardList.innerHTML = "";
+  remote.scores.slice(0, 10).forEach((record, index) => {
+    const item = document.createElement("li");
+    item.innerHTML = `
+      <span class="rank">#${index + 1}</span>
+      <span class="name">${escapeHtml(record.name)}<span class="meta">${record.mode || "solo"} · ${formatPlayedAt(record.playedAt)}</span></span>
+      <span class="score">${Number(record.score) || 0}</span>
+    `;
+    els.leaderboardList.appendChild(item);
+  });
+  els.leaderboardStatus.textContent = "Global board loaded.";
+}
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, (char) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  }[char]));
 }
 
 function stopRecording() {
@@ -2066,19 +2244,21 @@ function finishRound(gameOver = false, playerIndex = 0) {
     els.resultShot.removeAttribute("src");
   }
   const totalScore = twoPlayerMode ? Math.max(score, player2.score) : score;
+  const leaderboardRecord = saveLocalScore(totalScore, gameOver);
+  const rankText = leaderboardRecord.localRank ? ` · Local rank #${leaderboardRecord.localRank}` : "";
   els.rankText.textContent = gameOver ? "GAME OVER" : totalScore >= 2200 ? "大嘴王者" : totalScore >= 1300 ? "水果高手" : "小小大嘴怪";
   if (gameOver) {
     const playerText = twoPlayerMode ? `P${playerIndex + 1} ran out of hearts` : "You ran out of hearts";
-    els.finalText.textContent = `${playerText} · Score ${score} · Best ${best}`;
+    els.finalText.textContent = `${playerText} · Score ${totalScore} · Best ${best}${rankText}`;
     show(els.resultPanel);
     return;
   }
   playWinSound();
   if (twoPlayerMode) {
     const winner = score === player2.score ? "Tie game" : score > player2.score ? "P1 wins" : "P2 wins";
-    els.finalText.textContent = `${winner} · P1 ${score} · P2 ${player2.score} · Best ${best}`;
+    els.finalText.textContent = `${winner} · P1 ${score} · P2 ${player2.score} · Best ${best}${rankText}`;
   } else {
-    els.finalText.textContent = `Score ${score} · Best ${best}`;
+    els.finalText.textContent = `Score ${score} · Best ${best}${rankText}`;
   }
   show(els.resultPanel);
 }
@@ -2089,6 +2269,7 @@ function setMouth(open) {
 }
 
 els.startButton.addEventListener("click", async () => {
+  syncPlayerName();
   show(els.gamePanel);
   els.statusText.textContent = "Starting camera and face tracker...";
   await startAudio();
@@ -2101,12 +2282,31 @@ els.playAgainButton.addEventListener("click", () => {
   startAudio();
   startRound();
 });
+els.viewLeaderboardButton.addEventListener("click", showLeaderboard);
+els.startLeaderboardButton.addEventListener("click", showLeaderboard);
+els.leaderboardBackButton.addEventListener("click", () => show(els.startPanel));
+els.leaderboardPlayButton.addEventListener("click", async () => {
+  syncPlayerName();
+  show(els.gamePanel);
+  els.statusText.textContent = "Starting camera and face tracker...";
+  await startAudio();
+  await startCamera();
+  await initFaceTracking();
+  startRound();
+});
 els.restartButton.addEventListener("click", () => {
   startAudio();
   startRound();
 });
 els.audioButton.addEventListener("click", () => setAudioEnabled(!audioEnabled));
 updateAudioButton();
+els.playerNameInput.value = localStorage.getItem(PLAYER_NAME_KEY) || randomPlayerName();
+els.randomNameButton.addEventListener("click", () => {
+  els.playerNameInput.value = randomPlayerName();
+  syncPlayerName();
+});
+els.playerNameInput.addEventListener("change", syncPlayerName);
+renderLeaderboard();
 els.saveButton.addEventListener("click", () => {
   if (!replayUrl) return;
   const link = document.createElement("a");
