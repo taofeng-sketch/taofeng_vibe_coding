@@ -71,11 +71,16 @@ function normalizeRecord(body) {
     name,
     score,
     playedAt: new Date().toISOString(),
-    mode: body.mode === "two-player" ? "two-player" : "solo",
+    mode: cleanMode(body.mode),
     duration: clampNumber(Number(body.duration || 32), 4, 60),
     gameOver: Boolean(body.gameOver),
     game: "munch-monster",
   };
+}
+
+function cleanMode(value) {
+  const mode = String(value || "free").replace(/[^a-z0-9-]/gi, "").slice(0, 24);
+  return mode || "free";
 }
 
 function cleanName(value) {

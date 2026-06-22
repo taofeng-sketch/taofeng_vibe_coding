@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Bangers&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="live.css?v=20260621_leaderboard">
+  <link rel="stylesheet" href="live.css?v=20260622_viral_modes">
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7305058310778520"
      crossorigin="anonymous"></script>
 </head>
@@ -16,21 +16,28 @@
   <main class="live-shell">
     <section id="startPanel" class="panel">
       <h1>Munch Monster</h1>
-      <p class="lede">疯狂大嘴怪: open your mouth, catch flying fruit, dodge countdown bombs, and save a ridiculous replay.</p>
+      <p class="lede">疯狂大嘴怪 by taofeng.org: open wide, catch fruit, dodge bombs, and share a ridiculous replay.</p>
       <label class="name-field">
         <span>Player name</span>
         <input id="playerNameInput" type="text" maxlength="18" autocomplete="nickname" inputmode="text">
         <button id="randomNameButton" type="button" class="mini-button">Random</button>
       </label>
-      <label class="mode-toggle">
-        <input id="twoPlayerToggle" type="checkbox">
-        <span>Two player face-off</span>
-      </label>
+      <div class="mode-picker" aria-label="Game mode">
+        <button id="freeModeButton" class="mode-choice active" type="button" data-mode="free">
+          <span>Free Mode</span>
+          <small>one silly round</small>
+        </button>
+        <button id="challengeModeButton" class="mode-choice" type="button" data-mode="challenge">
+          <span>Challenge</span>
+          <small>clear 3 stages</small>
+        </button>
+      </div>
+      <p id="challengeText" class="challenge-text">Free Mode: play for score and bragging rights.</p>
       <a class="tutorial-link" href="tutorial.html" target="_blank" rel="noopener">Tutorial / 玩法教程</a>
       <button id="startButton" class="primary">Play Game</button>
       <button id="startLeaderboardButton" class="ghost compact-button" type="button">Leaderboard</button>
       <a class="secondary-link" href="./">Back to start</a>
-      <p class="note">MediaPipe face landmarks run in your browser. Replays download locally; no camera frame is stored by this app.</p>
+      <p class="note">Camera stays on your device. No photos, videos, or face data are uploaded unless you choose to share a replay.</p>
     </section>
 
     <section id="gamePanel" class="game-panel hidden">
@@ -76,11 +83,11 @@
       <img id="resultShot" class="result-shot" alt="Messy replay still">
       <p id="finalText">Score 0</p>
       <div class="result-actions">
-        <button id="saveButton" class="primary" disabled>Save replay</button>
+        <button id="saveButton" class="primary" disabled>Share replay</button>
         <button id="viewLeaderboardButton" class="ghost">View leaderboard</button>
         <button id="playAgainButton" class="ghost">Play again</button>
       </div>
-      <p id="saveHint" class="note">Replay saving depends on browser MediaRecorder support.</p>
+      <p id="saveHint" class="note">Replay sharing uses your browser share sheet when supported; fallback downloads locally.</p>
     </section>
 
     <section id="leaderboardPanel" class="panel leaderboard-panel hidden">
@@ -99,6 +106,6 @@
       <span>Ad space</span>
     </aside>
   </main>
-  <script type="module" src="live.js?v=20260621_leaderboard"></script>
+  <script type="module" src="live.js?v=20260622_viral_modes"></script>
 </body>
 </html>

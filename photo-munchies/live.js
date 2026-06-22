@@ -10,6 +10,9 @@ const els = {
   playerNameInput: document.getElementById("playerNameInput"),
   randomNameButton: document.getElementById("randomNameButton"),
   startLeaderboardButton: document.getElementById("startLeaderboardButton"),
+  freeModeButton: document.getElementById("freeModeButton"),
+  challengeModeButton: document.getElementById("challengeModeButton"),
+  challengeText: document.getElementById("challengeText"),
   twoPlayerToggle: document.getElementById("twoPlayerToggle"),
   scoreText: document.getElementById("scoreText"),
   score2Text: document.getElementById("score2Text"),
@@ -54,8 +57,16 @@ const PLAYER_NAME_KEY = "munchMonsterPlayerName";
 const LEADERBOARD_LIMIT = 50;
 const REMOTE_LEADERBOARD_LIMIT = 20;
 const LEADERBOARD_ENDPOINT = (window.MUNCH_MONSTER_LEADERBOARD_ENDPOINT || localStorage.getItem("munchMonsterLeaderboardEndpoint") || "").trim();
+const CHALLENGE_LEVELS = [
+  { title: "Level 1 - Fruit Rookie", target: 900, duration: 24, intro: "Catch fruit. No pressure yet." },
+  { title: "Level 2 - Mango Maniac", target: 1400, duration: 28, intro: "Score more, rest your mouth." },
+  { title: "Level 3 - Bomb Dodger", target: 1900, duration: 30, intro: "Bombs appear. Do not bite them." },
+  { title: "Level 4 - Watermelon Beast", target: 2400, duration: 32, intro: "Fruit gets messy and faster." },
+  { title: "Level 5 - Egg King Boss", target: 3000, duration: 32, intro: "Survive Double Score chaos." },
+];
+const SHARE_URL = "https://taofeng-sketch.github.io/taofeng_vibe_coding/photo-munchies/";
 const mouth = makeMouthState(0.5);
-const duration = DEBUG_SECONDS >= 4 && DEBUG_SECONDS <= 32 ? DEBUG_SECONDS : 32;
+let duration = DEBUG_SECONDS >= 4 && DEBUG_SECONDS <= 32 ? DEBUG_SECONDS : 32;
 const MAX_SMEARS = 20;
 const BOMB_LOCK_SECONDS = 1.2;
 const STARTING_LIVES = 10;
@@ -94,6 +105,8 @@ const SMASH = Object.fromEntries(Object.entries(SMASH_FILES).map(([kind, src]) =
 }));
 const BOMB_EXPLOSION = new Image();
 BOMB_EXPLOSION.src = "art/bomb_explosion.png";
+const SHARE_QR = new Image();
+SHARE_QR.src = "art/taofeng_org_qr.png";
 const trackingPill = document.createElement("div");
 trackingPill.className = "tracking-pill";
 trackingPill.textContent = "Loading face tracking...";
@@ -104,6 +117,7 @@ let recorder = null;
 let chunks = [];
 let replayUrl = "";
 let replayExtension = "webm";
+let replayBlob = null;
 let raf = 0;
 let startedAt = 0;
 let mouthOpen = false;
@@ -115,6 +129,8 @@ let lives = STARTING_LIVES;
 let bombLock = 0;
 let player2 = makePlayer2();
 let twoPlayerMode = false;
+let selectedMode = "free";
+let challengeLevelIndex = Number(localStorage.getItem("munchMonsterChallengeLevel") || 0);
 let manualMouthOpen = false;
 let hold = 0;
 let score = 0;
@@ -413,9 +429,9 @@ function bombChanceForSpawn(spawn) {
 }
 
 function chooseQueuedKind(spawn, index, forceBomb = false) {
-  if (forceBomb) return "bomb";
+  if (forceBomb && challengeAllowsBombs()) return "bomb";
   const goldenChance = index > 4 && Math.random() < 0.08;
-  if (Math.random() < bombChanceForSpawn(spawn)) return "bomb";
+  if (challengeAllowsBombs() && Math.random() < bombChanceForSpawn(spawn)) return "bomb";
   return goldenChance ? "golden" : FRUIT_KINDS[Math.floor(Math.random() * FRUIT_KINDS.length)];
 }
 
@@ -614,7 +630,12 @@ function show(panel) {
 
 function startRound() {
   show(els.gamePanel);
-  twoPlayerMode = Boolean(els.twoPlayerToggle && els.twoPlayerToggle.checked);
+  twoPlayerMode = false;
+  duration = DEBUG_SECONDS >= 4 && DEBUG_SECONDS <= 32
+    ? DEBUG_SECONDS
+    : selectedMode === "challenge"
+      ? currentChallengeLevel().duration
+      : 32;
   els.hud.classList.toggle("two-player", twoPlayerMode);
   els.p2Stat.classList.toggle("hidden", !twoPlayerMode);
   resetFoods();
@@ -640,6 +661,7 @@ function startRound() {
   chunks = [];
   if (replayUrl) URL.revokeObjectURL(replayUrl);
   replayUrl = "";
+  replayBlob = null;
   faceTracked = false;
   debugSeeded = false;
   lastVideoTime = -1;
@@ -686,10 +708,10 @@ function startRecording() {
       if (event.data.size) chunks.push(event.data);
     };
     recorder.onstop = () => {
-      const blob = new Blob(chunks, { type: recorder.mimeType || mimeType || "video/webm" });
-      replayUrl = URL.createObjectURL(blob);
+      replayBlob = new Blob(chunks, { type: recorder.mimeType || mimeType || "video/webm" });
+      replayUrl = URL.createObjectURL(replayBlob);
       els.saveButton.disabled = false;
-      els.saveHint.textContent = `Tap Save replay to download the local ${replayExtension.toUpperCase()} recording.`;
+      els.saveHint.textContent = `Tap Share replay to open the share sheet, or download the local ${replayExtension.toUpperCase()} recording if sharing is unavailable.`;
     };
     recorder.start();
   } catch (error) {
@@ -733,6 +755,43 @@ function syncPlayerName() {
   return name;
 }
 
+function currentChallengeLevel() {
+  if (!Number.isFinite(challengeLevelIndex)) challengeLevelIndex = 0;
+  challengeLevelIndex = clamp(Math.round(challengeLevelIndex), 0, CHALLENGE_LEVELS.length - 1);
+  return CHALLENGE_LEVELS[challengeLevelIndex];
+}
+
+function setGameMode(mode) {
+  selectedMode = mode === "challenge" ? "challenge" : "free";
+  els.freeModeButton.classList.toggle("active", selectedMode === "free");
+  els.challengeModeButton.classList.toggle("active", selectedMode === "challenge");
+  if (selectedMode === "challenge") {
+    const level = currentChallengeLevel();
+    els.challengeText.textContent = `${level.title}: ${level.intro} Target ${level.target}.`;
+  } else {
+    els.challengeText.textContent = "Free Mode: play for score and bragging rights.";
+  }
+  localStorage.setItem("munchMonsterMode", selectedMode);
+}
+
+function titleForScore(totalScore, gameOver = false) {
+  if (gameOver) return "Fruit Face Survivor";
+  if (totalScore >= 3600) return "Munch Monster Legend";
+  if (totalScore >= 3000) return "Egg King";
+  if (totalScore >= 2400) return "Watermelon Beast";
+  if (totalScore >= 1700) return "Mango Maniac";
+  if (totalScore >= 900) return "Fruit Rookie";
+  return "Tiny Chomper";
+}
+
+function challengeAllowsBombs() {
+  return selectedMode !== "challenge" || challengeLevelIndex >= 2;
+}
+
+function challengeAllowsFinalRush() {
+  return selectedMode !== "challenge" || challengeLevelIndex >= 4;
+}
+
 function loadLeaderboard() {
   try {
     const parsed = JSON.parse(localStorage.getItem(LEADERBOARD_KEY) || "[]");
@@ -759,7 +818,7 @@ function saveLocalScore(totalScore, gameOver = false) {
     name,
     score: Math.max(0, Math.round(totalScore)),
     playedAt,
-    mode: twoPlayerMode ? "two-player" : "solo",
+    mode: selectedMode === "challenge" ? `challenge-${challengeLevelIndex + 1}` : "free",
     duration,
     gameOver,
   };
@@ -911,7 +970,7 @@ function loop(now) {
     return;
   }
 
-  if (left <= 3 && !finalRushAnnounced) {
+  if (left <= 3 && !finalRushAnnounced && challengeAllowsFinalRush()) {
     finalRushAnnounced = true;
     spawnFinalRushWave(elapsed);
     playFinalRushSound();
@@ -1258,9 +1317,11 @@ function draw(elapsed, left, options = {}) {
   if (twoPlayerMode && player2.tracked) drawPeekEyes(1);
   if (shareMode) {
     drawShareScore(options.totalScore ?? score, options.gameOver ?? false);
+    drawBrandMark(true);
   } else {
     drawLives();
     drawPops();
+    drawBrandMark(false);
     if (left <= 3) drawFinalRush(left);
     if (DEBUG_FACE) els.canvas.dataset.debugState = JSON.stringify(debugState());
   }
@@ -2144,6 +2205,35 @@ function drawShareScore(totalScore, gameOver = false) {
   ctx.restore();
 }
 
+function drawBrandMark(shareMode = false) {
+  ctx.save();
+  const qrSize = shareMode ? 82 : 46;
+  const x = W - qrSize - 22;
+  const y = H - qrSize - (shareMode ? 28 : 20);
+  ctx.globalAlpha = shareMode ? 0.96 : 0.68;
+  roundRect(x - 10, y - 10, qrSize + 20, qrSize + (shareMode ? 58 : 34), 16, "rgba(8,3,15,0.76)");
+  if (SHARE_QR.complete && SHARE_QR.naturalWidth > 0) {
+    ctx.drawImage(SHARE_QR, x, y, qrSize, qrSize);
+  } else {
+    ctx.fillStyle = "#fff6ff";
+    ctx.fillRect(x, y, qrSize, qrSize);
+    ctx.fillStyle = "#08030f";
+    ctx.font = "1000 14px system-ui";
+    ctx.textAlign = "center";
+    ctx.fillText("QR", x + qrSize / 2, y + qrSize / 2 + 5);
+  }
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#fff6ff";
+  ctx.font = `1000 ${shareMode ? 17 : 12}px 'Baloo 2', system-ui`;
+  ctx.fillText("taofeng.org", x + qrSize / 2, y + qrSize + (shareMode ? 22 : 17));
+  if (shareMode) {
+    ctx.fillStyle = "#c6ff36";
+    ctx.font = "900 13px 'Baloo 2', system-ui";
+    ctx.fillText("Munch Monster", x + qrSize / 2, y + qrSize + 42);
+  }
+  ctx.restore();
+}
+
 function drawGameOverOverlay(playerIndex = 0, age = 0) {
   ctx.save();
   const alpha = age < 0.75 ? 1 : clamp(1 - (age - 0.75) / 0.95, 0, 1);
@@ -2246,7 +2336,10 @@ function finishRound(gameOver = false, playerIndex = 0) {
   const totalScore = twoPlayerMode ? Math.max(score, player2.score) : score;
   const leaderboardRecord = saveLocalScore(totalScore, gameOver);
   const rankText = leaderboardRecord.localRank ? ` · Local rank #${leaderboardRecord.localRank}` : "";
-  els.rankText.textContent = gameOver ? "GAME OVER" : totalScore >= 2200 ? "大嘴王者" : totalScore >= 1300 ? "水果高手" : "小小大嘴怪";
+  const bragTitle = titleForScore(totalScore, gameOver);
+  const level = currentChallengeLevel();
+  const challengeClear = selectedMode === "challenge" && !gameOver && totalScore >= level.target;
+  els.rankText.textContent = gameOver ? "GAME OVER" : selectedMode === "challenge" ? (challengeClear ? "LEVEL CLEAR" : "TRY AGAIN") : bragTitle;
   if (gameOver) {
     const playerText = twoPlayerMode ? `P${playerIndex + 1} ran out of hearts` : "You ran out of hearts";
     els.finalText.textContent = `${playerText} · Score ${totalScore} · Best ${best}${rankText}`;
@@ -2254,11 +2347,27 @@ function finishRound(gameOver = false, playerIndex = 0) {
     return;
   }
   playWinSound();
+  if (selectedMode === "challenge") {
+    if (challengeClear) {
+      if (challengeLevelIndex < CHALLENGE_LEVELS.length - 1) {
+        challengeLevelIndex += 1;
+        localStorage.setItem("munchMonsterChallengeLevel", String(challengeLevelIndex));
+        setGameMode("challenge");
+        els.finalText.textContent = `${level.title} clear · Score ${totalScore}/${level.target} · Next: ${currentChallengeLevel().title}${rankText}`;
+      } else {
+        els.finalText.textContent = `Challenge complete · ${bragTitle} · Score ${totalScore}/${level.target}${rankText}`;
+      }
+    } else {
+      els.finalText.textContent = `${level.title} · Score ${totalScore}/${level.target} · ${bragTitle}${rankText}`;
+    }
+    show(els.resultPanel);
+    return;
+  }
   if (twoPlayerMode) {
     const winner = score === player2.score ? "Tie game" : score > player2.score ? "P1 wins" : "P2 wins";
     els.finalText.textContent = `${winner} · P1 ${score} · P2 ${player2.score} · Best ${best}${rankText}`;
   } else {
-    els.finalText.textContent = `Score ${score} · Best ${best}${rankText}`;
+    els.finalText.textContent = `${bragTitle} · Score ${score} · Best ${best}${rankText}`;
   }
   show(els.resultPanel);
 }
@@ -2266,6 +2375,44 @@ function finishRound(gameOver = false, playerIndex = 0) {
 function setMouth(open) {
   mouthWantsOpen = open;
   refreshEffectiveMouth();
+}
+
+function downloadReplay() {
+  if (!replayUrl) return;
+  const link = document.createElement("a");
+  link.href = replayUrl;
+  link.download = `munch-monster-taofeng-org.${replayExtension}`;
+  link.click();
+}
+
+async function shareReplay() {
+  if (!replayBlob) {
+    downloadReplay();
+    return;
+  }
+  const mimeType = replayBlob.type || `video/${replayExtension}`;
+  const file = new File([replayBlob], `munch-monster-taofeng-org.${replayExtension}`, { type: mimeType });
+  const shareData = {
+    title: "Munch Monster",
+    text: "I played Munch Monster by taofeng.org.",
+    url: SHARE_URL,
+    files: [file],
+  };
+  try {
+    if (navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) {
+      await navigator.share(shareData);
+      els.saveHint.textContent = "Replay shared through your system share sheet.";
+      return;
+    }
+    if (navigator.share) {
+      await navigator.share({ title: shareData.title, text: shareData.text, url: shareData.url });
+      els.saveHint.textContent = "Link shared. This browser cannot attach the replay file.";
+      return;
+    }
+  } catch (error) {
+    els.saveHint.textContent = "Share was cancelled or blocked. Downloading replay instead.";
+  }
+  downloadReplay();
 }
 
 els.startButton.addEventListener("click", async () => {
@@ -2301,19 +2448,16 @@ els.restartButton.addEventListener("click", () => {
 els.audioButton.addEventListener("click", () => setAudioEnabled(!audioEnabled));
 updateAudioButton();
 els.playerNameInput.value = localStorage.getItem(PLAYER_NAME_KEY) || randomPlayerName();
+setGameMode(localStorage.getItem("munchMonsterMode") || "free");
 els.randomNameButton.addEventListener("click", () => {
   els.playerNameInput.value = randomPlayerName();
   syncPlayerName();
 });
 els.playerNameInput.addEventListener("change", syncPlayerName);
+els.freeModeButton.addEventListener("click", () => setGameMode("free"));
+els.challengeModeButton.addEventListener("click", () => setGameMode("challenge"));
 renderLeaderboard();
-els.saveButton.addEventListener("click", () => {
-  if (!replayUrl) return;
-  const link = document.createElement("a");
-  link.href = replayUrl;
-  link.download = `crazy-big-mouth-replay.${replayExtension}`;
-  link.click();
-});
+els.saveButton.addEventListener("click", shareReplay);
 
 ["pointerdown", "touchstart"].forEach((eventName) => {
   els.mouthButton.addEventListener(eventName, (event) => {
